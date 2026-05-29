@@ -10,6 +10,7 @@ import ExitPermitForm from "./components/ExitPermitForm";
 import TransportAllowanceForm from "./components/TransportAllowanceForm";
 import SalesPerformancePage from "./components/SalesPerformancePage";
 import TasksPage from "./components/TasksPage";
+import CampaignsPage from "./components/CampaignsPage";
 import SaudiCalendar from "./components/SaudiCalendar";
 import { supabase } from "./lib/supabase";
 import { Bell, Search, Settings, Menu, LogOut, Inbox, Send, FileText, Users, ShieldCheck, ClipboardList, Award, Accessibility, GaugeCircle, Sparkles, ChevronRight, ChevronLeft, ChevronDown, Upload, X, Save, Check, ArrowRight, Tag, Calendar, Building2, Shield, AlertTriangle, Clock, CheckCircle, Phone, RefreshCcw, Archive, FilePlus, Mail, BarChart3, LayoutDashboard, ArrowLeftRight, ExternalLink, Globe, Database, MessageSquare, TrendingUp, FileSpreadsheet, Briefcase, UserCheck, CreditCard, Home, Car, Plane, Heart, GraduationCap, Baby, MapPin, Zap, User, Lock, Eye, EyeOff, Smartphone, CircleUser as UserCircle, ListTodo, Megaphone, Languages, Type, Moon, Sun } from "lucide-react";
@@ -19,10 +20,10 @@ const sidebarGroups = [
   {
     label: "الرئيسية",
     items: [
-      { key: "transactions", title: "المعاملات",  icon: ArrowLeftRight },
       { key: "tasks",        title: "المهام",     icon: ListTodo },
-      { key: "attendance",   title: "الحضور",     icon: Calendar },
       { key: "sales_kpi",    title: "الأداء",     icon: TrendingUp },
+      { key: "transactions", title: "المعاملات",  icon: ArrowLeftRight },
+      { key: "attendance",   title: "الحضور",     icon: Calendar },
       { key: "notifications",title: "التنبيهات", icon: Bell },
       { key: "shortcuts",    title: "اختصارات",  icon: Zap },
     ],
@@ -2198,7 +2199,8 @@ export default function ResponsiveDashboard() {
     if (view === "inbox") return renderInboxView();
     if (view === "transaction_details") return renderTransactionDetailsView();
     if (view === "sales_kpi") return <SalesPerformancePage onBack={() => setView("dashboard")} />;
-    if (view === "tasks") return <TasksPage onBack={() => setView("dashboard")} />;
+    if (view === "tasks") return <TasksPage onBack={() => setView("dashboard")} onNewCampaign={() => setView("campaigns")} onNewProject={() => alert("صفحة المشاريع قيد التطوير")} />;
+    if (view === "campaigns") return <CampaignsPage onBack={() => setView("dashboard")} />;
     if (view === "shortcuts") return renderShortcutsPage();
     return renderGenericPage(view);
   }
@@ -2293,10 +2295,10 @@ export default function ResponsiveDashboard() {
 
   function renderMainDashboard() {
     const bottomTabs = [
-      { key: "transactions",  label: "المعاملات",  icon: ArrowLeftRight, view: "transactions" },
       { key: "tasks",         label: "المهام",     icon: ListTodo,       view: "tasks" },
-      { key: "attendance",    label: "الحضور",     icon: Calendar,       view: "attendance" },
       { key: "sales_kpi",     label: "الأداء",     icon: TrendingUp,     view: "sales_kpi" },
+      { key: "transactions",  label: "المعاملات",  icon: ArrowLeftRight, view: "transactions" },
+      { key: "attendance",    label: "الحضور",     icon: Calendar,       view: "attendance" },
       { key: "notifications", label: "التنبيهات", icon: Bell,           view: "notifications" },
       { key: "shortcuts",     label: "اختصارات",  icon: Zap,            view: "shortcuts" },
     ];
