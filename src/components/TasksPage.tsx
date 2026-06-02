@@ -3,6 +3,7 @@ import { Plus, Search, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, C
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../lib/utils";
 import CampaignsPage from "./CampaignsPage";
+import TeamsPage from "./TeamsPage";
 
 type TaskStatus = "todo" | "in-progress" | "in-review" | "completed" | "overdue";
 type TaskPriority = "low" | "medium" | "high" | "urgent";
@@ -24,6 +25,7 @@ interface Task {
   assignTarget?: string;
   assignMembers?: string[];
   taskSource?: string;
+  createdAt?: string;
 }
 
 const ASSIGNEES = ["فهد العتيبي", "نورة السبيعي", "خالد القحطاني", "منى الزهراني", "أحمد الشمري", "سارة الدوسري"];
@@ -77,18 +79,18 @@ function getInitialTasks(): Task[] {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) { try { return JSON.parse(saved); } catch { /* fall */ } }
   return [
-    { id: "P991254-1", title: "جرد مخزون عطور الفرع الرئيسي", description: "فحص الكميات الفعلية لمنتجات فروج ومونتال", status: "todo", priority: "high", dueDate: "2026-06-10", assignee: "فهد العتيبي", progress: 0, projectName: "معرض الرياض بارك" },
-    { id: "P552714-2", title: "تدريب بائعي قسم النيش براند", description: "شرح خصائص العطور النيش للفريق", status: "todo", priority: "high", dueDate: "2026-06-02", assignee: "نورة السبيعي", progress: 0, projectName: "فرع جدة بارك" },
-    { id: "P882726-3", title: "تحضير عرض ترويجي لعيد الفطر", description: "تصميم باقات عطور بأسعار مغرية مع تغليف هدايا", status: "todo", priority: "low", dueDate: "2026-05-31", assignee: "نورة السبيعي", progress: 0, projectName: "فرع مكة مول" },
-    { id: "P883561-1", title: "توزيع استبيانات قياس رضا العملاء", description: "رصد تجربة الشراء وتحليل النتائج", status: "in-progress", priority: "medium", dueDate: "2026-05-25", assignee: "أحمد الشمري", progress: 80, projectName: "معرض الظهران مول" },
-    { id: "P919712-2", title: "جدولة جلسات عرض العطور الموسمية", description: "تنسيق مع موردي العطور الصيفية", status: "in-progress", priority: "high", dueDate: "2026-05-24", assignee: "منى الزهراني", progress: 55, projectName: "معرض الرياض بارك" },
-    { id: "P913762-3", title: "التنسيق مع متحدثين خارجيين لمعرض العطور", description: "التواصل مع خبراء العطور الدوليين", status: "in-progress", priority: "low", dueDate: "2026-05-30", assignee: "خالد القحطاني", progress: 76, projectName: "فرع الرياض جاليري" },
-    { id: "P125773-1", title: "مراجعة قائمة المنتجات الجديدة للفرع", description: "التحقق من جاهزية المنتجات قبل الإطلاق", status: "in-review", priority: "medium", dueDate: "2026-05-26", assignee: "سارة الدوسري", progress: 90, projectName: "معرض الخبر بلازا" },
-    { id: "P927572-2", title: "استلام شحنة عطور جديدة - مونتال", description: "فحص جودة الشحنة وتسجيلها في النظام", status: "in-review", priority: "high", dueDate: "2026-05-28", assignee: "فهد العتيبي", progress: 86, projectName: "فرع جدة بارك" },
-    { id: "P012263-3", title: "تصميم كتالوج عطور الصيف 2026", description: "اختيار المنتجات الموسمية وتصميم الكتالوج الرقمي", status: "in-review", priority: "medium", dueDate: "2026-05-22", assignee: "منى الزهراني", progress: 89, projectName: "معرض الرياض بارك" },
-    { id: "P774412-1", title: "مراجعة تقرير مبيعات أبريل", description: "تحليل أداء الفروع ومقارنة الأهداف الشهرية", status: "completed", priority: "medium", dueDate: "2026-05-05", assignee: "خالد القحطاني", progress: 100, projectName: "فرع الرياض جاليري" },
-    { id: "P338821-2", title: "تحديث قائمة الأسعار بعد الضريبة", description: "تطبيق نسبة الضريبة الجديدة على جميع المنتجات", status: "completed", priority: "low", dueDate: "2026-05-01", assignee: "سارة الدوسري", progress: 100, projectName: "فرع جدة بارك" },
-    { id: "P558832-1", title: "مراجعة عقود إيجار الفروع الجديدة", description: "الاطلاع على بنود عقود الفروع المقرر افتتاحها", status: "overdue", priority: "high", dueDate: "2026-05-10", assignee: "أحمد الشمري", progress: 30, projectName: "معرض الخبر بلازا" },
+    { id: "P991254-1", title: "جرد مخزون عطور الفرع الرئيسي", description: "فحص الكميات الفعلية لمنتجات فروج ومونتال", status: "todo", priority: "high", dueDate: "2026-06-10", assignee: "فهد العتيبي", progress: 0, projectName: "معرض الرياض بارك", createdAt: "2026-05-20" },
+    { id: "P552714-2", title: "تدريب بائعي قسم النيش براند", description: "شرح خصائص العطور النيش للفريق", status: "todo", priority: "high", dueDate: "2026-06-02", assignee: "نورة السبيعي", progress: 0, projectName: "فرع جدة بارك", createdAt: "2026-05-21" },
+    { id: "P882726-3", title: "تحضير عرض ترويجي لعيد الفطر", description: "تصميم باقات عطور بأسعار مغرية مع تغليف هدايا", status: "todo", priority: "low", dueDate: "2026-05-31", assignee: "نورة السبيعي", progress: 0, projectName: "فرع مكة مول", createdAt: "2026-05-22" },
+    { id: "P883561-1", title: "توزيع استبيانات قياس رضا العملاء", description: "رصد تجربة الشراء وتحليل النتائج", status: "in-progress", priority: "medium", dueDate: "2026-05-25", assignee: "أحمد الشمري", progress: 80, projectName: "معرض الظهران مول", createdAt: "2026-05-15" },
+    { id: "P919712-2", title: "جدولة جلسات عرض العطور الموسمية", description: "تنسيق مع موردي العطور الصيفية", status: "in-progress", priority: "high", dueDate: "2026-05-24", assignee: "منى الزهراني", progress: 55, projectName: "معرض الرياض بارك", createdAt: "2026-05-16" },
+    { id: "P913762-3", title: "التنسيق مع متحدثين خارجيين لمعرض العطور", description: "التواصل مع خبراء العطور الدوليين", status: "in-progress", priority: "low", dueDate: "2026-05-30", assignee: "خالد القحطاني", progress: 76, projectName: "فرع الرياض جاليري", createdAt: "2026-05-17" },
+    { id: "P125773-1", title: "مراجعة قائمة المنتجات الجديدة للفرع", description: "التحقق من جاهزية المنتجات قبل الإطلاق", status: "in-review", priority: "medium", dueDate: "2026-05-26", assignee: "سارة الدوسري", progress: 90, projectName: "معرض الخبر بلازا", createdAt: "2026-05-18" },
+    { id: "P927572-2", title: "استلام شحنة عطور جديدة - مونتال", description: "فحص جودة الشحنة وتسجيلها في النظام", status: "in-review", priority: "high", dueDate: "2026-05-28", assignee: "فهد العتيبي", progress: 86, projectName: "فرع جدة بارك", createdAt: "2026-05-19" },
+    { id: "P012263-3", title: "تصميم كتالوج عطور الصيف 2026", description: "اختيار المنتجات الموسمية وتصميم الكتالوج الرقمي", status: "in-review", priority: "medium", dueDate: "2026-05-22", assignee: "منى الزهراني", progress: 89, projectName: "معرض الرياض بارك", createdAt: "2026-05-20" },
+    { id: "P774412-1", title: "مراجعة تقرير مبيعات أبريل", description: "تحليل أداء الفروع ومقارنة الأهداف الشهرية", status: "completed", priority: "medium", dueDate: "2026-05-05", assignee: "خالد القحطاني", progress: 100, projectName: "فرع الرياض جاليري", createdAt: "2026-04-10" },
+    { id: "P338821-2", title: "تحديث قائمة الأسعار بعد الضريبة", description: "تطبيق نسبة الضريبة الجديدة على جميع المنتجات", status: "completed", priority: "low", dueDate: "2026-05-01", assignee: "سارة الدوسري", progress: 100, projectName: "فرع جدة بارك", createdAt: "2026-04-15" },
+    { id: "P558832-1", title: "مراجعة عقود إيجار الفروع الجديدة", description: "الاطلاع على بنود عقود الفروع المقرر افتتاحها", status: "overdue", priority: "high", dueDate: "2026-05-10", assignee: "أحمد الشمري", progress: 30, projectName: "معرض الخبر بلازا", createdAt: "2026-04-20" },
   ];
 }
 
@@ -110,14 +112,15 @@ const PRIORITY_CONFIG: Record<TaskPriority, { label: string; bg: string; text: s
 interface TasksPageProps { onBack?: () => void; onNewCampaign?: () => void; onNewProject?: () => void; }
 
 const COLS = [
-  { key: "id",          label: "رقم المهمة" },
   { key: "title",       label: "اسم المهمة" },
   { key: "assignee",    label: "المسؤول" },
   { key: "projectName", label: "المشروع" },
   { key: "source",      label: "المصدر" },
+  { key: "createdAt",   label: "تاريخ الإنشاء" },
   { key: "progress",    label: "الإنجاز" },
   { key: "dueDate",     label: "الموعد النهائي" },
   { key: "priority",    label: "الأولوية" },
+  { key: "id",          label: "رقم المهمة" },
   { key: "action",      label: "إجراء" },
 ] as const;
 
@@ -132,15 +135,34 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
   const [editing, setEditing] = useState<Task | null>(null);
   const [form, setForm] = useState<Partial<Task>>({ status: "todo", priority: "medium", progress: 0 });
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const addMenuRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState<"tasks" | "campaigns" | "projects">("tasks");
+  const [activeTab, setActiveTab] = useState<"tasks" | "campaigns" | "projects" | "teams">("tasks");
   const [formDropdown, setFormDropdown] = useState<"status" | "assignee" | "dueDate" | "priority" | "tags" | "source" | "project" | null>(null);
   const formDropdownRef = useRef<HTMLDivElement>(null);
   const [assignStep, setAssignStep] = useState<"mode" | "list" | "members">("mode");
   const assignDropdownRef = useRef<HTMLDivElement>(null);
+  const [tableDropdown, setTableDropdown] = useState<{
+    id: string;
+    field: "assignee" | "project" | "source" | "progress" | "dueDate" | "priority";
+    top: number;
+    right: number;
+  } | null>(null);
+  const [teamsFilter, setTeamsFilter] = useState<"all" | "team" | "department" | "committee">("all");
+  const [teamsSearch, setTeamsSearch] = useState("");
+  const [teamsView, setTeamsView] = useState<"table" | "cards">("table");
+  const tableDropdownRef = useRef<HTMLDivElement | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+  const [sortField, setSortField] = useState<"dueDate" | "priority" | "progress" | "createdAt" | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [filterStatus, setFilterStatus] = useState<TaskStatus | "all">("all");
+  const [filterPriority, setFilterPriority] = useState<TaskPriority | "all">("all");
+  const [filterAssignee, setFilterAssignee] = useState<string | "all">("all");
+  const [filterProject, setFilterProject] = useState<string | "all">("all");
+
+  const activeFilterCount = (filterStatus !== "all" ? 1 : 0) + (filterPriority !== "all" ? 1 : 0) + (filterAssignee !== "all" ? 1 : 0) + (filterProject !== "all" ? 1 : 0) + (sortField ? 1 : 0);
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -179,6 +201,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(null);
       if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) setAddMenuOpen(false);
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
+      if (tableDropdownRef.current && !tableDropdownRef.current.contains(e.target as Node)) setTableDropdown(null);
       if (assignDropdownRef.current && assignDropdownRef.current.contains(e.target as Node)) {
         // keep assign dropdown open
       } else {
@@ -186,17 +210,37 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
         setAssignStep("mode");
       }
     };
+    const onScroll = () => setTableDropdown(null);
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    window.addEventListener("scroll", onScroll, true);
+    return () => { document.removeEventListener("mousedown", handler); window.removeEventListener("scroll", onScroll, true); };
   }, []);
 
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return tasks;
-    const q = search.trim().toLowerCase();
-    return tasks.filter(t => t.title.toLowerCase().includes(q) || t.assignee.toLowerCase().includes(q) || t.projectName.toLowerCase().includes(q) || t.id.toLowerCase().includes(q));
-  }, [tasks, search]);
+    let res = tasks;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      res = res.filter(t => t.title.toLowerCase().includes(q) || t.assignee.toLowerCase().includes(q) || t.projectName.toLowerCase().includes(q) || t.id.toLowerCase().includes(q));
+    }
+    if (filterStatus !== "all") res = res.filter(t => t.status === filterStatus);
+    if (filterPriority !== "all") res = res.filter(t => t.priority === filterPriority);
+    if (filterAssignee !== "all") res = res.filter(t => t.assignee === filterAssignee);
+    if (filterProject !== "all") res = res.filter(t => t.projectName === filterProject);
+    if (sortField) {
+      const priorityOrder: Record<TaskPriority, number> = { urgent: 4, high: 3, medium: 2, low: 1 };
+      res = [...res].sort((a, b) => {
+        let cmp = 0;
+        if (sortField === "priority") cmp = priorityOrder[a.priority] - priorityOrder[b.priority];
+        else if (sortField === "progress") cmp = a.progress - b.progress;
+        else if (sortField === "dueDate") cmp = (a.dueDate || "").localeCompare(b.dueDate || "");
+        else if (sortField === "createdAt") cmp = (a.createdAt || "").localeCompare(b.createdAt || "");
+        return sortDir === "asc" ? cmp : -cmp;
+      });
+    }
+    return res;
+  }, [tasks, search, filterStatus, filterPriority, sortField, sortDir]);
 
   const grouped = useMemo(() => {
     const g: Record<TaskStatus, Task[]> = { todo: [], "in-progress": [], "in-review": [], completed: [], overdue: [] };
@@ -205,7 +249,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
   }, [filtered]);
 
   const toggle = (s: TaskStatus) => setExpanded(p => ({ ...p, [s]: !p[s] }));
-  const openCreate = () => { setEditing(null); setForm({ status: "todo", priority: "medium", dueDate: today, assignee: ASSIGNEES[0], progress: 0, projectName: PROJECTS[0], assignMode: "me", assignTarget: undefined, assignMembers: undefined, taskSource: SOURCES[0] }); setModalOpen(true); setAssignStep("mode"); };
+  const openCreate = () => { setEditing(null); setForm({ status: "todo", priority: "medium", dueDate: today, assignee: ASSIGNEES[0], progress: 0, projectName: PROJECTS[0], assignMode: "me", assignTarget: undefined, assignMembers: undefined, taskSource: SOURCES[0], createdAt: today }); setModalOpen(true); setAssignStep("mode"); };
   const openEdit = (t: Task) => { setEditing(t); setForm({ ...t }); setModalOpen(true); setMenuOpen(null); setAssignStep("mode"); };
   const save = () => {
     if (!form.title?.trim()) return;
@@ -217,7 +261,9 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
     setModalOpen(false);
   };
   const remove = (id: string) => { if (confirm("هل أنت متأكد من حذف هذه المهمة؟")) { setTasks(p => p.filter(t => t.id !== id)); setMenuOpen(null); } };
-  const toggleRow = (id: string) => setSelectedRows(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const updateTask = (id: string, changes: Partial<Task>) => {
+    setTasks(prev => prev.map(t => (t.id === id ? { ...t, ...changes } : t)));
+  };
 
   const order: TaskStatus[] = ["todo", "in-progress", "in-review", "overdue", "completed"];
 
@@ -246,6 +292,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
               { key: "tasks" as const, label: "المهام" },
               { key: "campaigns" as const, label: "الحملات" },
               { key: "projects" as const, label: "المشاريع" },
+              { key: "teams" as const, label: "الفرق" },
             ]).map(({ key, label }) => (
               <button
                 key={key}
@@ -279,7 +326,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
               initial="hide"
               animate="show"
               exit="hide"
-              className="overflow-hidden flex-1"
+              className={cn("flex-1", headerCollapsed && "overflow-hidden")}
             >
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {activeTab === "tasks" && (
@@ -289,9 +336,140 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
                 <input value={search} onChange={e => setSearch(e.target.value)} placeholder="بحث..."
                   className="w-full pr-9 pl-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400/40 text-right" />
               </div>
-              <button className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-sm text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-neutral-600 rounded-xl hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors">
-                <SlidersHorizontal className="w-4 h-4" /> <span className="hidden sm:inline">تصفية</span>
-              </button>
+              {/* Active filter chips */}
+              {activeFilterCount > 0 && (
+                <div className="hidden md:flex items-center gap-1 flex-wrap">
+                  {sortField && (
+                    <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 text-[11px] font-medium">
+                      <ArrowUpDown className="w-3 h-3" />
+                      {sortField === "dueDate" ? "الموعد" : sortField === "priority" ? "الأولوية" : sortField === "progress" ? "الإنجاز" : "الإنشاء"}
+                      {sortDir === "asc" ? " ↑" : " ↓"}
+                      <button onClick={() => setSortField(null)} className="hover:text-teal-900 dark:hover:text-teal-100"><X className="w-3 h-3" /></button>
+                    </span>
+                  )}
+                  {filterStatus !== "all" && (
+                    <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-[11px] font-medium">
+                      <Flag className="w-3 h-3" /> {STATUS_CONFIG[filterStatus].label}
+                      <button onClick={() => setFilterStatus("all")} className="hover:text-blue-900 dark:hover:text-blue-100"><X className="w-3 h-3" /></button>
+                    </span>
+                  )}
+                  {filterPriority !== "all" && (
+                    <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[11px] font-medium">
+                      <Flag className="w-3 h-3" /> {PRIORITY_CONFIG[filterPriority].label}
+                      <button onClick={() => setFilterPriority("all")} className="hover:text-amber-900 dark:hover:text-amber-100"><X className="w-3 h-3" /></button>
+                    </span>
+                  )}
+                  {filterAssignee !== "all" && (
+                    <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 text-[11px] font-medium">
+                      <UserCircle className="w-3 h-3" /> {filterAssignee}
+                      <button onClick={() => setFilterAssignee("all")} className="hover:text-violet-900 dark:hover:text-violet-100"><X className="w-3 h-3" /></button>
+                    </span>
+                  )}
+                  {filterProject !== "all" && (
+                    <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 text-[11px] font-medium">
+                      <FolderOpen className="w-3 h-3" /> {filterProject}
+                      <button onClick={() => setFilterProject("all")} className="hover:text-emerald-900 dark:hover:text-emerald-100"><X className="w-3 h-3" /></button>
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="relative" ref={filterRef}>
+                <button onClick={() => setFilterOpen(v => !v)} className={cn("flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-sm border rounded-xl transition-colors relative", filterOpen || activeFilterCount > 0 ? "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/20 dark:text-teal-300 dark:border-teal-800" : "text-gray-600 dark:text-gray-300 border-gray-200 dark:border-neutral-600 hover:bg-gray-50 dark:hover:bg-neutral-700")}>
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span className="hidden sm:inline">تصفية</span>
+                  {activeFilterCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center px-1 rounded-full bg-teal-500 text-white text-[10px] font-bold shadow-sm">{activeFilterCount}</span>
+                  )}
+                </button>
+                {filterOpen && (
+                  <div className="absolute left-0 top-full mt-2 z-50 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-2xl shadow-2xl p-4 min-w-[280px] max-h-[70vh] overflow-y-auto">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-bold text-gray-800 dark:text-gray-100">تصفية وترتيب</p>
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-neutral-700 text-gray-500 dark:text-gray-400">{filtered.length} نتيجة</span>
+                    </div>
+
+                    {/* Sort */}
+                    <div className="mb-4">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1"><ArrowUpDown className="w-3 h-3" /> الترتيب</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {([
+                          { key: "dueDate" as const, label: "الموعد النهائي", icon: CalendarIcon },
+                          { key: "priority" as const, label: "الأولوية", icon: Flag },
+                          { key: "progress" as const, label: "نسبة الإنجاز", icon: SlidersHorizontal },
+                          { key: "createdAt" as const, label: "تاريخ الإنشاء", icon: Calendar },
+                        ]).map(({ key, label, icon: Icon }) => (
+                          <button key={key} onClick={() => { if (sortField === key) { setSortDir(d => d === "asc" ? "desc" : "asc"); } else { setSortField(key); setSortDir("desc"); } }}
+                            className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all", sortField === key ? "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 shadow-sm" : "bg-gray-50 text-gray-600 dark:bg-neutral-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-600")}>
+                            <Icon className="w-3 h-3" /> {label} {sortField === key && (sortDir === "asc" ? "↑" : "↓")}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="mb-4">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1"><Inbox className="w-3 h-3" /> الحالة</p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {([{k:"all" as const,l:"الكل",c:"bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-300",ac:"bg-gray-200 text-gray-800 dark:bg-neutral-600 dark:text-white"},{k:"todo" as const,l:"قيد الانتظار",c:"bg-neutral-100 text-neutral-600",ac:"bg-neutral-800 text-white"},{k:"in-progress" as const,l:"قيد العمل",c:"bg-blue-50 text-blue-600",ac:"bg-blue-500 text-white"},{k:"in-review" as const,l:"تحت المراجعة",c:"bg-orange-50 text-orange-600",ac:"bg-orange-500 text-white"},{k:"completed" as const,l:"منتهية",c:"bg-teal-50 text-teal-600",ac:"bg-teal-500 text-white"},{k:"overdue" as const,l:"متأخرة",c:"bg-red-50 text-red-600",ac:"bg-red-500 text-white"}] as {k:TaskStatus|"all",l:string,c:string,ac:string}[]).map(({k,l,c,ac}) => (
+                          <button key={k} onClick={() => setFilterStatus(k)}
+                            className={cn("px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all text-center", filterStatus === k ? ac : c + " hover:opacity-80")}>
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Priority */}
+                    <div className="mb-4">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1"><Flag className="w-3 h-3" /> الأولوية</p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {([{k:"all" as const,l:"الكل",c:"bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-300",ac:"bg-gray-200 text-gray-800 dark:bg-neutral-600 dark:text-white"},{k:"urgent" as const,l:"عاجلة",c:"bg-red-50 text-red-600",ac:"bg-red-500 text-white"},{k:"high" as const,l:"عالية",c:"bg-amber-50 text-amber-600",ac:"bg-amber-500 text-white"},{k:"medium" as const,l:"متوسطة",c:"bg-blue-50 text-blue-600",ac:"bg-blue-500 text-white"},{k:"low" as const,l:"منخفضة",c:"bg-gray-50 text-gray-500",ac:"bg-gray-500 text-white"}] as {k:TaskPriority|"all",l:string,c:string,ac:string}[]).map(({k,l,c,ac}) => (
+                          <button key={k} onClick={() => setFilterPriority(k)}
+                            className={cn("px-2 py-1.5 rounded-lg text-[11px] font-medium transition-all text-center", filterPriority === k ? ac : c + " hover:opacity-80")}>
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Assignee */}
+                    <div className="mb-4">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1"><Users className="w-3 h-3" /> المسؤول</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button onClick={() => setFilterAssignee("all")} className={cn("px-2 py-1 rounded-lg text-[11px] font-medium transition-all", filterAssignee === "all" ? "bg-violet-500 text-white shadow-sm" : "bg-gray-50 text-gray-600 dark:bg-neutral-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-600")}>الكل</button>
+                        {ASSIGNEES.map(a => (
+                          <button key={a} onClick={() => setFilterAssignee(a)}
+                            className={cn("flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium transition-all", filterAssignee === a ? "bg-violet-500 text-white shadow-sm" : "bg-gray-50 text-gray-600 dark:bg-neutral-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-600")}>
+                            <span className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white shrink-0", avatarColor(a))}>{initials(a)}</span>
+                            {a}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Project */}
+                    <div className="mb-2">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1"><FolderOpen className="w-3 h-3" /> المشروع</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button onClick={() => setFilterProject("all")} className={cn("px-2 py-1 rounded-lg text-[11px] font-medium transition-all", filterProject === "all" ? "bg-emerald-500 text-white shadow-sm" : "bg-gray-50 text-gray-600 dark:bg-neutral-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-600")}>الكل</button>
+                        {PROJECTS.map(p => (
+                          <button key={p} onClick={() => setFilterProject(p)}
+                            className={cn("px-2 py-1 rounded-lg text-[11px] font-medium transition-all", filterProject === p ? "bg-emerald-500 text-white shadow-sm" : "bg-gray-50 text-gray-600 dark:bg-neutral-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-600")}>
+                            {p}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Reset */}
+                    <button onClick={() => { setSortField(null); setFilterStatus("all"); setFilterPriority("all"); setFilterAssignee("all"); setFilterProject("all"); }} className="w-full mt-3 py-2 text-[11px] font-semibold text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 border-t border-gray-100 dark:border-neutral-700 transition-colors flex items-center justify-center gap-1">
+                      <X className="w-3 h-3" /> إعادة تعيين الكل
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className="mr-auto flex items-center gap-1 bg-neutral-50 dark:bg-neutral-700 rounded-xl p-1">
                 {([["list","قائمة",List],["kanban","كانبان",LayoutGrid],["calendar","تقويم",CalendarIcon]] as [ViewMode, string, React.ElementType][]).map(([v, label, Icon]) => (
                   <button key={v} onClick={() => setViewMode(v)} className={cn("flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-200", viewMode === v ? "bg-neutral-900 text-white shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600")}>
@@ -302,7 +480,38 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
             </>
           )}
 
-          {activeTab !== "tasks" && <div className="flex-1" />}
+          {activeTab === "teams" && (
+            <>
+              <div className="hidden sm:flex items-center gap-1 bg-neutral-50 dark:bg-neutral-700 rounded-xl p-1">
+                {([
+                  { key: "all" as const, label: "الكل" },
+                  { key: "team" as const, label: "الفرق" },
+                  { key: "department" as const, label: "الأقسام" },
+                  { key: "committee" as const, label: "اللجان" },
+                ]).map(({ key, label }) => (
+                  <button key={key} onClick={() => setTeamsFilter(key)}
+                    className={cn("flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-200",
+                      teamsFilter === key ? "bg-neutral-900 text-white shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600")}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="relative flex-1 max-w-[140px] sm:max-w-xs">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input value={teamsSearch} onChange={e => setTeamsSearch(e.target.value)} placeholder="بحث..."
+                  className="w-full pr-9 pl-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400/40 text-right" />
+              </div>
+              <div className="mr-auto flex items-center gap-1 bg-neutral-50 dark:bg-neutral-700 rounded-xl p-1">
+                {([["table","جداول",List],["cards","بطاقات",LayoutGrid]] as ["table" | "cards", string, React.ElementType][]).map(([v, label, Icon]) => (
+                  <button key={v} onClick={() => setTeamsView(v)} className={cn("flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-200", teamsView === v ? "bg-neutral-900 text-white shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600")}>
+                    <Icon className="w-3.5 h-3.5" /><span className="hidden sm:inline">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {activeTab !== "tasks" && activeTab !== "teams" && <div className="flex-1" />}
             </div>
             </motion.div>
             )}
@@ -327,6 +536,26 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
               )}
             </div>
           </div>
+
+          {/* Mobile-only teams filter bar — below toolbar, inside sticky header */}
+          {activeTab === "teams" && (
+            <div className="sm:hidden px-2 pb-2">
+              <div className="flex items-center gap-1 bg-neutral-50 dark:bg-neutral-700 rounded-xl p-1 w-full">
+                {([
+                  { key: "all" as const, label: "الكل" },
+                  { key: "team" as const, label: "الفرق" },
+                  { key: "department" as const, label: "الأقسام" },
+                  { key: "committee" as const, label: "اللجان" },
+                ]).map(({ key, label }) => (
+                  <button key={key} onClick={() => setTeamsFilter(key)}
+                    className={cn("flex flex-1 items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-bold rounded-lg transition-all duration-200",
+                      teamsFilter === key ? "bg-neutral-900 text-white shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600")}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -342,7 +571,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
               const open = expanded[status];
               const cfg = STATUS_CONFIG[status];
               return (
-                <div key={status} className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-100 dark:border-neutral-700 overflow-hidden">
+                <div key={status} className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm border border-gray-100 dark:border-neutral-700">
                   {/* Group Header */}
                   <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-neutral-700">
                     <div className="flex items-center gap-3">
@@ -362,12 +591,11 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
                   {open && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }}>
                       <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
+                        <table className="w-full text-sm min-w-[800px]">
                           <thead>
                             <tr className="border-b border-gray-100 dark:border-neutral-700">
-                              <th className="w-10 px-4 py-3"><input type="checkbox" className="rounded border-gray-300 text-teal-500 focus:ring-teal-400" /></th>
-                              {COLS.map(col => (
-                                <th key={col.key} className={cn("px-3 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap", col.key === "action" ? "text-center" : "")}>
+                              {COLS.map((col, idx) => (
+                                <th key={col.key} className={cn("px-3 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap", col.key === "action" ? "text-center" : "", idx === 0 ? "pr-5" : "", idx === COLS.length - 1 ? "pl-5" : "")}>
                                   {col.key !== "action" ? (
                                     <button className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
                                       {col.label}<ArrowUpDown className="w-3 h-3 opacity-50" />
@@ -380,12 +608,15 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
                           <tbody>
                             {items.map(task => (
                               <tr key={task.id} className="border-b border-gray-50 dark:border-neutral-700/50 hover:bg-gray-50/60 dark:hover:bg-neutral-700/20 transition-colors">
-                                <td className="px-4 py-3.5">
-                                  <input type="checkbox" checked={selectedRows.has(task.id)} onChange={() => toggleRow(task.id)} className="rounded border-gray-300 text-teal-500 focus:ring-teal-400" />
-                                </td>
-                                <td className="px-3 py-3.5 text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap font-mono text-right">{task.id}</td>
-                                <td className="px-3 py-3.5 min-w-[200px]">
-                                  <p className="text-sm text-gray-700 dark:text-gray-200 text-right" title={task.title}>{task.title}</p>
+                                <td className="px-3 py-3.5 min-w-[200px] pr-5">
+                                  <button
+                                    type="button"
+                                    onClick={() => openEdit(task)}
+                                    className="w-full text-right text-sm text-gray-700 dark:text-gray-200 hover:text-teal-600 transition-colors"
+                                    title={task.title}
+                                  >
+                                    {task.title}
+                                  </button>
                                 </td>
                                 <td className="px-3 py-3.5 whitespace-nowrap">
                                   {task.assignMode === "team" && (
@@ -416,26 +647,87 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
                                     </div>
                                   )}
                                   {(!task.assignMode || task.assignMode === "me") && (
-                                    <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "assignee" ? null : { id: task.id, field: "assignee", top: r.bottom, right: window.innerWidth - r.right }); }}
+                                      className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors"
+                                    >
                                       <div className={cn("w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0", avatarColor(task.assignee))}>
                                         {initials(task.assignee)}
                                       </div>
                                       <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{task.assignee}</span>
-                                    </div>
+                                      <ChevronDown className="w-3 h-3 text-gray-400" />
+                                    </button>
                                   )}
                                 </td>
-                                <td className="px-3 py-3.5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{task.projectName}</td>
-                                <td className="px-3 py-3.5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{task.taskSource || "-"}</td>
-                                <td className="px-3 py-3.5 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{task.progress}%</td>
-                                <td className={cn("px-3 py-3.5 text-sm whitespace-nowrap", task.dueDate < today && task.status !== "completed" ? "text-red-500 font-semibold" : "text-gray-500 dark:text-gray-400")}>
-                                  {fmtDate(task.dueDate)}
+                                <td className="px-3 py-3.5 whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "project" ? null : { id: task.id, field: "project", top: r.bottom, right: window.innerWidth - r.right }); }}
+                                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-gray-200 bg-gray-50 text-gray-700 dark:border-neutral-600 dark:bg-neutral-800/60 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+                                  >
+                                    <Briefcase className="w-3.5 h-3.5 text-blue-500" />
+                                    <span className="truncate max-w-[140px]">{task.projectName}</span>
+                                    <ChevronDown className="w-3 h-3 opacity-60" />
+                                  </button>
+                                </td>
+                                <td className="px-3 py-3.5 whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "source" ? null : { id: task.id, field: "source", top: r.bottom, right: window.innerWidth - r.right }); }}
+                                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-gray-200 bg-gray-50 text-gray-700 dark:border-neutral-600 dark:bg-neutral-800/60 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+                                  >
+                                    <Inbox className="w-3.5 h-3.5 text-amber-500" />
+                                    <span className="truncate max-w-[120px]">{task.taskSource || "غير محدد"}</span>
+                                    <ChevronDown className="w-3 h-3 opacity-60" />
+                                  </button>
+                                </td>
+                                <td className="px-3 py-3.5 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
+                                  {task.createdAt ? fmtDate(task.createdAt) : "—"}
+                                </td>
+                                <td className="px-3 py-3.5 whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "progress" ? null : { id: task.id, field: "progress", top: r.bottom, right: window.innerWidth - r.right }); }}
+                                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-700 text-xs"
+                                  >
+                                    <div className="w-16 h-1.5 rounded-full bg-gray-100 dark:bg-neutral-700 overflow-hidden">
+                                      <div className="h-full rounded-full bg-teal-500" style={{ width: `${task.progress}%` }} />
+                                    </div>
+                                    <span className="text-[11px] font-medium text-gray-600 dark:text-gray-300">{task.progress}%</span>
+                                    <ChevronDown className="w-3 h-3 text-gray-400" />
+                                  </button>
+                                </td>
+                                <td className="px-3 py-3.5 whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "dueDate" ? null : { id: task.id, field: "dueDate", top: r.bottom, right: window.innerWidth - r.right }); }}
+                                    className={cn(
+                                      "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-gray-200 bg-gray-50 dark:border-neutral-600 dark:bg-neutral-800/60 transition-colors",
+                                      task.dueDate < today && task.status !== "completed"
+                                        ? "text-red-500 border-red-200 bg-red-50/70 dark:text-red-300 dark:border-red-700 dark:bg-red-900/30"
+                                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700"
+                                    )}
+                                  >
+                                    <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
+                                    <span className="truncate max-w-[120px]">{fmtDate(task.dueDate)}</span>
+                                    <ChevronDown className="w-3 h-3 opacity-60" />
+                                  </button>
                                 </td>
                                 <td className="px-3 py-3.5">
-                                  <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", PRIORITY_CONFIG[task.priority].bg, PRIORITY_CONFIG[task.priority].text)}>
-                                    {PRIORITY_CONFIG[task.priority].label}
-                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "priority" ? null : { id: task.id, field: "priority", top: r.bottom, right: window.innerWidth - r.right }); }}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700"
+                                  >
+                                    <span className={cn("px-1.5 py-0.5 rounded-full text-[11px] font-semibold", PRIORITY_CONFIG[task.priority].bg, PRIORITY_CONFIG[task.priority].text)}>
+                                      {PRIORITY_CONFIG[task.priority].label}
+                                    </span>
+                                    <ChevronDown className="w-3 h-3 text-gray-400" />
+                                  </button>
                                 </td>
-                                <td className="px-3 py-3.5 text-center relative">
+                                <td className="px-3 py-3.5 text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap font-mono text-right">{task.id}</td>
+                                <td className="px-3 py-3.5 text-center relative pl-5">
                                   <div ref={menuOpen === task.id ? menuRef : null} className="inline-block">
                                     <button onClick={() => setMenuOpen(menuOpen === task.id ? null : task.id)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-400 hover:text-gray-600 transition-colors">
                                       <MoreHorizontal className="w-4 h-4" />
@@ -652,6 +944,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
       )}
 
       {activeTab === "campaigns" && <CampaignsPage />}
+
+      {activeTab === "teams" && <TeamsPage filter={teamsFilter} search={teamsSearch} view={teamsView} />}
 
       {activeTab === "projects" && (
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-20 text-center">
@@ -937,6 +1231,81 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Fixed-position table inline dropdown — escapes all overflow/z-index constraints */}
+      {tableDropdown && (() => {
+        const dt = tasks.find(t => t.id === tableDropdown.id);
+        if (!dt) return null;
+        return (
+          <div
+            ref={tableDropdownRef}
+            className="fixed z-[9999] bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-xl shadow-xl"
+            style={{ top: tableDropdown.top + 4, right: tableDropdown.right }}
+          >
+            {tableDropdown.field === "assignee" && (
+              <div className="py-1.5 min-w-[200px]">
+                {ASSIGNEES.map(name => (
+                  <button key={name} type="button"
+                    onClick={() => { updateTask(dt.id, { assignee: name, assignMode: "me", assignTarget: undefined, assignMembers: undefined }); setTableDropdown(null); }}
+                    className={cn("w-full px-4 py-2 text-sm text-right flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors", dt.assignee === name ? "text-teal-600 font-semibold" : "text-gray-700 dark:text-gray-200")}>
+                    <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0", avatarColor(name))}>{initials(name)}</div>
+                    <span className="truncate">{name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {tableDropdown.field === "project" && (
+              <div className="py-1.5 min-w-[220px]">
+                {PROJECTS.map(p => (
+                  <button key={p} type="button"
+                    onClick={() => { updateTask(dt.id, { projectName: p }); setTableDropdown(null); }}
+                    className={cn("w-full px-4 py-2 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors", dt.projectName === p ? "text-teal-600 font-semibold" : "text-gray-700 dark:text-gray-200")}>
+                    {p}
+                  </button>
+                ))}
+              </div>
+            )}
+            {tableDropdown.field === "source" && (
+              <div className="py-1.5 min-w-[200px]">
+                {SOURCES.map(s => (
+                  <button key={s} type="button"
+                    onClick={() => { updateTask(dt.id, { taskSource: s }); setTableDropdown(null); }}
+                    className={cn("w-full px-4 py-2 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors", dt.taskSource === s ? "text-teal-600 font-semibold" : "text-gray-700 dark:text-gray-200")}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+            {tableDropdown.field === "progress" && (
+              <div className="p-3 w-[220px]">
+                <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">نسبة الإنجاز: {dt.progress}%</label>
+                <input type="range" min={0} max={100} value={dt.progress}
+                  onChange={e => updateTask(dt.id, { progress: parseInt(e.target.value || "0", 10) || 0 })}
+                  className="w-full accent-teal-500" />
+              </div>
+            )}
+            {tableDropdown.field === "dueDate" && (
+              <div className="p-3 w-[220px]">
+                <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">الموعد النهائي</label>
+                <input type="date" value={dt.dueDate}
+                  onChange={e => updateTask(dt.id, { dueDate: e.target.value })}
+                  className="w-full text-xs rounded-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-2 py-1.5 text-right focus:outline-none focus:ring-1 focus:ring-teal-400" />
+              </div>
+            )}
+            {tableDropdown.field === "priority" && (
+              <div className="py-1.5 min-w-[180px]">
+                {(["low", "medium", "high", "urgent"] as TaskPriority[]).map(p => (
+                  <button key={p} type="button"
+                    onClick={() => { updateTask(dt.id, { priority: p }); setTableDropdown(null); }}
+                    className={cn("w-full px-4 py-2 text-sm text-right flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors", dt.priority === p ? "text-teal-600 font-semibold" : "text-gray-700 dark:text-gray-200")}>
+                    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold", PRIORITY_CONFIG[p].bg, PRIORITY_CONFIG[p].text)}>{PRIORITY_CONFIG[p].label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
