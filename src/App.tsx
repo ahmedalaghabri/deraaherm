@@ -13,7 +13,7 @@ import TasksPage from "./components/TasksPage";
 import CampaignsPage from "./components/CampaignsPage";
 import SaudiCalendar from "./components/SaudiCalendar";
 import { supabase } from "./lib/supabase";
-import { Bell, Search, Settings, Menu, LogOut, Inbox, Send, FileText, Users, ShieldCheck, ClipboardList, Award, Accessibility, GaugeCircle, Sparkles, ChevronRight, ChevronLeft, ChevronDown, Upload, X, Save, Check, ArrowRight, Tag, Calendar, Building2, Shield, AlertTriangle, Clock, CheckCircle, Phone, RefreshCcw, Archive, FilePlus, Mail, BarChart3, LayoutDashboard, ArrowLeftRight, ExternalLink, Globe, Database, MessageSquare, TrendingUp, FileSpreadsheet, Briefcase, UserCheck, CreditCard, Home, Car, Plane, Heart, GraduationCap, Baby, MapPin, Zap, User, Lock, Eye, EyeOff, Smartphone, CircleUser as UserCircle, ListTodo, Megaphone, Languages, Type, Moon, Sun } from "lucide-react";
+import { Bell, Search, Settings, LogOut, Inbox, Send, FileText, Users, ShieldCheck, ClipboardList, Award, Accessibility, GaugeCircle, Sparkles, ChevronRight, ChevronLeft, ChevronDown, Upload, X, Save, Check, ArrowRight, Tag, Calendar, Building2, Shield, AlertTriangle, Clock, CheckCircle, Phone, Archive, FilePlus, Mail, BarChart3, LayoutDashboard, ArrowLeftRight, ExternalLink, Globe, Database, MessageSquare, TrendingUp, FileSpreadsheet, Briefcase, CreditCard, Home, Car, Plane, Heart, GraduationCap, Baby, MapPin, Zap, User, Lock, Eye, EyeOff, Smartphone, CircleUser as UserCircle, ListTodo, Megaphone, Languages, Type, Moon, Sun, UserPlus, Trophy } from "lucide-react";
 
 // ====== مجموعات القائمة الجانبية ======
 const sidebarGroups = [
@@ -48,29 +48,6 @@ function PageShell({ title, children }) {
   );
 }
 
-function AttendanceMiniChart({ data }) {
-  const max = 100;
-  return (
-    <div className="w-full">
-      <div className="h-48 w-full flex items-end gap-2">
-        {data.map((d) => (
-          <div key={d.day} className="flex-1 flex flex-col justify-end gap-0.5">
-            <div className="w-full rounded-t-md bg-emerald-500/80" style={{ height: `${(d.present / max) * 100}%` }} title={`حضور ${d.present}%`} />
-            <div className="w-full bg-amber-500/80" style={{ height: `${(d.late / max) * 100}%` }} title={`تأخير ${d.late}%`} />
-            <div className="w-full rounded-b-md bg-rose-500/80" style={{ height: `${(d.absent / max) * 100}%` }} title={`غياب ${d.absent}%`} />
-            <div className="text-[11px] text-center mt-1 text-neutral-500">{d.day}</div>
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center gap-3 text-xs mt-3 text-neutral-600">
-        <span className="inline-flex items-center gap-1"><span className="inline-block size-3 rounded-sm bg-emerald-500/80" /> حضور</span>
-        <span className="inline-flex items-center gap-1"><span className="inline-block size-3 rounded-sm bg-amber-500/80" /> تأخير</span>
-        <span className="inline-flex items-center gap-1"><span className="inline-block size-3 rounded-sm bg-rose-500/80" /> غياب</span>
-      </div>
-    </div>
-  );
-}
-
 // ====== السلايدر ======
 function ImageSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -79,7 +56,7 @@ function ImageSlider() {
       id: 1,
       title: "",
       subtitle: "",
-      image: "https://i.ibb.co/tTCPm0Yt/ban1.jpg",
+      image: "https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=1200&h=600&fit=crop",
       gradient: ""
     },
     {
@@ -741,12 +718,182 @@ const primaryCards = [
   { title: "تقرير الحضور", subtitle: "نسبة الالتزام اليوم", icon: Calendar, badge: null, accent: "from-indigo-500/50 to-violet-600/50", action: "عرض التقرير", onAction: (setView) => setView("attendance_report") },
 ];
 
+// ====== Reminder Carousel Component ======
+function ReminderCarousel({ setView, setActiveKey, setTransactionsSubTab }: {
+  setView: React.Dispatch<React.SetStateAction<string>>;
+  setActiveKey: React.Dispatch<React.SetStateAction<string>>;
+  setTransactionsSubTab: React.Dispatch<React.SetStateAction<'new'|'inbox'|'outbox'|'archive'>>;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const cards = [
+    { type: "معاملة طارئة", title: "سداد مستحقات إيجار فرع الروابي تجنباً للإغلاق", icon: AlertTriangle, color: "text-red-500", bg: "bg-red-50 dark:bg-red-900/20", action: () => { setView("transactions"); setActiveKey("transactions"); setTransactionsSubTab("inbox"); } },
+    { type: "مهمة طارئة", title: "تنسيق اجتماع مع شركة تمارا لربط فروع الشرقية", icon: Clock, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-900/20", action: () => { setView("tasks"); setActiveKey("tasks"); } },
+    { type: "تنبيه سريع", title: "مضى 10 أيام على انتهاء عقد فرع الراجحي", icon: Bell, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20", action: () => { setView("tasks"); setActiveKey("tasks"); } },
+    { type: "مهمة جديدة", title: "مراجعة طلبات الإجازة المعلقة للموظفين", icon: ClipboardList, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-900/20", action: () => { setView("tasks"); setActiveKey("tasks"); } },
+    { type: "معاملة جديدة", title: "استلام مكاتبة من وزارة التجارة بشأن التراخيص", icon: Mail, color: "text-indigo-500", bg: "bg-indigo-50 dark:bg-indigo-900/20", action: () => { setView("transactions"); setActiveKey("transactions"); setTransactionsSubTab("inbox"); } },
+    { type: "تنبيه", title: "3 فواتير مستحقة الدفع خلال 48 ساعة القادمة", icon: FileText, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", action: () => { setView("transactions"); setActiveKey("transactions"); setTransactionsSubTab("inbox"); } },
+    { type: "مهمة طارئة", title: "جرد مخزون عطور الفرع الرئيسي", icon: ClipboardList, color: "text-orange-500", bg: "bg-orange-50 dark:bg-orange-900/20", action: () => { setView("tasks"); setActiveKey("tasks"); } },
+    { type: "معاملة طارئة", title: "اعتماد ترقية موظف - عبدالله خالد", icon: FileText, color: "text-red-500", bg: "bg-red-50 dark:bg-red-900/20", action: () => { setView("transactions"); setActiveKey("transactions"); setTransactionsSubTab("inbox"); } },
+    { type: "مهمة جديدة", title: "مراجعة عقود إيجار الفروع الجديدة", icon: Building2, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-900/20", action: () => { setView("tasks"); setActiveKey("tasks"); } },
+    { type: "معاملة طارئة", title: "اعتماد طلب شراء أجهزة IT لفرع الرياض", icon: AlertTriangle, color: "text-red-500", bg: "bg-red-50 dark:bg-red-900/20", action: () => { setView("transactions"); setActiveKey("transactions"); setTransactionsSubTab("inbox"); } },
+  ];
+
+  const getPerPage = () => typeof window !== 'undefined' && window.innerWidth >= 640 ? 3 : 1;
+  const pageCount = Math.ceil(cards.length / getPerPage());
+
+  const scrollToIndex = (index: number) => {
+    const perPage = getPerPage();
+    const maxIndex = Math.max(0, Math.ceil(cards.length / perPage) - 1);
+    const clamped = Math.max(0, Math.min(index, maxIndex));
+    setCurrentIndex(clamped);
+    const targetCard = cardRefs.current[clamped * perPage];
+    if (targetCard) {
+      targetCard.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+    }
+  };
+
+  const goNext = () => scrollToIndex(currentIndex + 1);
+  const goPrev = () => scrollToIndex(currentIndex - 1);
+
+  // Update index on scroll
+  const handleScroll = () => {
+    const container = containerRef.current;
+    if (!container) return;
+    const perPage = getPerPage();
+    const scrollLeft = container.scrollLeft;
+    const containerWidth = container.offsetWidth;
+    // Find which card is most visible
+    let bestIndex = 0;
+    let bestVisibility = -1;
+    cardRefs.current.forEach((card, i) => {
+      if (!card) return;
+      const cardLeft = card.offsetLeft;
+      const cardRight = cardLeft + card.offsetWidth;
+      const visibleLeft = Math.max(cardLeft, scrollLeft);
+      const visibleRight = Math.min(cardRight, scrollLeft + containerWidth);
+      const visibility = Math.max(0, visibleRight - visibleLeft);
+      if (visibility > bestVisibility) {
+        bestVisibility = visibility;
+        bestIndex = i;
+      }
+    });
+    setCurrentIndex(Math.floor(bestIndex / perPage));
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+      className="mx-1 sm:mx-0"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <h3 className="text-sm sm:text-base font-bold text-neutral-800 dark:text-neutral-100 tracking-wide">
+          تنبيهات سريعة
+          <span className="mr-1.5 text-[10px] sm:text-xs font-semibold text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full">
+            {cards.length}
+          </span>
+        </h3>
+        <span className="hidden sm:inline text-xs text-neutral-400 dark:text-neutral-500 font-medium">
+          {currentIndex + 1} / {pageCount}
+        </span>
+      </div>
+
+      <div className="relative">
+        {/* Arrows */}
+        {currentIndex > 0 && (
+          <button
+            onClick={goPrev}
+            className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white dark:bg-neutral-700 shadow-md border border-neutral-100 dark:border-neutral-600 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-600 transition-colors"
+            style={{ marginRight: '-12px' }}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
+        {currentIndex < pageCount - 1 && (
+          <button
+            onClick={goNext}
+            className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center rounded-full bg-white dark:bg-neutral-700 shadow-md border border-neutral-100 dark:border-neutral-600 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-600 transition-colors"
+            style={{ marginLeft: '-12px' }}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Slider container */}
+        <div
+          ref={containerRef}
+          className="overflow-x-auto scroll-smooth scrollbar-hide"
+          onScroll={handleScroll}
+        >
+          <div className="flex gap-3 sm:gap-4 pb-2">
+            {cards.map((card, idx) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={idx}
+                  ref={(el) => { cardRefs.current[idx] = el; }}
+                  className="shrink-0 w-[85%] sm:w-[340px] relative overflow-hidden bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm hover:shadow-md transition-shadow p-4 sm:p-5 flex items-center gap-3 h-auto min-h-[90px] sm:min-h-[100px] cursor-pointer"
+                  onClick={card.action}
+                >
+                  <div className={`shrink-0 w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-xl ${card.bg} ${card.color}`}>
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </div>
+                  <div className="flex-1 text-right min-w-0">
+                    <p className="text-[10px] sm:text-xs font-semibold text-neutral-400 dark:text-neutral-500 tracking-wide uppercase mb-0.5">{card.type}</p>
+                    <h3 className="text-sm sm:text-[15px] font-bold text-neutral-800 dark:text-neutral-100 leading-snug line-clamp-2">{card.title}</h3>
+                  </div>
+                  <div className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-400 dark:text-neutral-500">
+                    <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Dots + mobile counter */}
+      <div className="flex items-center justify-center gap-3 mt-3">
+        <span className="sm:hidden text-xs text-neutral-400 dark:text-neutral-500 font-medium">
+          {currentIndex + 1} / {pageCount}
+        </span>
+        <div className="flex items-center gap-2">
+          {Array.from({ length: pageCount }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => scrollToIndex(i)}
+              className={`rounded-full transition-all duration-300 ${
+                i === currentIndex
+                  ? "w-5 h-2 bg-neutral-800 dark:bg-neutral-200"
+                  : "w-2 h-2 bg-neutral-300 dark:bg-neutral-600 hover:bg-neutral-400"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+      <p className="text-[10px] text-neutral-400 dark:text-neutral-500 text-center mt-1 sm:hidden">اسحب للتنقل بين البطاقات</p>
+    </motion.div>
+  );
+}
+
 // ====== الواجهة الرئيسية ======
 export default function ResponsiveDashboard() {
-  const [currentPage, setCurrentPage] = useState("welcome"); // TODO: restore "login"
+  const [currentPage, setCurrentPage] = useState("main-dashboard");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const [, setBottomTab] = useState("transactions");
+  const [contestModalOpen, setContestModalOpen] = useState(false);
+  const [contestModalTab, setContestModalTab] = useState<'details' | 'myResult'>('details');
+  const [activeContest, setActiveContest] = useState<1 | 2 | 3>(1);
+  const [contestMenuOpen, setContestMenuOpen] = useState<number | null>(null);
+  const [contestEditModalOpen, setContestEditModalOpen] = useState(false);
+  const [contestEditTab, setContestEditTab] = useState<'results' | 'edit'>('results');
+  const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
+  const [sideDrawerOpen, setSideDrawerOpen] = useState(false);
   const [fontScale, setFontScale] = useState<number>(() => {
     const saved = localStorage.getItem("app-font-scale");
     const n = saved ? Number(saved) : 100;
@@ -756,6 +903,7 @@ export default function ResponsiveDashboard() {
     const saved = localStorage.getItem("app-dark-mode");
     return saved === "true";
   });
+  const [showChart, setShowChart] = useState(false);
 
   // Apply dark mode to html element
   useEffect(() => {
@@ -1782,83 +1930,1085 @@ export default function ResponsiveDashboard() {
     );
   }
 
-  function renderDashboard() {
-    // فصل البطاقات حسب النوع
-    const serviceCards = cards.filter((c) => !["الوارد", "أرشيف الصادر"].includes(c.title));
+  function PerformanceTrendsChart() {
+    const monthsMeta = [
+      { short: 'يناير' }, { short: 'فبراير' }, { short: 'مارس' },
+      { short: 'أبريل' }, { short: 'مايو' }, { short: 'يونيو' },
+      { short: 'يوليو' }, { short: 'أغسطس' }, { short: 'سبتمبر' },
+      { short: 'أكتوبر' }, { short: 'نوفمبر' }, { short: 'ديسمبر' },
+    ];
+
+    // pseudo-random so all 3 colors are clearly visible
+    const seriesDef = [
+      { name: 'الأداء',  color: '#10b981', vals: [72, 81, 68, 85, 78, 90, 75, 88, 70, 92, 77, 84] },
+      { name: 'الحضور',  color: '#3b82f6', vals: [95, 88, 96, 82, 91, 76, 98, 85, 93, 79, 97, 83] },
+      { name: 'الإنجاز', color: '#a855f7', vals: [68, 74, 82, 66, 89, 71, 86, 78, 65, 91, 73, 87] },
+    ];
+
+    const W = 720, H = 220;
+    const P = { top: 24, right: 12, bottom: 36, left: 40 };
+    const cw = W - P.left - P.right;
+    const ch = H - P.top - P.bottom;
+    const groupCount = 12;
+    const groupGap = 10;
+    const groupW = (cw - groupGap * (groupCount - 1)) / groupCount;
+    const innerGap = 2;
+    const barW = (groupW - innerGap * 2) / 3;
+    const yMin = 60, yMax = 100;
+
+    const yF = (v: number) => P.top + (1 - (v - yMin) / (yMax - yMin)) * ch;
+    const xGroup = (i: number) => P.left + i * (groupW + groupGap);
+    const xBar = (i: number, sIdx: number) => xGroup(i) + sIdx * (barW + innerGap);
+    const xLabel = (i: number) => xGroup(i) + groupW / 2;
+
+    const gridTicks = [60, 70, 80, 90, 100];
+
+    const bg = dark ? '#27272a' : '#f3f4f6';
+    const labelColor = dark ? '#71717a' : '#a1a1aa';
+    const tickColor = dark ? '#52525b' : '#d4d4d8';
 
     return (
-      <div className="space-y-6">
-        {/* السلايدر */}
-        <ImageSlider />
-        
+      <div className="flex flex-col gap-3">
+        {/* Legend */}
+        <div className="flex items-center gap-4">
+          {seriesDef.map(s => (
+            <span key={s.name} className="flex items-center gap-1.5 text-[11px] sm:text-xs font-medium text-neutral-500 dark:text-neutral-400">
+              <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: s.color }} />
+              {s.name}
+            </span>
+          ))}
+        </div>
 
-        
-        {/* قسم الخدمات الأساسية */}
+        {/* Chart */}
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[160px] sm:h-[200px]" preserveAspectRatio="xMidYMid meet">
+          {/* dotted horizontal grid */}
+          {gridTicks.map(tick => (
+            <g key={tick}>
+              <line x1={P.left} y1={yF(tick)} x2={W - P.right} y2={yF(tick)}
+                stroke={bg} strokeWidth="1" strokeDasharray="3 3" />
+              <text x={P.left - 8} y={yF(tick) + 3.5} textAnchor="end" fontSize="9"
+                fill={tickColor} fontFamily="sans-serif">{tick}</text>
+            </g>
+          ))}
+
+          {/* grouped bars */}
+          {monthsMeta.map((_, mi) => (
+            <g key={mi}>
+              {seriesDef.map((s, sIdx) => {
+                const v = s.vals[mi];
+                const h = ch - (yF(v) - P.top);
+                const x = xBar(mi, sIdx);
+                const y = yF(v);
+                return (
+                  <rect
+                    key={sIdx}
+                    x={x} y={y} width={barW} height={h}
+                    rx={barW * 0.2} ry={barW * 0.2}
+                    fill={s.color}
+                    stroke="none"
+                    opacity="0.85"
+                  />
+                );
+              })}
+            </g>
+          ))}
+
+          {/* month labels */}
+          {monthsMeta.map((m, i) => (
+            <text key={m.short} x={xLabel(i)} y={H - 10} textAnchor="middle" fontSize="9"
+              fill={labelColor} fontFamily="sans-serif">{m.short}</text>
+          ))}
+        </svg>
+
+        {/* Month values summary */}
+        <div className="grid grid-cols-3 gap-2 text-center pt-1">
+          {seriesDef.map(s => (
+            <div key={s.name} className="flex flex-col gap-0.5">
+              <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium">{s.name}</span>
+              <span className="text-sm font-bold" style={{ color: s.color }}>+{s.vals[s.vals.length - 1] - s.vals[0]}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function renderDashboard() {
+    return (
+      <div className="space-y-8">
+        {/* ====== بطاقة ملخص KPI الموظف ====== */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.02 }}
+        >
+          <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4 sm:p-5 flex flex-col gap-4 sm:gap-5">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3 sm:gap-4">
+                {/* Employee Avatar */}
+                <div className="relative shrink-0">
+                  <img
+                    src="https://api.dicebear.com/7.x/notionists/svg?seed=AhmedAbdulkader&backgroundColor=10b981"
+                    alt="أحمد عبدالقادر أحمد"
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/30"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const fallback = target.nextElementSibling as HTMLElement;
+                      if (fallback) fallback.style.display = 'flex';
+                    }}
+                  />
+                  <div
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl items-center justify-center hidden bg-gradient-to-br from-emerald-400 to-emerald-600 text-white font-bold text-sm sm:text-base"
+                  >
+                    أ.ع
+                  </div>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <h2 className="text-base sm:text-lg font-bold text-neutral-800 dark:text-white leading-tight">أحمد عبدالقادر أحمد</h2>
+                  <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-medium">مدير تجربة المستخدم · يناير - ديسمبر 2025</p>
+                </div>
+              </div>
+              <div className="text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm font-bold bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-lg">ممتاز</div>
+            </div>
+
+            {/* Bottom: Trends Chart */}
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => setShowChart(v => !v)}
+                className="flex items-center justify-between w-full bg-neutral-50 dark:bg-neutral-900/50 rounded-xl px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 transition-colors"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-bold text-neutral-700 dark:text-neutral-200">توجهات الأداء</span>
+                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium">12 شهراً</span>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform ${showChart ? 'rotate-180' : ''}`} />
+              </button>
+              {showChart && (
+                <div className="flex flex-col gap-4">
+                  <div className="rounded-xl bg-neutral-50 dark:bg-neutral-900/50 p-3 sm:p-4">
+                    <PerformanceTrendsChart />
+                  </div>
+                  <section className="grid grid-cols-3 sm:grid-cols-6 gap-0 divide-x divide-x-reverse divide-neutral-100 dark:divide-neutral-700 border-y border-neutral-100 dark:border-neutral-700 py-4 rounded-xl bg-white dark:bg-neutral-800 px-2">
+                    {[
+                      { label: "الأداء",     value: "92",  unit: "%", delta: "+5%",   positive: true,  sub: "vs. السنة الماضية" },
+                      { label: "المهام",     value: "124", unit: "",  delta: "+18",   positive: true,  sub: "مهمة منجزة" },
+                      { label: "الحضور",    value: "98",  unit: "%", delta: "+2%",   positive: true,  sub: "معدل 2025" },
+                      { label: "المعاملات", value: "156", unit: "",  delta: "+9%",   positive: true,  sub: "معاملة" },
+                      { label: "التأخير",   value: "0",   unit: "",  delta: "لا تأخير", positive: true,  sub: "ساعات" },
+                      { label: "الإجازات",  value: "4",   unit: "",  delta: "12 متاح", positive: true,  sub: "أيام مستخدمة" },
+                    ].map((m, idx) => (
+                      <motion.div
+                        key={m.label}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.04 * idx }}
+                        className="flex flex-col gap-1 px-3 sm:px-5 lg:px-6"
+                      >
+                        <span className="text-[10px] sm:text-[11px] text-neutral-400 dark:text-neutral-500 font-medium tracking-wide">{m.label}</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-xl sm:text-3xl font-extrabold text-neutral-800 dark:text-white tabular-nums leading-none">{m.value}</span>
+                          {m.unit && <span className="text-sm sm:text-base font-bold text-neutral-500 dark:text-neutral-400">{m.unit}</span>}
+                        </div>
+                        <span className={"inline-flex w-fit text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 rounded-full " + (m.positive ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" : "bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400")}>
+                          {m.delta}
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-neutral-400 dark:text-neutral-600 hidden sm:block mt-0.5">{m.sub}</span>
+                      </motion.div>
+                    ))}
+                  </section>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ====== تذكير سريع - Carousel ====== */}
+        <ReminderCarousel
+          setView={setView}
+          setActiveKey={setActiveKey}
+          setTransactionsSubTab={setTransactionsSubTab}
+        />
+
+        {/* ====== المسابقات - مدمجة مباشرة ====== */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="flex items-center justify-between mb-3 px-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-neutral-800 dark:text-neutral-100 tracking-wide">المسابقات الحالية</h3>
+            </div>
+            <span className="text-[10px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-full">3 مسابقات نشطة</span>
+          </div>
+
+          <div className="overflow-x-auto scroll-smooth scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex gap-3 sm:grid sm:grid-cols-3 sm:gap-3 pb-2">
+              {/* Competition 1 */}
+              <div
+                onClick={() => { setActiveContest(1); setContestModalOpen(true); setContestModalTab('details'); }}
+                className="shrink-0 w-[85%] sm:w-auto relative bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-3 sm:p-4 flex flex-col gap-2 hover:shadow-md transition-shadow cursor-pointer group"
+              >
+                <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+                  <div className="absolute inset-x-0 -top-10 h-28 bg-gradient-to-r from-emerald-500/50 to-green-600/50 opacity-10 group-hover:opacity-20 blur-2xl transition" />
+                </div>
+                <div className="relative flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                      <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-neutral-800 dark:text-neutral-100 leading-tight">مسابقة البائعين</h4>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">منطقة الشرقية</p>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setContestMenuOpen(contestMenuOpen === 1 ? null : 1); }}
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-400 dark:text-neutral-500"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                    </button>
+                    {contestMenuOpen === 1 && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setContestMenuOpen(null)} />
+                        <div className="absolute left-0 top-full mt-1 w-40 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg z-20 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setContestMenuOpen(null); setActiveContest(1); setContestEditTab('results'); setContestEditModalOpen(true); }}
+                            className="w-full text-right px-3 py-2.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+                          >
+                            نتائج المسابقة
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setContestMenuOpen(null); setActiveContest(1); setContestEditTab('edit'); setContestEditModalOpen(true); }}
+                            className="w-full text-right px-3 py-2.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors border-t border-neutral-100 dark:border-neutral-700"
+                          >
+                            تعديل المسابقة
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="relative flex items-center gap-3 text-[11px] text-neutral-600 dark:text-neutral-400">
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-neutral-400" /> حتى 26 يونيو</span>
+                  <span className="flex items-center gap-1"><Users className="w-3 h-3 text-neutral-400" /> 48 بائع</span>
+                </div>
+                <div className="relative flex items-center gap-1.5 pt-2 border-t border-neutral-100 dark:border-neutral-700">
+                  <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">الجوائز:</span>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥇 10000</span>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥈 5000</span>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥉 2000</span>
+                  <span className="text-[9px] text-neutral-400 dark:text-neutral-500 mr-auto">ريال</span>
+                </div>
+              </div>
+
+              {/* Competition 2 */}
+              <div
+                onClick={() => { setActiveContest(2); setContestModalOpen(true); setContestModalTab('details'); }}
+                className="shrink-0 w-[85%] sm:w-auto relative bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-3 sm:p-4 flex flex-col gap-2 hover:shadow-md transition-shadow cursor-pointer group"
+              >
+                <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+                  <div className="absolute inset-x-0 -top-10 h-28 bg-gradient-to-r from-emerald-500/50 to-green-600/50 opacity-10 group-hover:opacity-20 blur-2xl transition" />
+                </div>
+                <div className="relative flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                      <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-neutral-800 dark:text-neutral-100 leading-tight">أفضل فرع</h4>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">موسم رمضان 2026</p>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setContestMenuOpen(contestMenuOpen === 2 ? null : 2); }}
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-400 dark:text-neutral-500"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                    </button>
+                    {contestMenuOpen === 2 && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setContestMenuOpen(null)} />
+                        <div className="absolute left-0 top-full mt-1 w-40 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg z-20 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setContestMenuOpen(null); setActiveContest(2); setContestEditTab('results'); setContestEditModalOpen(true); }}
+                            className="w-full text-right px-3 py-2.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+                          >
+                            نتائج المسابقة
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setContestMenuOpen(null); setActiveContest(2); setContestEditTab('edit'); setContestEditModalOpen(true); }}
+                            className="w-full text-right px-3 py-2.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors border-t border-neutral-100 dark:border-neutral-700"
+                          >
+                            تعديل المسابقة
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="relative flex items-center gap-3 text-[11px] text-neutral-600 dark:text-neutral-400">
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-neutral-400" /> حتى 9 يوليو</span>
+                  <span className="flex items-center gap-1"><Users className="w-3 h-3 text-neutral-400" /> 12 فرع</span>
+                </div>
+                <div className="relative flex items-center gap-1.5 pt-2 border-t border-neutral-100 dark:border-neutral-700">
+                  <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">الجوائز:</span>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥇 10000</span>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥈 5000</span>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥉 2000</span>
+                  <span className="text-[9px] text-neutral-400 dark:text-neutral-500 mr-auto">ريال</span>
+                </div>
+              </div>
+
+              {/* Competition 3 */}
+              <div
+                onClick={() => { setActiveContest(3); setContestModalOpen(true); setContestModalTab('details'); }}
+                className="shrink-0 w-[85%] sm:w-auto relative bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-3 sm:p-4 flex flex-col gap-2 hover:shadow-md transition-shadow cursor-pointer group"
+              >
+                <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+                  <div className="absolute inset-x-0 -top-10 h-28 bg-gradient-to-r from-emerald-500/50 to-green-600/50 opacity-10 group-hover:opacity-20 blur-2xl transition" />
+                </div>
+                <div className="relative flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                      <Award className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-neutral-800 dark:text-neutral-100 leading-tight">أفضل خدمة عملاء</h4>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">الربع الثالث 2026</p>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setContestMenuOpen(contestMenuOpen === 3 ? null : 3); }}
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-400 dark:text-neutral-500"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                    </button>
+                    {contestMenuOpen === 3 && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setContestMenuOpen(null)} />
+                        <div className="absolute left-0 top-full mt-1 w-40 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg z-20 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setContestMenuOpen(null); setActiveContest(3); setContestEditTab('results'); setContestEditModalOpen(true); }}
+                            className="w-full text-right px-3 py-2.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+                          >
+                            نتائج المسابقة
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setContestMenuOpen(null); setActiveContest(3); setContestEditTab('edit'); setContestEditModalOpen(true); }}
+                            className="w-full text-right px-3 py-2.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors border-t border-neutral-100 dark:border-neutral-700"
+                          >
+                            تعديل المسابقة
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="relative flex items-center gap-3 text-[11px] text-neutral-600 dark:text-neutral-400">
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-neutral-400" /> حتى 30 سبتمبر</span>
+                  <span className="flex items-center gap-1"><Users className="w-3 h-3 text-neutral-400" /> 35 موظف</span>
+                </div>
+                <div className="relative flex items-center gap-1.5 pt-2 border-t border-neutral-100 dark:border-neutral-700">
+                  <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">الجوائز:</span>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥇 10000</span>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥈 5000</span>
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥉 2000</span>
+                  <span className="text-[9px] text-neutral-400 dark:text-neutral-500 mr-auto">ريال</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ====== نافذة تفاصيل المسابقة ====== */}
+        {contestModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setContestModalOpen(false)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-neutral-100 dark:border-neutral-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center">
+                    {activeContest === 1 ? <TrendingUp className="w-4 h-4" /> : activeContest === 2 ? <Building2 className="w-4 h-4" /> : <Award className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-100">{activeContest === 1 ? 'مسابقة البائعين' : activeContest === 2 ? 'أفضل فرع' : 'أفضل خدمة عملاء'}</h3>
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{activeContest === 1 ? 'منطقة الشرقية' : activeContest === 2 ? 'موسم رمضان 2026' : 'الربع الثالث 2026'}</p>
+                  </div>
+                </div>
+                <button onClick={() => setContestModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
+                  <X className="w-4 h-4 text-neutral-500" />
+                </button>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex border-b border-neutral-100 dark:border-neutral-700">
+                <button
+                  onClick={() => setContestModalTab('details')}
+                  className={`flex-1 py-3 text-xs font-bold transition-colors ${contestModalTab === 'details' ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-500' : 'text-neutral-500 dark:text-neutral-400'}`}
+                >
+                  تفاصيل المسابقة
+                </button>
+                <button
+                  onClick={() => setContestModalTab('myResult')}
+                  className={`flex-1 py-3 text-xs font-bold transition-colors ${contestModalTab === 'myResult' ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-500' : 'text-neutral-500 dark:text-neutral-400'}`}
+                >
+                  نتيجتي الحالية
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-4 overflow-y-auto flex-1">
+                {contestModalTab === 'details' ? (
+                  <div className="flex flex-col gap-4">
+                    {/* Donut Chart */}
+                    <div className="flex items-center gap-4 justify-center">
+                      <div className="relative w-28 h-28 shrink-0">
+                        <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                          <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#d1fae5" strokeWidth="3" />
+                          {(activeContest === 1 ? [
+                            { w: 30, c: '#10b981', o: 0 },
+                            { w: 25, c: '#3b82f6', o: -30 },
+                            { w: 20, c: '#f59e0b', o: -55 },
+                            { w: 15, c: '#ef4444', o: -75 },
+                            { w: 10, c: '#8b5cf6', o: -90 },
+                          ] : activeContest === 2 ? [
+                            { w: 35, c: '#10b981', o: 0 },
+                            { w: 25, c: '#3b82f6', o: -35 },
+                            { w: 20, c: '#f59e0b', o: -60 },
+                            { w: 20, c: '#ef4444', o: -80 },
+                          ] : [
+                            { w: 40, c: '#10b981', o: 0 },
+                            { w: 30, c: '#3b82f6', o: -40 },
+                            { w: 20, c: '#f59e0b', o: -70 },
+                            { w: 10, c: '#ef4444', o: -90 },
+                          ]).map((seg, i) => (
+                            <path key={i} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={seg.c} strokeWidth="3" strokeDasharray={`${seg.w} 100`} strokeDashoffset={seg.o} />
+                          ))}
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">100%</span>
+                          <span className="text-[9px] text-neutral-500 dark:text-neutral-400">اجمالي المعايير</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {(activeContest === 1 ? [
+                          { label: 'إجمالي المبيعات', weight: 30, color: '#10b981' },
+                          { label: 'نسبة التحقيق', weight: 25, color: '#3b82f6' },
+                          { label: 'متوسط الفاتورة', weight: 20, color: '#f59e0b' },
+                          { label: 'عدد الفواتير', weight: 15, color: '#ef4444' },
+                          { label: 'الكمية', weight: 10, color: '#8b5cf6' },
+                        ] : activeContest === 2 ? [
+                          { label: 'إجمالي الإيرادات', weight: 35, color: '#10b981' },
+                          { label: 'رضا العملاء', weight: 25, color: '#3b82f6' },
+                          { label: 'نظافة الفرع', weight: 20, color: '#f59e0b' },
+                          { label: 'التسويق', weight: 20, color: '#ef4444' },
+                        ] : [
+                          { label: 'سرعة الاستجابة', weight: 40, color: '#10b981' },
+                          { label: 'رضا العملاء', weight: 30, color: '#3b82f6' },
+                          { label: 'عدد التقييمات', weight: 20, color: '#f59e0b' },
+                          { label: 'حل الشكاوى', weight: 10, color: '#ef4444' },
+                        ]).map((m) => (
+                          <div key={m.label} className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: m.color }} />
+                            <span className="text-xs text-neutral-600 dark:text-neutral-400">{m.label}</span>
+                            <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300 mr-auto">{m.weight}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Motivational Note */}
+                    <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/20 rounded-xl p-3 flex items-center gap-2">
+                      <span className="text-lg">💡</span>
+                      <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400 leading-relaxed">
+                        على المتسابق محاولة تحقيق أعلى نسبة من جميع المعايير ليضمن الفوز
+                      </p>
+                    </div>
+
+                    {/* Prize Table */}
+                    <div className="bg-neutral-50 dark:bg-neutral-700/30 rounded-xl p-3">
+                      <p className="text-xs font-bold text-neutral-700 dark:text-neutral-200 mb-2">الجوائز</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { rank: '🥇 الأول', amount: '10000', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20' },
+                          { rank: '🥈 الثاني', amount: '5000', color: 'text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700/50' },
+                          { rank: '🥉 الثالث', amount: '2000', color: 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20' },
+                        ].map((p) => (
+                          <div key={p.rank} className={`rounded-lg p-2 text-center ${p.color}`}>
+                            <p className="text-[10px] font-medium">{p.rank}</p>
+                            <p className="text-sm font-bold">{p.amount}</p>
+                            <p className="text-[9px] text-neutral-500 dark:text-neutral-400">ريال</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
+                      <span>عدد المشاركين: {activeContest === 1 ? '48 بائع' : activeContest === 2 ? '12 فرع' : '35 موظف'}</span>
+                      <span>ينتهي: {activeContest === 1 ? '26 يونيو' : activeContest === 2 ? '9 يوليو' : '30 سبتمبر'}</span>
+                    </div>
+
+                    {/* Managers */}
+                    <div className="bg-neutral-50 dark:bg-neutral-700/30 rounded-xl p-3 flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 w-24">مشرف المسابقة</span>
+                        <span className="text-xs font-bold text-neutral-700 dark:text-neutral-200">{activeContest === 1 ? 'محمد القحطاني' : activeContest === 2 ? 'خالد الشمري' : 'فهد العنزي'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 w-24">مدير المنطقة</span>
+                        <span className="text-xs font-bold text-neutral-700 dark:text-neutral-200">{activeContest === 1 ? 'عبدالرحمن الدوسري' : activeContest === 2 ? 'سعد الحربي' : 'طلال الراشد'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 w-24">المدير الإقليمي</span>
+                        <span className="text-xs font-bold text-neutral-700 dark:text-neutral-200">{activeContest === 1 ? 'سلطان العتيبي' : activeContest === 2 ? 'نواف المطيري' : 'مشعل السبيعي'}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {/* Employee Stats Header */}
+                    <div className="flex items-center gap-3 bg-neutral-50 dark:bg-neutral-700/30 rounded-xl p-3">
+                      <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                        <UserCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-neutral-800 dark:text-neutral-100">أحمد عبدالقادر</p>
+                        <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{activeContest === 3 ? 'ممثل خدمة عملاء — فرع الدمام' : 'بائع — فرع الدمام الرئيسي'}</p>
+                      </div>
+                      <div className="mr-auto text-center">
+                        <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">#{activeContest === 1 ? '3' : activeContest === 2 ? '5' : '2'}</p>
+                        <p className="text-[10px] text-neutral-500 dark:text-neutral-400">ترتيبك</p>
+                      </div>
+                    </div>
+
+                    {/* Stats Bars */}
+                    <div className="flex flex-col gap-3">
+                      <p className="text-xs font-bold text-neutral-700 dark:text-neutral-200">إحصائياتك</p>
+                      {(activeContest === 1 ? [
+                        { label: 'إجمالي المبيعات', current: 195000, target: 200000, weight: 30 },
+                        { label: 'نسبة التحقيق', current: 92, target: 100, weight: 25 },
+                        { label: 'متوسط الفاتورة', current: 465, target: 500, weight: 20 },
+                        { label: 'عدد الفواتير', current: 380, target: 400, weight: 15 },
+                        { label: 'الكمية', current: 950, target: 1000, weight: 10 },
+                      ] : activeContest === 2 ? [
+                        { label: 'إجمالي الإيرادات', current: 980000, target: 1200000, weight: 35 },
+                        { label: 'رضا العملاء', current: 4.6, target: 5, weight: 25 },
+                        { label: 'نظافة الفرع', current: 94, target: 100, weight: 20 },
+                        { label: 'التسويق', current: 13, target: 15, weight: 20 },
+                      ] : [
+                        { label: 'سرعة الاستجابة', current: 88, target: 100, weight: 40 },
+                        { label: 'رضا العملاء', current: 4.5, target: 5, weight: 30 },
+                        { label: 'عدد التقييمات', current: 85, target: 100, weight: 20 },
+                        { label: 'حل الشكاوى', current: 92, target: 100, weight: 10 },
+                      ]).map((s) => {
+                        const pct = Math.min(100, Math.round((s.current / s.target) * 100));
+                        return (
+                          <div key={s.label} className="flex flex-col gap-1">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="font-medium text-neutral-700 dark:text-neutral-300">{s.label} ({s.weight}%)</span>
+                              <span className="font-bold text-neutral-700 dark:text-neutral-200">{s.current.toLocaleString()} / {s.target.toLocaleString()}</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-neutral-100 dark:bg-neutral-700 overflow-hidden">
+                              <div className={`h-full rounded-full transition-all ${pct >= 90 ? 'bg-emerald-500' : pct >= 70 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="text-[10px] text-neutral-500 dark:text-neutral-400 self-end">{pct}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Overall Score */}
+                    <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 flex items-center gap-3">
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-neutral-700 dark:text-neutral-200">إجمالي تقييمك</p>
+                        <p className="text-[10px] text-neutral-500 dark:text-neutral-400">{activeContest === 1 ? '92% — مؤهّل للجائزة الأولى 🥇' : activeContest === 2 ? '86% — مؤهّل للجائزة الثانية 🥈' : '89% — مؤهّل للجائزة الأولى 🥇'}</p>
+                      </div>
+                      <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{activeContest === 1 ? '92%' : activeContest === 2 ? '86%' : '89%'}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* ====== نافذة تعديل المسابقة ====== */}
+        {contestEditModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setContestEditModalOpen(false)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-neutral-100 dark:border-neutral-700">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${contestEditTab === 'results' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600'}`}>
+                    {contestEditTab === 'results' ? <Trophy className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-100">{activeContest === 1 ? 'مسابقة البائعين' : activeContest === 2 ? 'أفضل فرع' : 'أفضل خدمة عملاء'}</h3>
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{contestEditTab === 'results' ? 'نتائج المسابقة' : 'تعديل المسابقة'}</p>
+                  </div>
+                </div>
+                <button onClick={() => setContestEditModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
+                  <X className="w-4 h-4 text-neutral-500" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-4 overflow-y-auto flex-1">
+                {contestEditTab === 'results' ? (
+                  <div className="flex flex-col gap-4">
+                    <p className="text-xs font-bold text-neutral-700 dark:text-neutral-200">جدول المتسابقين والنتائج</p>
+                    <div className="overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-700">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="bg-neutral-50 dark:bg-neutral-700/50 text-neutral-600 dark:text-neutral-300">
+                            <th className="px-3 py-2.5 font-bold text-right">المرتب</th>
+                            <th className="px-3 py-2.5 font-bold text-right">المتسابق</th>
+                            {activeContest === 1 ? (
+                              <>
+                                <th className="px-3 py-2.5 font-bold text-right">المبيعات</th>
+                                <th className="px-3 py-2.5 font-bold text-right">الهدف</th>
+                                <th className="px-3 py-2.5 font-bold text-right">التحقيق</th>
+                                <th className="px-3 py-2.5 font-bold text-right">متوسط الفاتورة</th>
+                                <th className="px-3 py-2.5 font-bold text-right">النقاط</th>
+                                <th className="px-3 py-2.5 font-bold text-right">الجائزة</th>
+                              </>
+                            ) : activeContest === 2 ? (
+                              <>
+                                <th className="px-3 py-2.5 font-bold text-right">الإيرادات</th>
+                                <th className="px-3 py-2.5 font-bold text-right">رضا العملاء</th>
+                                <th className="px-3 py-2.5 font-bold text-right">نظافة</th>
+                                <th className="px-3 py-2.5 font-bold text-right">تسويق</th>
+                                <th className="px-3 py-2.5 font-bold text-right">النقاط</th>
+                                <th className="px-3 py-2.5 font-bold text-right">الجائزة</th>
+                              </>
+                            ) : (
+                              <>
+                                <th className="px-3 py-2.5 font-bold text-right">سرعة</th>
+                                <th className="px-3 py-2.5 font-bold text-right">رضا</th>
+                                <th className="px-3 py-2.5 font-bold text-right">تقييمات</th>
+                                <th className="px-3 py-2.5 font-bold text-right">شكاوى</th>
+                                <th className="px-3 py-2.5 font-bold text-right">النقاط</th>
+                                <th className="px-3 py-2.5 font-bold text-right">الجائزة</th>
+                              </>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700">
+                          {(activeContest === 1 ? [
+                            { rank: 1, name: 'م 1042 كيو اند ايه رويال حجران', sales: 9628, target: 9680, achieve: '99.46%', avg: 188.78, points: 91.9, prize: '1000' },
+                            { rank: 2, name: 'م 1564 كيو اند ايه الباحة مول', sales: 17163, target: 15260, achieve: '112.48%', avg: 122.6, points: 89.48, prize: '1000' },
+                            { rank: 3, name: 'م 168 لايونز الباحة مول - الباحة', sales: 16002, target: 15950, achieve: '100.33%', avg: 152.41, points: 86.66, prize: '1000' },
+                            { rank: 4, name: 'م 1560 لايونز العظيم الربوة - الرياض', sales: 13415, target: 12829, achieve: '104.56%', avg: 123.07, points: 84.63, prize: '500' },
+                            { rank: 5, name: 'م 1451 لايونز جدة بارك - جدة', sales: 14786, target: 16536, achieve: '89.42%', avg: 168.02, points: 82.35, prize: '500' },
+                            { rank: 6, name: 'م 1383 لايونز تالا مول - الرياض', sales: 11940, target: 13966, achieve: '85.5%', avg: 161.36, points: 78.85, prize: '500' },
+                          ] : activeContest === 2 ? [
+                            { rank: 1, name: 'فرع الدمام الرئيسي', c1: 1200000, c2: '4.9', c3: '98%', c4: '15/15', points: 95.2, prize: '10000' },
+                            { rank: 2, name: 'فرع الرياض مول', c1: 1150000, c2: '4.8', c3: '96%', c4: '14/15', points: 91.5, prize: '5000' },
+                            { rank: 3, name: 'فرع جدة بارك', c1: 1100000, c2: '4.7', c3: '95%', c4: '13/15', points: 88.3, prize: '2000' },
+                            { rank: 4, name: 'فرع الخبر', c1: 1050000, c2: '4.6', c3: '94%', c4: '12/15', points: 84.7, prize: '-' },
+                            { rank: 5, name: 'فرع أبها', c1: 980000, c2: '4.5', c3: '92%', c4: '11/15', points: 80.1, prize: '-' },
+                          ] : [
+                            { rank: 1, name: 'أحمد عبدالقادر', c1: '95%', c2: '4.9', c3: 120, c4: '98%', points: 94.5, prize: '10000' },
+                            { rank: 2, name: 'محمد القحطاني', c1: '92%', c2: '4.8', c3: 110, c4: '96%', points: 91.2, prize: '5000' },
+                            { rank: 3, name: 'خالد الشمري', c1: '90%', c2: '4.7', c3: 105, c4: '94%', points: 88.0, prize: '2000' },
+                            { rank: 4, name: 'فهد العنزي', c1: '88%', c2: '4.6', c3: 100, c4: '92%', points: 85.5, prize: '-' },
+                            { rank: 5, name: 'طلال الراشد', c1: '85%', c2: '4.5', c3: 95, c4: '90%', points: 82.1, prize: '-' },
+                          ] as any[]).map((row: any) => (
+                            <tr key={row.rank} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/30 transition-colors">
+                              <td className="px-3 py-2.5 font-bold text-neutral-800 dark:text-neutral-200">{row.rank}</td>
+                              <td className="px-3 py-2.5 text-neutral-700 dark:text-neutral-300 whitespace-nowrap">{row.name}</td>
+                              {activeContest === 1 ? (
+                                <>
+                                  <td className="px-3 py-2.5 text-neutral-600 dark:text-neutral-400">{row.sales?.toLocaleString()}</td>
+                                  <td className="px-3 py-2.5 text-neutral-600 dark:text-neutral-400">{row.target?.toLocaleString()}</td>
+                                  <td className="px-3 py-2.5 font-bold text-emerald-600 dark:text-emerald-400">{row.achieve}</td>
+                                  <td className="px-3 py-2.5 text-neutral-600 dark:text-neutral-400">{row.avg}</td>
+                                  <td className="px-3 py-2.5 font-bold text-neutral-700 dark:text-neutral-200">{row.points}</td>
+                                  <td className="px-3 py-2.5 font-bold text-amber-600 dark:text-amber-400">{row.prize !== '-' ? `${row.prize} ريال` : '-'}</td>
+                                </>
+                              ) : activeContest === 2 ? (
+                                <>
+                                  <td className="px-3 py-2.5 text-neutral-600 dark:text-neutral-400">{row.c1?.toLocaleString()}</td>
+                                  <td className="px-3 py-2.5 text-neutral-600 dark:text-neutral-400">{row.c2}</td>
+                                  <td className="px-3 py-2.5 text-neutral-600 dark:text-neutral-400">{row.c3}</td>
+                                  <td className="px-3 py-2.5 text-neutral-600 dark:text-neutral-400">{row.c4}</td>
+                                  <td className="px-3 py-2.5 font-bold text-neutral-700 dark:text-neutral-200">{row.points}</td>
+                                  <td className="px-3 py-2.5 font-bold text-amber-600 dark:text-amber-400">{row.prize !== '-' ? `${row.prize} ريال` : '-'}</td>
+                                </>
+                              ) : (
+                                <>
+                                  <td className="px-3 py-2.5 text-neutral-600 dark:text-neutral-400">{row.c1}</td>
+                                  <td className="px-3 py-2.5 text-neutral-600 dark:text-neutral-400">{row.c2}</td>
+                                  <td className="px-3 py-2.5 text-neutral-600 dark:text-neutral-400">{row.c3}</td>
+                                  <td className="px-3 py-2.5 text-neutral-600 dark:text-neutral-400">{row.c4}</td>
+                                  <td className="px-3 py-2.5 font-bold text-neutral-700 dark:text-neutral-200">{row.points}</td>
+                                  <td className="px-3 py-2.5 font-bold text-amber-600 dark:text-amber-400">{row.prize !== '-' ? `${row.prize} ريال` : '-'}</td>
+                                </>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {/* Contest Name */}
+                    <div>
+                      <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-200 mb-1.5">اسم المسابقة</label>
+                      <input
+                        type="text"
+                        defaultValue={activeContest === 1 ? 'مسابقة البائعين' : activeContest === 2 ? 'أفضل فرع' : 'أفضل خدمة عملاء'}
+                        className="w-full rounded-xl px-3 py-2.5 bg-neutral-50 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 text-sm text-neutral-800 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    {/* Classification + Region */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-200 mb-1.5">التصنيف</label>
+                        <select className="w-full rounded-xl px-3 py-2.5 bg-neutral-50 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 text-sm text-neutral-800 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-emerald-500">
+                          <option>بائعين</option>
+                          <option>فروع</option>
+                          <option>خدمة عملاء</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-200 mb-1.5">المنطقة</label>
+                        <select className="w-full rounded-xl px-3 py-2.5 bg-neutral-50 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 text-sm text-neutral-800 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-emerald-500">
+                          <option>منطقة الشرقية</option>
+                          <option>منطقة الرياض</option>
+                          <option>منطقة جدة</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Dates */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-200 mb-1.5">من تاريخ</label>
+                        <input type="date" defaultValue="2026-05-31" className="w-full rounded-xl px-3 py-2.5 bg-neutral-50 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 text-sm text-neutral-800 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-emerald-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-200 mb-1.5">إلى تاريخ</label>
+                        <input type="date" defaultValue="2026-06-29" className="w-full rounded-xl px-3 py-2.5 bg-neutral-50 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 text-sm text-neutral-800 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-emerald-500" />
+                      </div>
+                    </div>
+
+                    {/* Criteria Weights */}
+                    <div className="bg-neutral-50 dark:bg-neutral-700/30 rounded-xl p-3 flex flex-col gap-3">
+                      <p className="text-xs font-bold text-neutral-700 dark:text-neutral-200">معايير المسابقة</p>
+                      {(activeContest === 1 ? [
+                        { label: 'نسبة التحقيق', weight: 70 },
+                        { label: 'متوسط الفاتورة', weight: 30 },
+                        { label: 'إجمالي المبيعات', weight: 0 },
+                        { label: 'عدد الفواتير', weight: 0 },
+                        { label: 'الكمية', weight: 0 },
+                      ] : activeContest === 2 ? [
+                        { label: 'إجمالي الإيرادات', weight: 35 },
+                        { label: 'رضا العملاء', weight: 25 },
+                        { label: 'نظافة الفرع', weight: 20 },
+                        { label: 'التسويق', weight: 20 },
+                      ] : [
+                        { label: 'سرعة الاستجابة', weight: 40 },
+                        { label: 'رضا العملاء', weight: 30 },
+                        { label: 'عدد التقييمات', weight: 20 },
+                        { label: 'حل الشكاوى', weight: 10 },
+                      ]).map((c) => (
+                        <div key={c.label} className="flex items-center gap-3">
+                          <input type="checkbox" defaultChecked={c.weight > 0} className="w-4 h-4 rounded border-neutral-300 text-emerald-600 focus:ring-emerald-500" />
+                          <span className="flex-1 text-xs text-neutral-700 dark:text-neutral-200">{c.label}</span>
+                          <input
+                            type="number"
+                            defaultValue={c.weight}
+                            className="w-16 rounded-lg px-2 py-1.5 bg-white dark:bg-neutral-600 border border-neutral-200 dark:border-neutral-500 text-xs text-neutral-800 dark:text-neutral-100 text-center outline-none focus:ring-2 focus:ring-emerald-500"
+                          />
+                          <span className="text-xs text-neutral-500">%</span>
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between pt-2 border-t border-neutral-200 dark:border-neutral-600">
+                        <span className="text-xs font-medium text-neutral-500">مجموع الأوزان</span>
+                        <span className="text-xs font-bold text-emerald-600">100%</span>
+                      </div>
+                    </div>
+
+                    {/* Managers */}
+                    <div className="bg-neutral-50 dark:bg-neutral-700/30 rounded-xl p-3 flex flex-col gap-3">
+                      <p className="text-xs font-bold text-neutral-700 dark:text-neutral-200">المشرفون</p>
+                      <div>
+                        <label className="block text-[10px] font-medium text-neutral-500 mb-1">مشرف المسابقة</label>
+                        <input type="text" defaultValue={activeContest === 1 ? 'محمد القحطاني' : activeContest === 2 ? 'خالد الشمري' : 'فهد العنزي'} className="w-full rounded-lg px-3 py-2 bg-white dark:bg-neutral-600 border border-neutral-200 dark:border-neutral-500 text-xs text-neutral-800 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-emerald-500" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-neutral-500 mb-1">مدير المنطقة</label>
+                        <input type="text" defaultValue={activeContest === 1 ? 'عبدالرحمن الدوسري' : activeContest === 2 ? 'سعد الحربي' : 'طلال الراشد'} className="w-full rounded-lg px-3 py-2 bg-white dark:bg-neutral-600 border border-neutral-200 dark:border-neutral-500 text-xs text-neutral-800 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-emerald-500" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-neutral-500 mb-1">المدير الإقليمي</label>
+                        <input type="text" defaultValue={activeContest === 1 ? 'سلطان العتيبي' : activeContest === 2 ? 'نواف المطيري' : 'مشعل السبيعي'} className="w-full rounded-lg px-3 py-2 bg-white dark:bg-neutral-600 border border-neutral-200 dark:border-neutral-500 text-xs text-neutral-800 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-emerald-500" />
+                      </div>
+                    </div>
+
+                    {/* Prizes */}
+                    <div className="bg-neutral-50 dark:bg-neutral-700/30 rounded-xl p-3">
+                      <p className="text-xs font-bold text-neutral-700 dark:text-neutral-200 mb-2">الجوائز</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { rank: '🥇 الأول', amount: '10000' },
+                          { rank: '🥈 الثاني', amount: '5000' },
+                          { rank: '🥉 الثالث', amount: '2000' },
+                        ].map((p) => (
+                          <div key={p.rank} className="flex flex-col gap-1">
+                            <span className="text-[10px] font-medium text-neutral-500">{p.rank}</span>
+                            <input type="text" defaultValue={p.amount} className="w-full rounded-lg px-2 py-1.5 bg-white dark:bg-neutral-600 border border-neutral-200 dark:border-neutral-500 text-xs text-neutral-800 dark:text-neutral-100 text-center outline-none focus:ring-2 focus:ring-emerald-500" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Save Button */}
+                    <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+                      <Save className="w-4 h-4" />
+                      حفظ التعديلات
+                    </button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* ====== قسم المهام ====== */}
         <div>
-          <h2 className="text-sm sm:text-base font-bold mb-3 sm:mb-4 text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">الخدمات الأساسية</h2>
-          <section className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 items-stretch">
-            {primaryCards.map((c) => ({ ...c, onAction: c.onAction?.bind(null, setView) })).map((card, idx) => (
+          {/* Desktop header row */}
+          <div className="hidden sm:grid grid-cols-6 gap-2.5 mb-4">
+            <div className="col-span-3 flex items-center justify-start">
+              <h2 className="text-base font-bold text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">
+                مهامك اليوم — {(() => { const d = new Date(); const m = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']; return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`; })()}
+              </h2>
+            </div>
+            <div className="col-span-3 flex items-center justify-start">
+              <h3 className="text-sm sm:text-base font-bold text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">
+                معاملات اليوم — {(() => { const d = new Date(); const m = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']; return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`; })()}
+              </h3>
+            </div>
+          </div>
+          {/* Mobile header */}
+          <h2 className="sm:hidden text-sm font-bold mb-3 text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">
+            مهامك اليوم — {(() => { const d = new Date(); const m = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']; return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`; })()}
+          </h2>
+          <section className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2.5 mx-1 sm:mx-0 overflow-visible">
+            {[
+              { title: "جديدة", value: "17", sub: "12 جديدة · ", subRed: "5 طارئة", subColor: undefined, icon: ListTodo, accent: "from-green-500/50 to-green-600/50" },
+              { title: "متأخرة", value: "3", sub: "مهام متأخرة", subRed: undefined, subColor: undefined, icon: Clock, accent: "from-red-500/50 to-red-600/50" },
+              { title: "يومية", value: "8", sub: "مهام يومية", subRed: undefined, subColor: undefined, icon: Calendar, accent: "from-blue-500/50 to-blue-600/50" },
+            ].map((card, idx) => (
               <motion.button
                 key={card.title + idx}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.03 * idx }}
-                onClick={() => handleCardClick(card)}
                 className="group h-full w-full text-right cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
               >
-                <div className="relative h-full min-h-[140px] sm:min-h-[200px] flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl bg-white dark:bg-neutral-800 shadow-[0_2px_16px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.10)] transition-all duration-200 border border-neutral-100 dark:border-neutral-700">
-                  <div className={cn("absolute inset-x-0 -top-16 h-40 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
-                  <div className="relative p-3 sm:p-5 flex flex-col gap-2 sm:gap-3 flex-1">
-                    <div className="flex items-start justify-between gap-1 sm:gap-2">
-                      <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-neutral-900 text-white rounded-full text-[10px] sm:text-xs font-semibold shrink-0 max-w-[80%] sm:max-w-[70%]">
-                        <card.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
-                        <span className="truncate">{card.title}</span>
+                {idx === 0 ? (
+                  <div className="card-stroke-green h-full">
+                    <div className="relative z-[2] overflow-hidden shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
+                      <div className={cn("absolute inset-x-0 -top-10 h-28 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
+                      <div className="relative flex items-center justify-between gap-1">
+                        <span className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                          <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-700 dark:text-neutral-300" />
+                        </div>
                       </div>
-                      {card.badge !== null && (
-                        <span className="inline-flex items-center justify-center h-5 sm:h-6 min-w-[1.25rem] sm:min-w-[1.5rem] px-1.5 sm:px-2 text-[10px] sm:text-xs font-bold rounded-full text-white shrink-0" style={{ backgroundColor: '#B21063' }}>{card.badge}</span>
+                      <div className="relative text-[22px] sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
+                      {(card.sub || card.subRed) && (
+                        <div className="relative text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-medium truncate">
+                          {card.sub}
+                          {card.subRed && <span className="text-red-500">{card.subRed}</span>}
+                        </div>
                       )}
                     </div>
-                    <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-300 leading-relaxed flex-1 line-clamp-2">{card.subtitle}</p>
                   </div>
-                  <div className="px-3 sm:px-5 pb-3 sm:pb-5 mt-auto">
-                    <span className="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400 group-hover:text-blue-800 dark:group-hover:text-blue-300 transition-colors">{card.action}</span>
+                ) : (
+                  <div className="relative overflow-hidden bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
+                    <div className={cn("absolute inset-x-0 -top-10 h-28 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
+                    <div className="relative flex items-center justify-between gap-1">
+                      <span className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                        <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-700 dark:text-neutral-300" />
+                      </div>
+                    </div>
+                    <div className="relative text-[22px] sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
+                    {(card.sub || card.subRed) && (
+                      <div className="relative text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-medium truncate">
+                        {card.sub}
+                        {card.subRed && <span className="text-red-500">{card.subRed}</span>}
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
+              </motion.button>
+            ))}
+
+            {/* Transactions label (mobile only) */}
+            <div className="col-span-3 sm:hidden flex items-center justify-start py-1 px-1">
+              <h3 className="text-sm font-bold text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">معاملات اليوم</h3>
+            </div>
+
+            {[
+              { title: "جديدة", value: "8", sub: "معاملات جديدة", subRed: undefined, subColor: undefined, icon: Inbox, accent: "from-indigo-500/50 to-indigo-600/50" },
+              { title: "طارئة", value: "5", sub: "معاملات طارئة", subRed: undefined, subColor: "text-red-500", icon: AlertTriangle, accent: "from-orange-500/50 to-orange-600/50" },
+              { title: "متأخرة", value: "3", sub: "معاملات متأخرة", subRed: undefined, subColor: "text-amber-500", icon: Clock, accent: "from-amber-500/50 to-amber-600/50" },
+            ].map((card, idx) => (
+              <motion.button
+                key={card.title + idx}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.03 * (idx + 3) }}
+                className="group h-full w-full text-right cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+              >
+                {idx === 0 ? (
+                  <div className="card-stroke-indigo h-full">
+                    <div className="relative z-[2] overflow-hidden shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
+                      <div className={cn("absolute inset-x-0 -top-10 h-28 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
+                      <div className="relative flex items-center justify-between gap-1">
+                        <span className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                          <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-700 dark:text-neutral-300" />
+                        </div>
+                      </div>
+                      <div className="relative text-[22px] sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
+                      {(card.sub || card.subRed) && (
+                        <div className="relative text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-medium truncate">
+                          {card.sub}
+                          {card.subRed && <span className="text-red-500">{card.subRed}</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative overflow-hidden bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
+                    <div className={cn("absolute inset-x-0 -top-10 h-28 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
+                    <div className="relative flex items-center justify-between gap-1">
+                      <span className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                        <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-700 dark:text-neutral-300" />
+                      </div>
+                    </div>
+                    <div className="relative text-[22px] sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
+                    {(card.sub || card.subRed) && (
+                      <div className="relative text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-medium truncate">
+                        {card.sub}
+                        {card.subRed && <span className="text-red-500">{card.subRed}</span>}
+                      </div>
+                    )}
+                  </div>
+                )}
               </motion.button>
             ))}
           </section>
         </div>
 
-        {/* قسم الخدمات الإضافية */}
+        {/* ====== قسم الأداء والتنبيهات ====== */}
         <div>
-          <h2 className="text-sm sm:text-base font-bold mb-3 sm:mb-4 text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">الخدمات الإضافية</h2>
-          <section className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5 items-stretch">
-            {regularCards.map((card, idx) => (
+          <h2 className="text-sm sm:text-base font-bold mb-3 sm:mb-4 text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">أداء المبيعات والتنبيهات</h2>
+          <section className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2.5 mx-1 sm:mx-0 overflow-visible">
+            {[
+              { title: "مبيعات اليوم", value: "45,320", sub: "ر.س", icon: TrendingUp, progress: 78, color: "#00C9A7" },
+              { title: "مبيعات الشهر", value: "1,240,500", sub: "ر.س", icon: BarChart3, progress: 92, color: "#4D8AFF" },
+              { title: "نسبة التحقيق", value: "87", sub: "%", icon: CheckCircle, progress: 87, color: "#F9A825" },
+              { title: "انتهاء الإقامة", value: "45", sub: "يوماً متبقية", icon: Bell, urgent: true },
+              { title: "صلاحية الجواز", value: "6", sub: "أشهر", icon: Globe },
+              { title: "عقد العمل", value: "120", sub: "يوماً", icon: FileText },
+            ].map((card, idx) => (
               <motion.button
                 key={card.title + idx}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.03 * (idx + primaryCards.length) }}
-                onClick={() => handleCardClick(card)}
+                transition={{ delay: 0.03 * (idx + 3) }}
                 className="group h-full w-full text-right cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
               >
-                <div className="relative h-full min-h-[140px] sm:min-h-[200px] flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl bg-white dark:bg-neutral-800 shadow-[0_2px_16px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.10)] transition-all duration-200 border border-neutral-100 dark:border-neutral-700">
-                  <div className={cn("absolute inset-x-0 -top-16 h-40 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
-                  <div className="relative p-3 sm:p-5 flex flex-col gap-2 sm:gap-3 flex-1">
-                    <div className="flex items-start justify-between gap-1 sm:gap-2">
-                      <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-neutral-900 text-white rounded-full text-[10px] sm:text-xs font-semibold shrink-0 max-w-[80%] sm:max-w-[70%]">
-                        <card.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
-                        <span className="truncate">{card.title}</span>
-                      </div>
-                      {card.badge !== null && (
-                        <span className="inline-flex items-center justify-center h-5 sm:h-6 min-w-[1.25rem] sm:min-w-[1.5rem] px-1.5 sm:px-2 text-[10px] sm:text-xs font-bold rounded-full text-white shrink-0" style={{ backgroundColor: '#B21063' }}>{card.badge}</span>
+                <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
+                    <div className="flex items-center gap-2">
+                      {card.urgent && (
+                        <span className="inline-flex items-center justify-center h-5 px-2 text-[10px] font-bold rounded-full text-white shrink-0 bg-rose-500">عاجل</span>
                       )}
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                        <card.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-700 dark:text-neutral-300" />
+                      </div>
                     </div>
-                    <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-300 leading-relaxed flex-1 line-clamp-2">{card.subtitle}</p>
                   </div>
-                  <div className="px-3 sm:px-5 pb-3 sm:pb-5 mt-auto">
-                    <span className="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400 group-hover:text-blue-800 dark:group-hover:text-blue-300 transition-colors">{card.action}</span>
+                  <div className="text-xl sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
+                  {card.sub && <div className="text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-medium truncate">{card.sub}</div>}
+                  {card.progress !== undefined && (
+                    <div className="h-1 sm:h-1.5 rounded-full bg-neutral-100 dark:bg-neutral-700 overflow-hidden mt-auto">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(card.progress, 100)}%`, backgroundColor: card.color }} />
+                    </div>
+                  )}
+                </div>
+              </motion.button>
+            ))}
+          </section>
+        </div>
+      </div>
+    );
+  }
+
+  function renderNotificationsPage() {
+    return (
+      <div className="space-y-8">
+        <ImageSlider />
+        <div>
+          <h2 className="text-sm sm:text-base font-bold mb-3 sm:mb-4 text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">التنبيهات والإشعارات</h2>
+          <section className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2.5 mx-1 sm:mx-0 overflow-visible">
+            {[
+              { title: "انتهاء الإقامة", value: "45", sub: "يوماً متبقية", icon: Bell, urgent: true },
+              { title: "آخر إشعار", value: "2024-089", sub: "معتمد", icon: CheckCircle, urgent: false },
+              { title: "صلاحية الجواز", value: "6", sub: "أشهر", icon: Globe },
+              { title: "موعد مراجعة", value: "15", sub: "يوماً", icon: Calendar },
+              { title: "عقد العمل", value: "120", sub: "يوماً", icon: FileText },
+              { title: "شهادة صحية", value: "30", sub: "يوماً", icon: ShieldCheck },
+            ].map((card, idx) => (
+              <motion.button
+                key={card.title + idx}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.03 * idx }}
+                className="group h-full w-full text-right cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+              >
+                <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
+                    <div className="flex items-center gap-2">
+                      {card.urgent && (
+                        <span className="inline-flex items-center justify-center h-5 px-2 text-[10px] font-bold rounded-full text-white shrink-0 bg-rose-500">عاجل</span>
+                      )}
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                        <card.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-700 dark:text-neutral-300" />
+                      </div>
+                    </div>
                   </div>
+                  <div className="text-xl sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
+                  {card.sub && <div className="text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-medium truncate">{card.sub}</div>}
                 </div>
               </motion.button>
             ))}
@@ -2097,15 +3247,14 @@ export default function ResponsiveDashboard() {
           <div className="max-w-[1400px] mx-auto px-0 sm:px-2 rounded-xl overflow-hidden">
             <div className="px-2 sm:px-4 py-2 border-b border-neutral-100">
               <div className="flex items-center gap-1 bg-neutral-0 rounded-full p-1 min-w-0">
-              {ATTEND_TABS.map(([key, label, Icon]) => (
+              {ATTEND_TABS.map(([key, label]) => (
                 <button key={key} onClick={() => setAttendanceSubTab(key)}
                   className={cn(
-                    'flex flex-1 flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-[13px] font-semibold transition-all duration-200 min-w-0',
+                    'flex flex-1 items-center justify-center px-2 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-[13px] font-semibold transition-all duration-200 min-w-0',
                     attendanceSubTab === key
                       ? 'bg-neutral-900 text-white shadow-sm'
                       : 'bg-neutral-50 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600 hover:text-neutral-900 dark:hover:text-white'
                   )}>
-                  <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
                   <span className="truncate">{label}</span>
                 </button>
               ))}
@@ -2131,20 +3280,19 @@ export default function ResponsiveDashboard() {
     return (
       <div dir="rtl" className="min-h-screen" style={{ backgroundColor: dark ? '#0a0a0a' : '#F4F8FE' }}>
         {/* Tab Bar */}
-        <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 rounded-xl">
-          <div className="max-w-[1400px] mx-auto px-0 sm:px-2 rounded-xl overflow-hidden">
-            <div className="px-2 sm:px-4 py-2 border-b border-neutral-100">
-              <div className="flex items-center gap-1 bg-neutral-0 rounded-full p-1 min-w-0">
-              {TRANS_TABS.map(([key, label, Icon]) => (
+        <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700">
+          <div className="max-w-[1400px] mx-auto px-0 sm:px-2 overflow-hidden">
+            <div className="px-1 sm:px-4 py-2">
+              <div className="flex items-center gap-1 bg-neutral-0 dark:bg-neutral-800 rounded-full p-1 w-full min-w-0 sm:max-w-[60%] sm:mx-auto">
+              {TRANS_TABS.map(([key, label]) => (
                 <button key={key} onClick={() => setTransactionsSubTab(key)}
                   className={cn(
-                    'flex flex-1 flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-[13px] font-semibold transition-all duration-200 min-w-0',
+                    'flex flex-1 items-center justify-center py-1.5 px-2 sm:px-3 rounded-full text-[13px] sm:text-[14px] font-bold transition-all duration-200 min-w-0',
                     transactionsSubTab === key
                       ? 'bg-neutral-900 text-white shadow-sm'
-                      : 'bg-neutral-50 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600 hover:text-neutral-900 dark:hover:text-white'
+                      : 'bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 hover:text-neutral-900 dark:hover:text-white'
                   )}>
-                  <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                  <span className="truncate">{label}</span>
+                  {label}
                 </button>
               ))}
             </div>
@@ -2202,6 +3350,7 @@ export default function ResponsiveDashboard() {
     if (view === "tasks") return <TasksPage onBack={() => setView("dashboard")} onNewCampaign={() => setView("campaigns")} onNewProject={() => alert("صفحة المشاريع قيد التطوير")} />;
     if (view === "campaigns") return <CampaignsPage onBack={() => setView("dashboard")} />;
     if (view === "shortcuts") return renderShortcutsPage();
+    if (view === "notifications") return renderNotificationsPage();
     return renderGenericPage(view);
   }
 
@@ -2294,35 +3443,27 @@ export default function ResponsiveDashboard() {
   }
 
   function renderMainDashboard() {
-    const bottomTabs = [
-      { key: "tasks",         label: "المهام",     icon: ListTodo,       view: "tasks" },
-      { key: "sales_kpi",     label: "الأداء",     icon: TrendingUp,     view: "sales_kpi" },
-      { key: "transactions",  label: "المعاملات",  icon: ArrowLeftRight, view: "transactions" },
-      { key: "attendance",    label: "الحضور",     icon: Calendar,       view: "attendance" },
-      { key: "notifications", label: "التنبيهات", icon: Bell,           view: "notifications" },
-      { key: "shortcuts",     label: "اختصارات",  icon: Zap,            view: "shortcuts" },
-    ];
-
     return (
-      <div dir="rtl" className={rootClass} style={backgroundStyle}>
+      <div dir="rtl" className={cn(rootClass, "overflow-x-hidden")} style={backgroundStyle}>
 
 
         {/* Body */}
-        <div className="py-4 pb-24 md:pb-6 flex gap-3 md:gap-[150px] px-3 sm:px-4 md:pe-[150px] md:ps-4">
+        <div className={cn(
+          "pb-24 md:pb-6 flex md:gap-[100px] md:py-4 md:pe-[100px] md:ps-4",
+          view === "dashboard" ? "px-3 sm:px-4 pt-4 gap-3" : "px-0 pt-0 gap-0"
+        )}>
           {/* Sidebar — Navigation Rail (ديسكتوب فقط) */}
-          <aside className="hidden md:flex flex-col w-[72px] shrink-0">
+          <aside className="hidden md:flex flex-col w-[72px] shrink-0 items-center gap-2 pt-3">
+            {/* Logo above sidebar */}
+            <div className="shrink-0 mb-[65px]">
+              <img
+                src="/logo deraah.png"
+                alt="شعار درعه"
+                className="h-[60px] w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => setView('dashboard')}
+              />
+            </div>
             <nav className="sticky top-[72px] rounded-2xl py-3 px-1.5 bg-white/80 dark:bg-neutral-800/80 backdrop-blur border border-white/80 dark:border-neutral-700/80 shadow-[0_2px_16px_rgba(0,0,0,0.07)] flex flex-col items-center gap-1 max-h-[calc(100vh-100px)] overflow-visible">
-              {/* Logo */}
-              <div className="mb-2 shrink-0">
-                <img
-                  src="/logonew.svg"
-                  alt="الشعار"
-                  className="h-8 w-8 object-contain cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => setView('dashboard')}
-                  onError={(e) => { e.currentTarget.src = '/vite.svg'; }}
-                />
-              </div>
-
               {/* Nav items */}
               <div className="flex-1 overflow-y-auto w-full space-y-0.5 scrollbar-hide">
                 {sidebarGroups.flatMap((g) => g.items).map(({ key, title, icon: Icon }) => (
@@ -2440,39 +3581,234 @@ export default function ResponsiveDashboard() {
 
           {/* Content */}
           <main className="flex-1 min-w-0">
+            {/* Top Bar (visible on dashboard only) */}
+            {view === "dashboard" && (
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h1 className="text-lg sm:text-xl font-bold text-neutral-800 dark:text-neutral-100">{currentTitle}</h1>
+                <div className="flex items-center gap-3">
+                  {/* Notification Bell */}
+                  <button className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 shadow-sm hover:shadow-md transition-shadow">
+                    <Bell className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
+                    <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white dark:border-neutral-900">3</span>
+                  </button>
+                  {/* User Avatar */}
+                  <button
+                    onClick={() => setAccountMenuOpen(v => !v)}
+                    className="w-10 h-10 rounded-xl overflow-hidden border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50"
+                  >
+                    <img
+                      src="https://api.dicebear.com/7.x/notionists/svg?seed=AhmedAbdulkader&backgroundColor=10b981"
+                      alt="User"
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                </div>
+              </div>
+            )}
             {renderContent()}
           </main>
         </div>
 
         {/* ── Bottom Navigation (جوال فقط) ── */}
-        <nav className="fixed bottom-0 inset-x-0 z-30 md:hidden bg-white dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700 safe-area-bottom">
-          <div className="flex items-stretch h-16">
-            {bottomTabs.map((tab) => {
-              const isActive = view === tab.view
-                || (tab.key === "transactions" && ["transactions", "add", "inbox", "outbox", "transaction_details", "annual_leave", "transport_allowance", "transaction_selection", "add_form"].includes(view))
-                || (tab.key === "attendance" && ["attendance", "attendance_report", "exit_permission", "hazer_system"].includes(view));
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => {
-                    setBottomTab(tab.key);
-                    setView(tab.view);
-                    setActiveKey(tab.key);
-                    if (tab.key === 'transactions') setTransactionsSubTab('inbox');
-                    if (tab.key === 'attendance') { setView('attendance'); setAttendanceSubTab('report'); }
-                  }}
-                  className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors relative"
-                >
-                  {isActive && (
-                    <span className="absolute top-0 inset-x-2 h-0.5 rounded-b-full bg-[#B21063]" />
-                  )}
-                  <tab.icon className={cn("h-5 w-5 transition-colors", isActive ? "text-[#B21063]" : "text-neutral-400 dark:text-neutral-400")} />
-                  <span className={cn("text-[10px] font-semibold transition-colors", isActive ? "text-[#B21063]" : "text-neutral-400 dark:text-neutral-400")}>
-                    {tab.label}
-                  </span>
-                </button>
-              );
-            })}
+        <nav className="fixed bottom-0 inset-x-0 z-40 md:hidden">
+          {/* Bottom Sheet */}
+          {bottomSheetOpen && (
+            <>
+              <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+                onClick={() => setBottomSheetOpen(false)}
+              />
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="fixed bottom-0 inset-x-0 z-50 bg-white dark:bg-neutral-800 rounded-t-3xl shadow-2xl border-t border-neutral-100 dark:border-neutral-700 p-6 pb-8"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold text-neutral-800 dark:text-neutral-100">إضافة جديد</h3>
+                  <button
+                    onClick={() => setBottomSheetOpen(false)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {[
+                    { label: "إنشاء مهمة", icon: ClipboardList, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-900/20", action: () => { setView("tasks"); setActiveKey("tasks"); setBottomSheetOpen(false); } },
+                    { label: "معاملة جديدة", icon: FilePlus, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20", action: () => { setView("add"); setActiveKey("transactions"); setBottomSheetOpen(false); } },
+                    { label: "طلب إجازة", icon: Calendar, color: "text-violet-500", bg: "bg-violet-50 dark:bg-violet-900/20", action: () => { setView("annual_leave"); setActiveKey("attendance"); setBottomSheetOpen(false); } },
+                    { label: "استئذان", icon: Clock, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20", action: () => { setView("exit_permission"); setActiveKey("attendance"); setBottomSheetOpen(false); } },
+                    { label: "إضافة مستخدم", icon: UserPlus, color: "text-rose-500", bg: "bg-rose-50 dark:bg-rose-900/20", action: () => { alert("قيد التطوير"); setBottomSheetOpen(false); } },
+                  ].map((item, idx) => {
+                    const Icon = item.icon;
+                    return (
+                      <motion.button
+                        key={idx}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.05 * idx }}
+                        onClick={item.action}
+                        className="flex items-center gap-4 w-full p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-700/50 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors text-right"
+                      >
+                        <div className={`shrink-0 w-12 h-12 flex items-center justify-center rounded-xl ${item.bg} ${item.color} shadow-lg shadow-${item.color.split('-')[1]}-500/20`}>
+                          <Icon className="w-6 h-6" />
+                        </div>
+                        <span className="text-base font-bold text-neutral-800 dark:text-neutral-100">{item.label}</span>
+                        <ChevronLeft className="w-5 h-5 text-neutral-400 mr-auto" />
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            </>
+          )}
+
+          {/* Side Drawer */}
+          {sideDrawerOpen && (
+            <>
+              <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+                onClick={() => setSideDrawerOpen(false)}
+              />
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="fixed top-0 right-0 bottom-0 w-[85%] max-w-[360px] z-50 bg-white dark:bg-neutral-800 shadow-2xl overflow-y-auto scrollbar-hide"
+              >
+                {/* User Header */}
+                <div className="p-6 pb-4 border-b border-neutral-100 dark:border-neutral-700">
+                  <div className="flex items-center gap-4 mb-4">
+                    <img
+                      src="https://api.dicebear.com/7.x/notionists/svg?seed=AhmedAbdulkader&backgroundColor=10b981"
+                      alt="User"
+                      className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50"
+                    />
+                    <div>
+                      <h3 className="text-base font-bold text-neutral-800 dark:text-neutral-100">أحمد عبدالقادر</h3>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400">مدير تجربة المستخدم</p>
+                    </div>
+                  </div>
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                    <input
+                      type="text"
+                      placeholder="البحث..."
+                      className="w-full pr-10 pl-4 py-2.5 bg-neutral-100 dark:bg-neutral-700 rounded-xl text-sm text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Navigation */}
+                <div className="p-4 space-y-1">
+                  <p className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 px-2 mb-2 uppercase tracking-wide">الرئيسية</p>
+                  {[
+                    { key: "dashboard", label: "الرئيسية", icon: LayoutDashboard },
+                    { key: "tasks", label: "المهام", icon: ListTodo },
+                    { key: "transactions", label: "المعاملات", icon: ArrowLeftRight },
+                    { key: "attendance", label: "الحضور", icon: Calendar },
+                    { key: "sales_kpi", label: "الأداء", icon: TrendingUp },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    const isActive = activeKey === item.key;
+                    return (
+                      <button
+                        key={item.key}
+                        onClick={() => {
+                          setActiveKey(item.key);
+                          if (item.key === "attendance") { setView("attendance"); setAttendanceSubTab('report'); }
+                          else if (item.key === "transactions") { setView("transactions"); setTransactionsSubTab('inbox'); }
+                          else setView(item.key);
+                          setSideDrawerOpen(false);
+                        }}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors text-right",
+                          isActive
+                            ? "bg-neutral-900 text-white"
+                            : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                        )}
+                      >
+                        <Icon className="w-5 h-5 shrink-0" />
+                        <span className="text-sm font-semibold">{item.label}</span>
+                      </button>
+                    );
+                  })}
+
+                  <p className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 px-2 mb-2 mt-4 uppercase tracking-wide">الإعدادات</p>
+                  <button
+                    onClick={() => { setView("settings"); setSideDrawerOpen(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors text-right"
+                  >
+                    <Settings className="w-5 h-5 shrink-0" />
+                    <span className="text-sm font-semibold">الإعدادات</span>
+                  </button>
+                  <button
+                    onClick={() => { setDark(!dark); }}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors text-right"
+                  >
+                    {dark ? <Sun className="w-5 h-5 shrink-0" /> : <Moon className="w-5 h-5 shrink-0" />}
+                    <span className="text-sm font-semibold">{dark ? "الوضع الفاتح" : "الوضع الداكن"}</span>
+                  </button>
+                </div>
+
+                {/* Logout */}
+                <div className="absolute bottom-0 inset-x-0 p-4 border-t border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+                  <button
+                    onClick={() => { setCurrentPage("login"); setSideDrawerOpen(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-right"
+                  >
+                    <LogOut className="w-5 h-5 shrink-0" />
+                    <span className="text-sm font-semibold">تسجيل الخروج</span>
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+
+          {/* Bottom Bar */}
+          <div className="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-2xl border-t border-neutral-200/60 dark:border-neutral-700/60 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-1 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div className="flex items-center justify-around">
+              {[
+                { key: "dashboard", label: "الرئيسية", icon: LayoutDashboard, view: "dashboard" },
+                { key: "tasks", label: "المهام", icon: ListTodo, view: "tasks" },
+                { key: "sales_kpi", label: "الأداء", icon: TrendingUp, view: "sales_kpi" },
+                { key: "transactions", label: "المعاملات", icon: ArrowLeftRight, view: "transactions" },
+                { key: "attendance", label: "الحضور", icon: Calendar, view: "attendance" },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isActive = activeKey === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => {
+                      setActiveKey(item.key);
+                      if (item.key === "attendance") { setView("attendance"); setAttendanceSubTab('report'); }
+                      else if (item.key === "transactions") { setView("transactions"); setTransactionsSubTab('inbox'); }
+                      else setView(item.view);
+                    }}
+                    className={cn(
+                      "relative flex flex-col items-center gap-0.5 py-1.5 px-1 rounded-xl transition-all duration-200 min-w-[60px] active:scale-95",
+                      isActive
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-neutral-400 dark:text-neutral-500"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-200",
+                      isActive ? "bg-emerald-50 dark:bg-emerald-900/30" : ""
+                    )}>
+                      <Icon className={cn("w-5 h-5 transition-all", isActive ? "stroke-[2.5px]" : "stroke-[1.8px]")} />
+                    </div>
+                    <span className={cn("text-[10px] font-bold leading-none", isActive ? "opacity-100" : "opacity-60")}>{item.label}</span>
+                    {isActive && <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-emerald-500" />}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </nav>
 

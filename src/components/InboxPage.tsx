@@ -86,23 +86,23 @@ const sampleTransactions: Transaction[] = [
 function toneClasses(tone: 'sky' | 'rose' | 'violet' | 'emerald' | 'amber') {
   const map = {
     sky: {
-      card: 'bg-gradient-to-b from-sky-50/80 to-white border-sky-100',
+      card: 'bg-white border-sky-100',
       iconWrap: 'bg-sky-100/60 text-sky-700 border-sky-200',
     },
     rose: {
-      card: 'bg-gradient-to-b from-rose-50/80 to-white border-rose-100',
+      card: 'bg-white border-rose-100',
       iconWrap: 'bg-rose-100/60 text-rose-700 border-rose-200',
     },
     violet: {
-      card: 'bg-gradient-to-b from-violet-50/80 to-white border-violet-100',
+      card: 'bg-white border-violet-100',
       iconWrap: 'bg-violet-100/60 text-violet-700 border-violet-200',
     },
     emerald: {
-      card: 'bg-gradient-to-b from-emerald-50/80 to-white border-emerald-100',
+      card: 'bg-white border-emerald-100',
       iconWrap: 'bg-emerald-100/60 text-emerald-700 border-emerald-200',
     },
     amber: {
-      card: 'bg-gradient-to-b from-amber-50/80 to-white border-amber-100',
+      card: 'bg-white border-amber-100',
       iconWrap: 'bg-amber-100/60 text-amber-700 border-amber-200',
     },
   } as const;
@@ -330,7 +330,7 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-[radial-gradient(40%_40%_at_100%_0%,#d1fae5_0%,transparent_60%),radial-gradient(50%_40%_at_0%_100%,#fce7f3_0%,transparent_60%)]"
+      className="min-h-screen"
     >
       <div className="mx-auto max-w-[1400px] p-3 sm:p-6 space-y-4 sm:space-y-6">
         <motion.div
@@ -339,7 +339,7 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
           transition={{ duration: 0.4 }}
           className="grid grid-cols-3 gap-3 sm:gap-4 lg:grid-cols-6"
         >
-          <Card className="rounded-2xl border bg-gradient-to-b from-green-50/80 to-white border-green-100 shadow-sm transition-all duration-200 hover:shadow-md">
+          <Card className="rounded-2xl border bg-white border-green-100 shadow-sm transition-all duration-200 hover:shadow-md">
             <CardHeader className="pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
               <div className="flex items-center gap-1.5 sm:gap-2">
                 <div className="grid h-7 w-7 sm:h-8 sm:w-8 place-items-center rounded-xl bg-green-100/60 text-green-700 border border-green-200 shrink-0">

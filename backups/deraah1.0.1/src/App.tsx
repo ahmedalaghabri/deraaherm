@@ -181,21 +181,21 @@ function ImageSlider() {
       id: 1,
       title: "مرحباً بك في البوابة الإلكترونية",
       subtitle: "نظام متكامل لإدارة المعاملات والخدمات",
-      image: "https://i.ibb.co/tTCPm0Yt/ban1.jpg?auto=compress&cs=tinysrgb&w=1200&h=600&fit=crop",
+      image: "https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=1200&h=600&fit=cropg?auto=compress&cs=tinysrgb&w=1200&h=600&fit=crop",
       gradient: ""
     },
     {
       id: 2,
       title: "خدمات متطورة وسهلة الاستخدام",
       subtitle: "تجربة مستخدم محسّنة لجميع احتياجاتك الإدارية",
-      image: "https://i.ibb.co/tTCPm0Yt/ban1.jpg?auto=compress&cs=tinysrgb&w=1200&h=600&fit=crop",
+      image: "https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=1200&h=600&fit=crop?auto=compress&cs=tinysrgb&w=1200&h=600&fit=crop",
       gradient: ""
     },
     {
       id: 3,
       title: "أمان وموثوقية عالية",
       subtitle: "حماية بياناتك وخصوصيتك أولويتنا القصوى",
-      image: "https://i.ibb.co/tTCPm0Yt/ban1.jpg
+      image: "https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=1200&h=600&fit=crop
         ?auto=compress&cs=tinysrgb&w=1200&h=600&fit=crop",
       gradient: ""
     }

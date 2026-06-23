@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Prevent zoom on iOS for dropdown menus */
 @media screen and (max-width: 768px) {
   .dropdown-menu {
@@ -168,4 +177,52 @@
 }
 @keyframes l26 {
   100% { transform: rotate(1turn); }
+}
+
+/* ── Animated gradient border for new cards ── */
+@keyframes spin-border {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.card-stroke-green,
+.card-stroke-indigo {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.card-stroke-green::before,
+.card-stroke-indigo::before {
+  content: "";
+  position: absolute;
+  inset: -100%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 200deg,
+    #E342B6 200deg,
+    #E37882 225deg,
+    #E9BE7E 255deg,
+    #FFEDE7 285deg,
+    transparent 300deg,
+    transparent 360deg
+  );
+  animation: spin-border 3s linear infinite;
+}
+.card-stroke-green::after,
+.card-stroke-indigo::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  background: white;
+  border-radius: calc(14px - 2px);
+  z-index: 1;
+}
+.dark .card-stroke-green::after,
+.dark .card-stroke-indigo::after {
+  background: #262626;
+}
+.card-stroke-green > *,
+.card-stroke-indigo > * {
+  position: relative;
+  z-index: 2;
 }

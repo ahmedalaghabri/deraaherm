@@ -21,6 +21,7 @@ import {
   SlidersHorizontal,
   Filter,
   MoreVertical,
+  Users,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -2163,16 +2164,16 @@ export default function SalesPerformancePage({ onBack }: Props) {
               )}
               <div className="mr-auto flex items-center gap-1 sm:gap-1.5 shrink-0">
                 {/* View mode tabs */}
-                <div className="flex items-center gap-0.5 bg-neutral-100 dark:bg-neutral-700 rounded-2xl p-0.5">
+                <div className="flex items-center gap-1 bg-neutral-50 dark:bg-neutral-700 rounded-xl p-1">
                   {([
                     ["analytics", "ملخص", BarChart2],
                     ["table", "تفصيلي", Table]
                   ] as const).map(([mode, label, IconComponent]) => (
                     <button key={mode} onClick={() => setViewMode(mode)}
-                      className={cn("px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-[10px] font-semibold transition-all flex items-center gap-1",
-                        viewMode === mode ? "bg-neutral-800 text-white shadow-sm" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:text-neutral-300")}
+                      className={cn("flex items-center justify-center px-2 py-1.5 text-xs font-bold rounded-lg transition-all duration-200",
+                        viewMode === mode ? "bg-neutral-900 text-white shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600")}
                       title={label}>
-                      <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <IconComponent className="w-3.5 h-3.5" />
                     </button>
                   ))}
                 </div>
@@ -2339,6 +2340,187 @@ export default function SalesPerformancePage({ onBack }: Props) {
             </button>
           </div>
         )}
+
+        {drillPath.length > 0 && (() => {
+          const last = drillPath[drillPath.length - 1];
+          const level = last.level;
+          const entityId = last.id;
+          const entityName = last.name;
+
+          const showroom = SHOWROOMS.find(s => s.id === entityId);
+          const seller = SELLERS.find(s => s.id === entityId);
+          const supervisor = SUPERVISORS.find(s => s.id === entityId);
+          const area = AREAS.find(a => a.id === entityId);
+          const region = REGIONS.find(r => r.id === (area?.regionId || showroom?.regionId || seller?.regionId));
+
+          const seedNum = parseInt(entityId.replace(/\D/g, "")) || 1;
+          const getEntityCode = (id: string, pfx = "DTS") => `${pfx}${String(parseInt(id.replace(/\D/g, "")) || 1).padStart(5, "0")}`;
+          const getGrade = (id: string) => {
+            const grades = ["A+", "A", "B+", "B", "C+", "C"]; return grades[(parseInt(id.replace(/\D/g, "")) || 1) % grades.length];
+          };
+          const getStatus = (id: string) => {
+            const states = [ { label: "Active", color: "bg-emerald-100 text-emerald-700" }, { label: "Inactive", color: "bg-rose-100 text-rose-700" }, { label: "موقّت", color: "bg-amber-100 text-amber-700" } ];
+            return states[(parseInt(id.replace(/\D/g, "")) || 1) % states.length];
+          };
+          const getDates = (id: string) => {
+            const n = parseInt(id.replace(/\D/g, "")) || 1; const y = 2010 + (n % 12);
+            return { openDate: `${y}-08-${String((n % 28) + 1).padStart(2, "0")}`, localizationDate: `${y + 7}-09-${String((n % 28) + 1).padStart(2, "0")}`, ladiesOnlyDate: `${y + 8}-08-${String((n % 28) + 1).padStart(2, "0")}` };
+          };
+          const brand = ["درعه", "عود", "عطور", "اكسسوارات", "+C"][seedNum % 5];
+          const layout = ["مختلط", "رجالي", "نسائي"][seedNum % 3];
+          const managerName = (salt: number) => `${_pick(_FIRST, _ds(_dsk(seedNum, salt, 1)))} ${_pick(_LAST, _ds(_dsk(seedNum, salt, 2)))}`;
+
+          function Header({ icon, sub: subProp }: { icon: React.ReactNode; sub?: string }) {
+            const code = getEntityCode(entityId, level === "sellers" ? "SEL" : level === "supervisors" ? "SUP" : level === "areas" ? "AR" : level === "regions" ? "RGN" : "DTS");
+            const status = getStatus(entityId);
+            const defaultSub = level === "showrooms" || level === "sellers" ? `${area ? area.name : ""} • ${region ? region.name : ""}` : level === "supervisors" ? `${area ? area.name : ""} • ${region ? region.name : ""}` : level === "areas" ? `${region ? region.name : ""}` : "";
+            const sub = subProp ?? defaultSub;
+            return (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shrink-0 bg-[#B21063]/10 rounded-xl">{icon}</div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-sm sm:text-base font-bold text-neutral-800 dark:text-white leading-tight">{entityName}</h2>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#B21063] bg-[#B21063]/10 px-2 py-0.5 rounded-lg">
+                        {code}
+                        <ChevronDown className="w-3 h-3" />
+                      </span>
+                    </div>
+                    {!!sub && <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{sub}</p>}
+                  </div>
+                </div>
+                <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg ${status.color}`}>{status.label}</span>
+              </div>
+            );
+          }
+
+          function KV({ label, value }: { label: string; value: React.ReactNode }) {
+            return (
+              <div className="flex items-center justify-between py-1.5">
+                <span className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-medium">{label}</span>
+                <span className="text-[12px] sm:text-sm font-bold text-neutral-800 dark:text-white text-left truncate max-w-[60%]">{value}</span>
+              </div>
+            );
+          }
+
+          const dates = getDates(entityId);
+
+          if (level === "showrooms" || level === "sellers") {
+            const sh = showroom || SHOWROOMS.find(s => s.id === seller?.showroomId);
+            const sup = sh ? SUPERVISORS.find(s => s.id === sh.supervisorId) : null;
+            const ar = sh ? AREAS.find(a => a.id === sh.areaId) : null;
+            const reg = ar ? REGIONS.find(r => r.id === ar.regionId) : null;
+            return (
+              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-3 bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4 sm:p-5">
+                <Header icon={<ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 text-[#B21063]" />} sub={`${ar?.name || ""} • ${reg?.name || ""}`} />
+                <div className="my-3 border-t border-neutral-100 dark:border-neutral-700" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-1"><h4 className="text-[12px] sm:text-sm font-bold text-neutral-800 dark:text-neutral-100">معلومات المعرض</h4><MapPin className="w-4 h-4 text-[#B21063]" /></div>
+                    <KV label="رمز المعرض" value={getEntityCode(sh?.id || entityId)} />
+                    <KV label="الماركة" value={brand} />
+                    <KV label="التصنيف" value={getGrade(entityId)} />
+                    <KV label="حالة المعرض" value={getStatus(entityId).label} />
+                    <KV label="الوضع" value={layout} />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1"><h4 className="text-[12px] sm:text-sm font-bold text-neutral-800 dark:text-neutral-100">التواريخ</h4><Calendar className="w-4 h-4 text-[#B21063]" /></div>
+                    <KV label="تاريخ الافتتاح" value={dates.openDate} />
+                    <KV label="تاريخ التوطين" value={dates.localizationDate} />
+                    <KV label="تاريخ السيدات فقط" value={dates.ladiesOnlyDate} />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1"><h4 className="text-[12px] sm:text-sm font-bold text-neutral-800 dark:text-neutral-100">الإدارة والمشرفون</h4><Users className="w-4 h-4 text-[#B21063]" /></div>
+                    <KV label="مدير الإقليم" value={managerName(10)} />
+                    <KV label="مدير المنطقة" value={managerName(20)} />
+                    <KV label="المشرف" value={sup?.name || "—"} />
+                  </div>
+                </div>
+              </motion.div>
+            );
+          }
+
+          if (level === "supervisors") {
+            const sup = supervisor; const ar = sup ? AREAS.find(a => a.id === sup.areaId) : null; const reg = ar ? REGIONS.find(r => r.id === ar.regionId) : null;
+            return (
+              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-3 bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4 sm:p-5">
+                <Header icon={<Users className="w-5 h-5 sm:w-6 sm:h-6 text-[#B21063]" />} sub={`${ar?.name || ""} • ${reg?.name || ""}`} />
+                <div className="my-3 border-t border-neutral-100 dark:border-neutral-700" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <h4 className="text-[12px] sm:text-sm font-bold text-neutral-800 dark:text-neutral-100 mb-1">معلومات المشرف</h4>
+                    <KV label="المنطقة" value={ar?.name || "—"} />
+                    <KV label="الإقليم" value={reg?.name || "—"} />
+                    <KV label="التصنيف" value={getGrade(entityId)} />
+                  </div>
+                  <div>
+                    <h4 className="text-[12px] sm:text-sm font-bold text-neutral-800 dark:text-neutral-100 mb-1">التواريخ</h4>
+                    <KV label="تاريخ التعيين" value={dates.openDate} />
+                  </div>
+                  <div>
+                    <h4 className="text-[12px] sm:text-sm font-bold text-neutral-800 dark:text-neutral-100 mb-1">الإدارة</h4>
+                    <KV label="مدير الإقليم" value={managerName(10)} />
+                    <KV label="مدير المنطقة" value={managerName(20)} />
+                  </div>
+                </div>
+              </motion.div>
+            );
+          }
+
+          if (level === "areas") {
+            const ar = area; const reg = ar ? REGIONS.find(r => r.id === ar.regionId) : null;
+            return (
+              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-3 bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4 sm:p-5">
+                <Header icon={<MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-[#B21063]" />} sub={`${reg?.name || ""}`} />
+                <div className="my-3 border-t border-neutral-100 dark:border-neutral-700" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <h4 className="text-[12px] sm:text-sm font-bold text-neutral-800 dark:text-neutral-100 mb-1">معلومات المنطقة</h4>
+                    <KV label="الإقليم" value={reg?.name || "—"} />
+                    <KV label="التصنيف" value={getGrade(entityId)} />
+                    <KV label="الحالة" value={getStatus(entityId).label} />
+                  </div>
+                  <div>
+                    <h4 className="text-[12px] sm:text-sm font-bold text-neutral-800 dark:text-neutral-100 mb-1">التواريخ</h4>
+                    <KV label="تاريخ التأسيس" value={dates.openDate} />
+                  </div>
+                  <div>
+                    <h4 className="text-[12px] sm:text-sm font-bold text-neutral-800 dark:text-neutral-100 mb-1">الإدارة</h4>
+                    <KV label="مدير الإقليم" value={managerName(10)} />
+                    <KV label="مدير المنطقة" value={managerName(20)} />
+                  </div>
+                </div>
+              </motion.div>
+            );
+          }
+
+          if (level === "regions") {
+            return (
+              <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-3 bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4 sm:p-5">
+                <Header icon={<MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-[#B21063]" />} />
+                <div className="my-3 border-t border-neutral-100 dark:border-neutral-700" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <h4 className="text-[12px] sm:text-sm font-bold text-neutral-800 dark:text-neutral-100 mb-1">معلومات الإقليم</h4>
+                    <KV label="الرمز" value={getEntityCode(entityId, "RGN")} />
+                    <KV label="التصنيف" value={getGrade(entityId)} />
+                  </div>
+                  <div>
+                    <h4 className="text-[12px] sm:text-sm font-bold text-neutral-800 dark:text-neutral-100 mb-1">التواريخ</h4>
+                    <KV label="تاريخ التأسيس" value={dates.openDate} />
+                  </div>
+                  <div>
+                    <h4 className="text-[12px] sm:text-sm font-bold text-neutral-800 dark:text-neutral-100 mb-1">الإدارة</h4>
+                    <KV label="مدير الإقليم" value={managerName(10)} />
+                  </div>
+                </div>
+              </motion.div>
+            );
+          }
+
+          return null;
+        })()}
 
                 {viewMode !== "table" && <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-1 sm:gap-2.5 pb-2 overflow-visible mx-1 sm:mx-0">
           <KpiCard title="إجمالي المبيعات" value={formatNum(totalSales)} sub={`الهدف: ${formatNum(totalTarget)}`} icon={ShoppingBag} color="#00C9A7" progress={achievementPct} />
