@@ -150,13 +150,13 @@ interface TasksPageProps { onBack?: () => void; onNewCampaign?: () => void; onNe
 const COLS = [
   { key: "title",       label: "اسم المهمة" },
   { key: "assignee",    label: "المسؤول" },
-  { key: "projectName", label: "المشروع" },
-  { key: "source",      label: "المصدر" },
   { key: "createdAt",   label: "تاريخ الإنشاء" },
   { key: "progress",    label: "الإنجاز" },
   { key: "subtasks",    label: "مهام فرعية" },
   { key: "dueDate",     label: "الموعد النهائي" },
   { key: "priority",    label: "الأولوية" },
+  { key: "projectName", label: "المشروع" },
+  { key: "source",      label: "المصدر" },
   { key: "status",      label: "الحالة" },
   { key: "id",          label: "رقم المهمة" },
   { key: "action",      label: "إجراء" },
@@ -852,28 +852,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
                                     </button>
                                   )}
                                 </td>
-                                <td className="px-3 py-3.5 whitespace-nowrap">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "project" ? null : { id: task.id, field: "project", top: r.bottom, right: window.innerWidth - r.right }); }}
-                                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-neutral-200 bg-white text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
-                                  >
-                                    <Briefcase className="w-3.5 h-3.5 text-blue-500" />
-                                    <span className="truncate max-w-[140px]">{task.projectName}</span>
-                                    <ChevronDown className="w-3 h-3 opacity-60" />
-                                  </button>
-                                </td>
-                                <td className="px-3 py-3.5 whitespace-nowrap">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "source" ? null : { id: task.id, field: "source", top: r.bottom, right: window.innerWidth - r.right }); }}
-                                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-neutral-200 bg-white text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
-                                  >
-                                    <Inbox className="w-3.5 h-3.5 text-amber-500" />
-                                    <span className="truncate max-w-[120px]">{task.taskSource || "غير محدد"}</span>
-                                    <ChevronDown className="w-3 h-3 opacity-60" />
-                                  </button>
-                                </td>
                                 <td className="px-3 py-3.5 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
                                   {task.createdAt ? fmtDate(task.createdAt) : "—"}
                                 </td>
@@ -922,6 +900,28 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
                                       <Flag className={cn("w-4 h-4", PRIORITY_CONFIG[task.priority].flag)} />
                                       <span>{PRIORITY_CONFIG[task.priority].label}</span>
                                     </span>
+                                    <ChevronDown className="w-3 h-3 opacity-60" />
+                                  </button>
+                                </td>
+                                <td className="px-3 py-3.5 whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "project" ? null : { id: task.id, field: "project", top: r.bottom, right: window.innerWidth - r.right }); }}
+                                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-neutral-200 bg-white text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                                  >
+                                    <Briefcase className="w-3.5 h-3.5 text-blue-500" />
+                                    <span className="truncate max-w-[140px]">{task.projectName}</span>
+                                    <ChevronDown className="w-3 h-3 opacity-60" />
+                                  </button>
+                                </td>
+                                <td className="px-3 py-3.5 whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "source" ? null : { id: task.id, field: "source", top: r.bottom, right: window.innerWidth - r.right }); }}
+                                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-neutral-200 bg-white text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                                  >
+                                    <Inbox className="w-3.5 h-3.5 text-amber-500" />
+                                    <span className="truncate max-w-[120px]">{task.taskSource || "غير محدد"}</span>
                                     <ChevronDown className="w-3 h-3 opacity-60" />
                                   </button>
                                 </td>

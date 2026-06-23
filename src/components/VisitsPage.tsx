@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin, Plus, Search, X, ChevronLeft, ChevronRight,
   Clock, Trash2, User, Calendar as CalendarIcon, Route,
-  Store, CheckCircle, XCircle, ClipboardList
+  Store, CheckCircle, XCircle, ClipboardList, Save, Pencil
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -53,6 +53,25 @@ type ActivityType =
   | "إجازة اسبوعية"
   | "أخرى";
 
+type VisitReason =
+  | "زيارة دورية"
+  | "متابعة المبيعات والمؤشرات"
+  | "متابعة التدريب"
+  | "متابعة المخزون وترتيب المعرض"
+  | "متابعة جودة خدمة العملاء"
+  | "دعم افتتاح معرض"
+  | "متابعة ملاحظة أو إجراء تصحيحي";
+
+const VISIT_REASONS: VisitReason[] = [
+  "زيارة دورية",
+  "متابعة المبيعات والمؤشرات",
+  "متابعة التدريب",
+  "متابعة المخزون وترتيب المعرض",
+  "متابعة جودة خدمة العملاء",
+  "دعم افتتاح معرض",
+  "متابعة ملاحظة أو إجراء تصحيحي",
+];
+
 const ACTIVITY_TYPES: { key: ActivityType; icon: string }[] = [
   { key: "زيارة معرض", icon: "🏬" },
   { key: "جرد معرض", icon: "📦" },
@@ -74,6 +93,7 @@ interface Visit {
   id: string;
   day: number;
   type: ActivityType;
+  reason?: VisitReason;
   showroom: string;
   route: string;
   startTime: string;
@@ -120,6 +140,7 @@ export default function VisitsPage() {
 
   const [newVisit, setNewVisit] = useState<Partial<Visit>>({
     type: "زيارة معرض",
+    reason: "زيارة دورية",
     showroom: SHOWROOMS[0],
     route: "",
     startTime: "09:00",
@@ -129,6 +150,7 @@ export default function VisitsPage() {
   });
   const [activityMenuOpen, setActivityMenuOpen] = useState(false);
   const [selectedActivityType, setSelectedActivityType] = useState<ActivityType | null>(null);
+  const [editingVisitId, setEditingVisitId] = useState<string | null>(null);
   const activityMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -165,23 +187,55 @@ export default function VisitsPage() {
     setSelectedDay(null);
   };
 
-  const handleAddVisit = () => {
+  const handleSaveVisit = () => {
     if (!selectedDay || !selectedActivityType) return;
-    const visit: Visit = {
-      id: generateId(),
-      day: selectedDay,
-      type: selectedActivityType,
-      showroom: newVisit.showroom || "",
-      route: newVisit.route || "",
-      startTime: newVisit.startTime || "",
-      endTime: newVisit.endTime || "",
-      status: (newVisit.status as any) || "planned",
-      notes: newVisit.notes || "",
-    };
-    setVisits(prev => [...prev, visit]);
-    setNewVisit({ type: "زيارة معرض", showroom: SHOWROOMS[0], route: "", startTime: "09:00", endTime: "12:00", status: "planned", notes: "" });
+    if (editingVisitId) {
+      setVisits(prev => prev.map(v => v.id === editingVisitId ? {
+        ...v,
+        type: selectedActivityType,
+        reason: newVisit.reason,
+        showroom: newVisit.showroom || "",
+        route: newVisit.route || "",
+        startTime: newVisit.startTime || "",
+        endTime: newVisit.endTime || "",
+        status: (newVisit.status as any) || "planned",
+        notes: newVisit.notes || "",
+      } : v));
+      setEditingVisitId(null);
+    } else {
+      const visit: Visit = {
+        id: generateId(),
+        day: selectedDay,
+        type: selectedActivityType,
+        reason: newVisit.reason,
+        showroom: newVisit.showroom || "",
+        route: newVisit.route || "",
+        startTime: newVisit.startTime || "",
+        endTime: newVisit.endTime || "",
+        status: (newVisit.status as any) || "planned",
+        notes: newVisit.notes || "",
+      };
+      setVisits(prev => [...prev, visit]);
+    }
+    setNewVisit({ type: "زيارة معرض", reason: "زيارة دورية", showroom: SHOWROOMS[0], route: "", startTime: "09:00", endTime: "12:00", status: "planned", notes: "" });
     setSelectedActivityType(null);
     setShowAddForm(false);
+  };
+
+  const handleEditVisit = (visit: Visit) => {
+    setEditingVisitId(visit.id);
+    setSelectedActivityType(visit.type);
+    setNewVisit({
+      type: visit.type,
+      reason: visit.reason,
+      showroom: visit.showroom,
+      route: visit.route,
+      startTime: visit.startTime,
+      endTime: visit.endTime,
+      status: visit.status,
+      notes: visit.notes,
+    });
+    setShowAddForm(true);
   };
 
   const handleDeleteVisit = (id: string) => {
@@ -442,33 +496,15 @@ export default function VisitsPage() {
                         {(["زيارة معرض", "جرد معرض", "زيارة تدقيق", "اغلاق معرض", "افتتاح معرض"].includes(selectedActivityType)) && (
                           <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">المعرض</label><select value={newVisit.showroom} onChange={e => setNewVisit(v => ({ ...v, showroom: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400/40 text-right">{SHOWROOMS.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
                         )}
-                        {/* From/To for transfers */}
-                        {selectedActivityType === "تحويلات" && (
-                          <>
-                            <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">من معرض</label><select value={newVisit.showroom} onChange={e => setNewVisit(v => ({ ...v, showroom: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400/40 text-right">{SHOWROOMS.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
-                            <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">إلى معرض</label><select value={newVisit.route} onChange={e => setNewVisit(v => ({ ...v, route: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400/40 text-right">{SHOWROOMS.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
-                          </>
+                        {/* Visit reason */}
+                        {(["زيارة معرض", "جرد معرض", "زيارة تدقيق", "جولة مع المدير المباشر"].includes(selectedActivityType)) && (
+                          <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">سبب الزيارة</label><select value={newVisit.reason} onChange={e => setNewVisit(v => ({ ...v, reason: e.target.value as VisitReason }))} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400/40 text-right">{VISIT_REASONS.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
                         )}
-                        {/* Route/location for activities needing it */}
-                        {(["زيارة معرض", "جولة مع المدير المباشر", "اجتماع البائعين", "أخرى"].includes(selectedActivityType)) && selectedActivityType !== "تحويلات" && (
-                          <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">{selectedActivityType === "أخرى" ? "العنوان / الوصف" : "المسار / الموقع"}</label><input value={newVisit.route} onChange={e => setNewVisit(v => ({ ...v, route: e.target.value }))} placeholder={selectedActivityType === "أخرى" ? "وصف النشاط..." : "وصف المسار..."} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-emerald-400/40 text-right" /></div>
-                        )}
-                        {/* Destination for travel */}
-                        {selectedActivityType === "سفر" && (
-                          <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">وجهة السفر</label><input value={newVisit.route} onChange={e => setNewVisit(v => ({ ...v, route: e.target.value }))} placeholder="المدينة / الوجهة..." className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-emerald-400/40 text-right" /></div>
-                        )}
-                        {/* Time fields for non-leave activities */}
-                        {!(["إجازة مرضية", "إجازة تعويضية", "إجازة اسبوعية"].includes(selectedActivityType)) && (
-                          <>
-                            <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">من</label><input type="time" value={newVisit.startTime} onChange={e => setNewVisit(v => ({ ...v, startTime: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400/40 text-right" /></div>
-                            <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">إلى</label><input type="time" value={newVisit.endTime} onChange={e => setNewVisit(v => ({ ...v, endTime: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400/40 text-right" /></div>
-                          </>
-                        )}
-                        <div className="sm:col-span-2"><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">ملاحظات</label><input value={newVisit.notes} onChange={e => setNewVisit(v => ({ ...v, notes: e.target.value }))} placeholder="أي ملاحظات إضافية..." className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-emerald-400/40 text-right" /></div>
+                        <div className="sm:col-span-2"><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">ملاحظات</label><textarea value={newVisit.notes} onChange={e => setNewVisit(v => ({ ...v, notes: e.target.value }))} placeholder="أي ملاحظات إضافية..." rows={3} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-emerald-400/40 text-right resize-none" /></div>
                       </div>
-                      <div className="flex items-center gap-2 pt-1">
-                        <button onClick={handleAddVisit} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-1.5 text-sm"><Plus className="w-4 h-4" />حفظ</button>
-                        <button onClick={() => { setShowAddForm(false); setSelectedActivityType(null); }} className="px-4 py-2.5 rounded-xl text-sm font-bold text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">إلغاء</button>
+                      <div className="flex items-center gap-2 pt-2">
+                        <button onClick={handleSaveVisit} className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"><Save className="w-4 h-4" />{editingVisitId ? "حفظ التعديلات" : "حفظ الزيارة"}</button>
+                        <button onClick={() => { setShowAddForm(false); setSelectedActivityType(null); }} className="px-6 py-3 rounded-xl text-sm font-bold text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">إلغاء</button>
                       </div>
                     </div>
                   </motion.div>
@@ -501,12 +537,22 @@ export default function VisitsPage() {
                           const timeStr = v.startTime && v.endTime ? `${v.startTime} – ${v.endTime}` : v.startTime || v.endTime || "—";
                           return (
                             <tr key={v.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/30 transition-colors">
-                              <td className="px-4 py-3"><span className="text-sm font-bold text-neutral-800 dark:text-neutral-100">{v.type}</span></td>
+                              <td className="px-4 py-3">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-sm font-bold text-neutral-800 dark:text-neutral-100">{v.type}</span>
+                                  {v.reason && <span className="text-[10px] text-neutral-500 dark:text-neutral-400">{v.reason}</span>}
+                                </div>
+                              </td>
                               <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300">{place}</td>
                               <td className="px-4 py-3"><div className="flex items-center gap-1 text-sm text-neutral-600 dark:text-neutral-300"><Clock className="w-3 h-3 text-neutral-400" /><span>{timeStr}</span></div></td>
                               <td className="px-4 py-3"><span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold", cfg.badgeBg, cfg.badgeText)}><span className={cn("w-1.5 h-1.5 rounded-full", cfg.dot)} />{cfg.label}</span></td>
                               <td className="px-4 py-3 text-xs text-neutral-400 dark:text-neutral-500">{v.notes || "—"}</td>
-                              <td className="px-4 py-3"><button onClick={() => handleDeleteVisit(v.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-neutral-400 hover:text-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button></td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-1">
+                                  <button onClick={() => handleEditVisit(v)} className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 text-neutral-400 hover:text-blue-500 transition-colors" title="تعديل"><Pencil className="w-3.5 h-3.5" /></button>
+                                  <button onClick={() => handleDeleteVisit(v.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-neutral-400 hover:text-red-500 transition-colors" title="حذف"><Trash2 className="w-3.5 h-3.5" /></button>
+                                </div>
+                              </td>
                             </tr>
                           );
                         })}
@@ -521,13 +567,19 @@ export default function VisitsPage() {
                       return (
                         <div key={v.id} className="p-4 space-y-2">
                           <div className="flex items-start justify-between gap-2">
-                            <span className="text-sm font-bold text-neutral-800 dark:text-white">{v.type}</span>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-sm font-bold text-neutral-800 dark:text-white">{v.type}</span>
+                              {v.reason && <span className="text-[10px] text-neutral-500 dark:text-neutral-400">{v.reason}</span>}
+                            </div>
                             <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0", cfg.badgeBg, cfg.badgeText)}><span className={cn("w-1.5 h-1.5 rounded-full", cfg.dot)} />{cfg.label}</span>
                           </div>
                           {place && <div className="text-xs text-neutral-500 dark:text-neutral-400">{place}</div>}
                           {timeStr && <div className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400"><Clock className="w-3 h-3" /><span>{timeStr}</span></div>}
                           {v.notes && <div className="text-[11px] text-neutral-400 dark:text-neutral-500 bg-neutral-50 dark:bg-neutral-700 rounded-lg p-2">{v.notes}</div>}
-                          <div className="flex items-center justify-end pt-1"><button onClick={() => handleDeleteVisit(v.id)} className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center gap-1"><Trash2 className="w-3 h-3" />حذف</button></div>
+                          <div className="flex items-center justify-end gap-2 pt-1">
+                            <button onClick={() => handleEditVisit(v)} className="text-xs font-bold text-blue-500 hover:text-blue-600 flex items-center gap-1"><Pencil className="w-3 h-3" />تعديل</button>
+                            <button onClick={() => handleDeleteVisit(v.id)} className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center gap-1"><Trash2 className="w-3 h-3" />حذف</button>
+                          </div>
                         </div>
                       );
                     })}
