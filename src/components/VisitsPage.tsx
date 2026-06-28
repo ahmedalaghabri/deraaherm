@@ -1,9 +1,9 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  MapPin, Plus, Search, X, ChevronLeft, ChevronRight,
-  Clock, Trash2, User, Calendar as CalendarIcon, Route,
-  Store, CheckCircle, XCircle, ClipboardList, Save, Pencil
+  MapPin, Plus, X, ChevronLeft, ChevronRight, ChevronDown,
+  Trash2, User, Calendar as CalendarIcon,
+  Store, CheckCircle, XCircle, ClipboardList, Save, Pencil, Star
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -35,7 +35,7 @@ const MONTHS_AR = [
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
 ];
 
-const DAYS_SHORT = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
+const DAYS_SHORT = ["سبت", "أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة"];
 
 type ActivityType =
   | "زيارة معرض"
@@ -100,13 +100,14 @@ interface Visit {
   endTime: string;
   status: "planned" | "completed" | "cancelled";
   notes: string;
+  rating?: number;
 }
 
 const sampleVisits: Visit[] = [
-  { id: "v1", day: 5, type: "زيارة معرض", showroom: "معرض الرياض - العليا", route: "المركز الرئيسي → فرع العليا → فرع الورود", startTime: "09:00", endTime: "12:00", status: "completed", notes: "" },
-  { id: "v2", day: 5, type: "زيارة معرض", showroom: "معرض جدة - التحلية", route: "فرع التحلية → فرع الأندلس", startTime: "14:00", endTime: "17:00", status: "planned", notes: "" },
-  { id: "v3", day: 12, type: "جرد معرض", showroom: "معرض الدمام - الشاطئ", route: "", startTime: "10:00", endTime: "13:00", status: "planned", notes: "" },
-  { id: "v4", day: 18, type: "زيارة تدقيق", showroom: "معرض مكة - العزيزية", route: "", startTime: "09:30", endTime: "12:30", status: "completed", notes: "" },
+  { id: "v1", day: 5, type: "زيارة معرض", showroom: "معرض الرياض - العليا", route: "المركز الرئيسي → فرع العليا → فرع الورود", startTime: "09:00", endTime: "12:00", status: "completed", notes: "", rating: 4 },
+  { id: "v2", day: 5, type: "زيارة معرض", showroom: "معرض جدة - التحلية", route: "فرع التحلية → فرع الأندلس", startTime: "14:00", endTime: "17:00", status: "planned", notes: "", rating: 3 },
+  { id: "v3", day: 12, type: "جرد معرض", showroom: "معرض الدمام - الشاطئ", route: "", startTime: "10:00", endTime: "13:00", status: "planned", notes: "", rating: 5 },
+  { id: "v4", day: 18, type: "زيارة تدقيق", showroom: "معرض مكة - العزيزية", route: "", startTime: "09:30", endTime: "12:30", status: "completed", notes: "", rating: 2 },
   { id: "v5", day: 25, type: "إجازة مرضية", showroom: "", route: "", startTime: "", endTime: "", status: "cancelled", notes: "تأجيل للأسبوع القادم" },
 ];
 
@@ -123,13 +124,12 @@ const STATUS_CONFIG = {
   cancelled:  { label: "ملغي",    badgeBg: "bg-red-50",     badgeText: "text-red-600",     dot: "bg-red-500" },
 };
 
-export default function VisitsPage() {
-  const today = new Date();
+interface VisitsPageProps {
+  selectedSupervisor: string;
+}
 
-  const [selectedSupervisor, setSelectedSupervisor] = useState<string>("");
-  const [supervisorSearch, setSupervisorSearch] = useState("");
-  const [supervisorOpen, setSupervisorOpen] = useState(false);
-  const supervisorRef = useRef<HTMLDivElement>(null);
+export default function VisitsPage({ selectedSupervisor }: VisitsPageProps) {
+  const today = new Date();
 
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
@@ -147,26 +147,28 @@ export default function VisitsPage() {
     endTime: "12:00",
     status: "planned",
     notes: "",
+    rating: undefined,
   });
   const [activityMenuOpen, setActivityMenuOpen] = useState(false);
   const [selectedActivityType, setSelectedActivityType] = useState<ActivityType | null>(null);
   const [editingVisitId, setEditingVisitId] = useState<string | null>(null);
   const activityMenuRef = useRef<HTMLDivElement>(null);
 
+  const [evalModalOpen, setEvalModalOpen] = useState(false);
+  const [evaluatingVisit, setEvaluatingVisit] = useState<Visit | null>(null);
+  const [evaluationForm, setEvaluationForm] = useState<Record<string, string>>({});
+  const [evalModalTab, setEvalModalTab] = useState<"results" | "edit">("results");
+  const [evalDropdownOpen, setEvalDropdownOpen] = useState<string | null>(null);
+  const evalDropdownRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (supervisorRef.current && !supervisorRef.current.contains(e.target as Node)) setSupervisorOpen(false);
       if (activityMenuRef.current && !activityMenuRef.current.contains(e.target as Node)) setActivityMenuOpen(false);
+      if (evalDropdownRef.current && !evalDropdownRef.current.contains(e.target as Node)) setEvalDropdownOpen(null);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  const filteredSupervisors = useMemo(() => {
-    const q = supervisorSearch.trim();
-    if (!q) return SUPERVISORS;
-    return SUPERVISORS.filter(s => s.name.includes(q));
-  }, [supervisorSearch]);
 
   const daysInMonth = getDaysInMonth(year, month);
 
@@ -175,17 +177,6 @@ export default function VisitsPage() {
     return visits.filter(v => v.day === selectedDay);
   }, [visits, selectedDay]);
 
-
-  const prevMonth = () => {
-    if (month === 0) { setYear(y => y - 1); setMonth(11); }
-    else setMonth(m => m - 1);
-    setSelectedDay(null);
-  };
-  const nextMonth = () => {
-    if (month === 11) { setYear(y => y + 1); setMonth(0); }
-    else setMonth(m => m + 1);
-    setSelectedDay(null);
-  };
 
   const handleSaveVisit = () => {
     if (!selectedDay || !selectedActivityType) return;
@@ -200,6 +191,7 @@ export default function VisitsPage() {
         endTime: newVisit.endTime || "",
         status: (newVisit.status as any) || "planned",
         notes: newVisit.notes || "",
+        rating: newVisit.rating,
       } : v));
       setEditingVisitId(null);
     } else {
@@ -214,10 +206,11 @@ export default function VisitsPage() {
         endTime: newVisit.endTime || "",
         status: (newVisit.status as any) || "planned",
         notes: newVisit.notes || "",
+        rating: newVisit.rating,
       };
       setVisits(prev => [...prev, visit]);
     }
-    setNewVisit({ type: "زيارة معرض", reason: "زيارة دورية", showroom: SHOWROOMS[0], route: "", startTime: "09:00", endTime: "12:00", status: "planned", notes: "" });
+    setNewVisit({ type: "زيارة معرض", reason: "زيارة دورية", showroom: SHOWROOMS[0], route: "", startTime: "09:00", endTime: "12:00", status: "planned", notes: "", rating: undefined });
     setSelectedActivityType(null);
     setShowAddForm(false);
   };
@@ -234,6 +227,7 @@ export default function VisitsPage() {
       endTime: visit.endTime,
       status: visit.status,
       notes: visit.notes,
+      rating: visit.rating,
     });
     setShowAddForm(true);
   };
@@ -244,64 +238,48 @@ export default function VisitsPage() {
 
   const selectedSupervisorName = SUPERVISORS.find(s => s.id === selectedSupervisor)?.name || "";
 
-  return (
-    <div dir="rtl" className="min-h-screen bg-[#F4F8FE] dark:bg-neutral-900 font-sans">
-      <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700 rounded-xl">
-        <div className="max-w-[1400px] mx-auto">
-          <div className="px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                <Route className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <h1 className="text-base sm:text-lg font-bold text-neutral-800 dark:text-white leading-tight">خط سير الزيارات</h1>
-                <p className="text-[11px] text-neutral-400 dark:text-neutral-500">تخطيط وإدارة جولات المشرفين</p>
-              </div>
-            </div>
-            <div className="flex-1 flex items-center gap-2 sm:gap-3 min-w-0 sm:mr-auto">
-              <div className="relative flex-1 min-w-0 max-w-[280px]" ref={supervisorRef}>
-                <button onClick={() => setSupervisorOpen(v => !v)} className={cn("w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all text-right", supervisorOpen ? "border-emerald-400 ring-2 ring-emerald-400/20" : "border-neutral-200 dark:border-neutral-600 hover:border-neutral-300")}>
-                  <User className="w-4 h-4 text-neutral-400 shrink-0" />
-                  <span className={cn("truncate flex-1", selectedSupervisor ? "text-neutral-800 dark:text-white" : "text-neutral-400")}>{selectedSupervisorName || "اختر المشرف"}</span>
-                  <ChevronLeft className={cn("w-3.5 h-3.5 text-neutral-400 transition-transform shrink-0", supervisorOpen && "-rotate-90")} />
+  const EvalSelect = ({ fieldKey, value, options, placeholder, onChange }: { fieldKey: string; value: string; options: { value: string; label: string }[]; placeholder: string; onChange: (val: string) => void }) => (
+    <div className="relative">
+      <button onClick={() => setEvalDropdownOpen(evalDropdownOpen === fieldKey ? null : fieldKey)} className={cn("w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border bg-white dark:bg-neutral-800 text-sm font-medium transition-all", evalDropdownOpen === fieldKey ? "border-indigo-500 ring-2 ring-indigo-200/50 dark:border-indigo-400 dark:ring-indigo-400/20" : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500")}>
+        <span className={cn("truncate flex-1 text-right", value ? "text-neutral-800 dark:text-white" : "text-neutral-400 dark:text-neutral-500")}>{options.find(o => o.value === value)?.label || placeholder}</span>
+        <ChevronDown className={cn("w-4 h-4 text-neutral-400 transition-transform shrink-0", evalDropdownOpen === fieldKey && "rotate-180")} />
+      </button>
+      <AnimatePresence>
+        {evalDropdownOpen === fieldKey && (
+          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute top-full left-0 right-0 mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden">
+            <div className="max-h-[200px] overflow-y-auto py-1">
+              {options.map(o => (
+                <button key={o.value} onClick={() => { onChange(o.value); setEvalDropdownOpen(null); }} className={cn("w-full text-right px-4 py-2.5 text-sm transition-colors", value === o.value ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-semibold" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
+                  {o.label}
                 </button>
-                <AnimatePresence>
-                  {supervisorOpen && (
-                    <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute top-full left-0 right-0 mt-2 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden">
-                      <div className="p-2 border-b border-neutral-100 dark:border-neutral-700">
-                        <div className="relative">
-                          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
-                          <input value={supervisorSearch} onChange={e => setSupervisorSearch(e.target.value)} placeholder="بحث..." className="w-full pr-9 pl-3 py-2 text-sm rounded-lg border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 text-right" />
-                        </div>
-                      </div>
-                      <div className="max-h-[200px] overflow-y-auto py-1">
-                        {filteredSupervisors.map(s => (
-                          <button key={s.id} onClick={() => { setSelectedSupervisor(s.id); setSupervisorOpen(false); setSupervisorSearch(""); }} className={cn("w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-right", selectedSupervisor === s.id ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
-                            <User className="w-4 h-4 text-neutral-400 shrink-0" /><span>{s.name}</span>
-                          </button>
-                        ))}
-                        {filteredSupervisors.length === 0 && <div className="px-3 py-4 text-sm text-neutral-400 text-center">لا يوجد نتائج</div>}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-              <div className="flex items-center gap-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl px-1 py-1 shrink-0">
-                <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"><ChevronRight className="w-4 h-4 text-neutral-500" /></button>
-                <select value={month} onChange={e => { setMonth(Number(e.target.value)); setSelectedDay(null); }} className="text-sm font-bold text-neutral-800 dark:text-white bg-transparent outline-none py-1 px-2 cursor-pointer min-w-[80px] text-center appearance-none">
-                  {MONTHS_AR.map((m, i) => <option key={i} value={i}>{m}</option>)}
-                </select>
-                <select value={year} onChange={e => { setYear(Number(e.target.value)); setSelectedDay(null); }} className="text-sm font-bold text-neutral-800 dark:text-white bg-transparent outline-none py-1 px-2 cursor-pointer min-w-[64px] text-center appearance-none">
-                  {[today.getFullYear(), today.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
-                </select>
-                <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"><ChevronLeft className="w-4 h-4 text-neutral-500" /></button>
-              </div>
+              ))}
             </div>
-          </div>
-        </div>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 
-      <div className="max-w-[1400px] mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+  const evalOptions = [
+    { value: "", label: "اختر" },
+    { value: "25%", label: "سيء - 25%" },
+    { value: "50%", label: "متوسط - 50%" },
+    { value: "75%", label: "جيد - 75%" },
+    { value: "100%", label: "ممتاز - 100%" },
+  ];
+
+  const ratingOptions = [
+    { value: "", label: "بدون تقييم" },
+    { value: "1", label: "1 نجوم" },
+    { value: "2", label: "2 نجوم" },
+    { value: "3", label: "3 نجوم" },
+    { value: "4", label: "4 نجوم" },
+    { value: "5", label: "5 نجوم" },
+  ];
+
+  return (
+    <div dir="rtl" className="min-h-screen font-sans">
+      <div className="max-w-full mx-auto px-0 sm:px-0 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {selectedSupervisor && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex lg:grid lg:grid-cols-5 gap-3 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 scrollbar-hide snap-x snap-mandatory">
             {/* Supervisor Card */}
@@ -353,7 +331,16 @@ export default function VisitsPage() {
         <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm overflow-hidden">
           <div className="px-4 sm:px-6 py-3 border-b border-neutral-100 dark:border-neutral-700 flex items-center justify-between">
             <h2 className="text-sm font-bold text-neutral-700 dark:text-neutral-200 flex items-center gap-2"><CalendarIcon className="w-4 h-4 text-neutral-400" />تقويم {MONTHS_AR[month]} {year}</h2>
-            <span className="text-xs text-neutral-400 dark:text-neutral-500">{selectedDay ? `اليوم ${selectedDay} محدد` : "اختر يوماً"}</span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => { if (month === 0) { setYear(y => y - 1); setMonth(11); } else setMonth(m => m - 1); setSelectedDay(null); }} className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"><ChevronLeft className="w-4 h-4 text-neutral-500" /></button>
+              <select value={month} onChange={e => { setMonth(Number(e.target.value)); setSelectedDay(null); }} className="text-xs font-bold text-neutral-800 dark:text-white bg-transparent outline-none py-1 px-2 cursor-pointer min-w-[60px] text-center appearance-none">
+                {MONTHS_AR.map((m, i) => <option key={i} value={i}>{m}</option>)}
+              </select>
+              <select value={year} onChange={e => { setYear(Number(e.target.value)); setSelectedDay(null); }} className="text-xs font-bold text-neutral-800 dark:text-white bg-transparent outline-none py-1 px-2 cursor-pointer min-w-[48px] text-center appearance-none">
+                {[today.getFullYear(), today.getFullYear() + 1].map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+              <button onClick={() => { if (month === 11) { setYear(y => y + 1); setMonth(0); } else setMonth(m => m + 1); setSelectedDay(null); }} className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"><ChevronRight className="w-4 h-4 text-neutral-500" /></button>
+            </div>
           </div>
           <div className="py-2 px-2 sm:px-3">
             <div className="grid grid-cols-5 sm:grid-cols-10 gap-1 sm:gap-1.5">
@@ -361,7 +348,7 @@ export default function VisitsPage() {
                 const day = i + 1;
                 const isSel = selectedDay === day;
                 const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
-                const dayName = DAYS_SHORT[new Date(year, month, day).getDay()];
+                const dayName = DAYS_SHORT[(new Date(year, month, day).getDay() + 1) % 7];
                 const dayVisits = visits.filter(v => v.day === day);
                 const dayVisitCount = dayVisits.length;
 
@@ -500,6 +487,7 @@ export default function VisitsPage() {
                         {(["زيارة معرض", "جرد معرض", "زيارة تدقيق", "جولة مع المدير المباشر"].includes(selectedActivityType)) && (
                           <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">سبب الزيارة</label><select value={newVisit.reason} onChange={e => setNewVisit(v => ({ ...v, reason: e.target.value as VisitReason }))} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400/40 text-right">{VISIT_REASONS.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
                         )}
+                        <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">التقييم</label><select value={newVisit.rating || ""} onChange={e => setNewVisit(v => ({ ...v, rating: e.target.value ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400/40 text-right"><option value="">بدون تقييم</option>{[1,2,3,4,5].map(r => <option key={r} value={r}>{r} نجوم</option>)}</select></div>
                         <div className="sm:col-span-2"><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">ملاحظات</label><textarea value={newVisit.notes} onChange={e => setNewVisit(v => ({ ...v, notes: e.target.value }))} placeholder="أي ملاحظات إضافية..." rows={3} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-emerald-400/40 text-right resize-none" /></div>
                       </div>
                       <div className="flex items-center gap-2 pt-2">
@@ -524,9 +512,10 @@ export default function VisitsPage() {
                         <tr>
                           <th className="px-4 py-3 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap">النشاط</th>
                           <th className="px-4 py-3 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap">المكان</th>
-                          <th className="px-4 py-3 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap">الوقت</th>
+                          <th className="px-4 py-3 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap">التاريخ</th>
                           <th className="px-4 py-3 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap">الحالة</th>
                           <th className="px-4 py-3 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap">ملاحظات</th>
+                          <th className="px-4 py-3 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap">التقييم</th>
                           <th className="px-4 py-3 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap w-10"></th>
                         </tr>
                       </thead>
@@ -534,7 +523,7 @@ export default function VisitsPage() {
                         {dayVisits.map(v => {
                           const cfg = STATUS_CONFIG[v.status];
                           const place = v.showroom || v.route || "—";
-                          const timeStr = v.startTime && v.endTime ? `${v.startTime} – ${v.endTime}` : v.startTime || v.endTime || "—";
+                          const dateStr = `${v.day}/${month + 1}/${year}`;
                           return (
                             <tr key={v.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/30 transition-colors">
                               <td className="px-4 py-3">
@@ -544,9 +533,10 @@ export default function VisitsPage() {
                                 </div>
                               </td>
                               <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300">{place}</td>
-                              <td className="px-4 py-3"><div className="flex items-center gap-1 text-sm text-neutral-600 dark:text-neutral-300"><Clock className="w-3 h-3 text-neutral-400" /><span>{timeStr}</span></div></td>
+                              <td className="px-4 py-3"><div className="flex items-center gap-1 text-sm text-neutral-600 dark:text-neutral-300"><CalendarIcon className="w-3 h-3 text-neutral-400" /><span>{dateStr}</span></div></td>
                               <td className="px-4 py-3"><span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold", cfg.badgeBg, cfg.badgeText)}><span className={cn("w-1.5 h-1.5 rounded-full", cfg.dot)} />{cfg.label}</span></td>
                               <td className="px-4 py-3 text-xs text-neutral-400 dark:text-neutral-500">{v.notes || "—"}</td>
+                              <td className="px-4 py-3"><button onClick={() => { setEvaluatingVisit(v); setEvaluationForm(v.rating ? { rating: String(v.rating) } : {}); setEvalModalOpen(true); }} className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"><Star className="w-3.5 h-3.5" />تقييم الزيارة</button></td>
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-1">
                                   <button onClick={() => handleEditVisit(v)} className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 text-neutral-400 hover:text-blue-500 transition-colors" title="تعديل"><Pencil className="w-3.5 h-3.5" /></button>
@@ -563,7 +553,7 @@ export default function VisitsPage() {
                     {dayVisits.map(v => {
                       const cfg = STATUS_CONFIG[v.status];
                       const place = v.showroom || v.route || "";
-                      const timeStr = v.startTime && v.endTime ? `${v.startTime} – ${v.endTime}` : v.startTime || v.endTime || "";
+                      const dateStr = `${v.day}/${month + 1}/${year}`;
                       return (
                         <div key={v.id} className="p-4 space-y-2">
                           <div className="flex items-start justify-between gap-2">
@@ -574,8 +564,9 @@ export default function VisitsPage() {
                             <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0", cfg.badgeBg, cfg.badgeText)}><span className={cn("w-1.5 h-1.5 rounded-full", cfg.dot)} />{cfg.label}</span>
                           </div>
                           {place && <div className="text-xs text-neutral-500 dark:text-neutral-400">{place}</div>}
-                          {timeStr && <div className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400"><Clock className="w-3 h-3" /><span>{timeStr}</span></div>}
+                          {dateStr && <div className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400"><CalendarIcon className="w-3 h-3" /><span>{dateStr}</span></div>}
                           {v.notes && <div className="text-[11px] text-neutral-400 dark:text-neutral-500 bg-neutral-50 dark:bg-neutral-700 rounded-lg p-2">{v.notes}</div>}
+                          <button onClick={() => { setEvaluatingVisit(v); setEvaluationForm(v.rating ? { rating: String(v.rating) } : {}); setEvalModalOpen(true); }} className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors self-start"><Star className="w-3.5 h-3.5" />تقييم الزيارة</button>
                           <div className="flex items-center justify-end gap-2 pt-1">
                             <button onClick={() => handleEditVisit(v)} className="text-xs font-bold text-blue-500 hover:text-blue-600 flex items-center gap-1"><Pencil className="w-3 h-3" />تعديل</button>
                             <button onClick={() => handleDeleteVisit(v.id)} className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center gap-1"><Trash2 className="w-3 h-3" />حذف</button>
@@ -590,6 +581,141 @@ export default function VisitsPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Evaluation Modal */}
+      {evalModalOpen && evaluatingVisit && (
+        <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm flex items-start justify-center pt-12 sm:pt-20 px-3" onClick={() => setEvalModalOpen(false)}>
+          <div ref={evalDropdownRef} className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-neutral-700">
+              <h3 className="text-sm font-bold text-neutral-800 dark:text-white flex items-center gap-2"><Star className="w-4 h-4 text-amber-500" />تقييم الزيارة - {evaluatingVisit.showroom || evaluatingVisit.type}</h3>
+              <button onClick={() => setEvalModalOpen(false)} className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"><X className="w-4 h-4 text-neutral-500" /></button>
+            </div>
+            {/* Tabs */}
+            <div className="flex items-center gap-0.5 p-1 bg-neutral-100 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-700">
+              <button onClick={() => setEvalModalTab("results")} className={cn("flex-1 py-2 rounded-lg text-sm font-bold transition-all", evalModalTab === "results" ? "bg-white dark:bg-neutral-600 text-neutral-800 dark:text-white shadow-sm" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200")}>نتائج التقييم</button>
+              <button onClick={() => setEvalModalTab("edit")} className={cn("flex-1 py-2 rounded-lg text-sm font-bold transition-all", evalModalTab === "edit" ? "bg-white dark:bg-neutral-600 text-neutral-800 dark:text-white shadow-sm" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200")}>تعديل / إضافة</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              {evalModalTab === "results" ? (
+                <div className="space-y-3">
+                  {[
+                    ["cleanliness","نظافة الواجهة واللوحة"],
+                    ["display_clean","نظافة العرض والأرفف والأرضيات"],
+                    ["single_display","تطبيق العرض الواحد"],
+                    ["new_products","عرض المنتجات الجديدة"],
+                    ["promo_materials","عرض وحالة المواد الترويجية"],
+                    ["warehouse","ترتيب المستودع والبضاعة والأدراج"],
+                    ["uniform","الزي الرسمي للبائعين"],
+                    ["attendance","التزام البائعين بفترات الدوام"],
+                    ["fragrance","توافر النسائم"],
+                    ["google_reviews","مراجعة تقييمات جوجل ماب مع البائعين"],
+                    ["customer_data","مراجعة نسب تسجيل بيانات العملاء"],
+                    ["seller_kpis","مناقشة مؤشرات ومبيعات البائعين"],
+                    ["display_kpis","مناقشة مؤشرات ومبيعات العرض"],
+                    ["new_items_sales","مناقشة مبيعات الأصناف الجديدة والمستهدفة"],
+                    ["strategic_items","مراجعة توافر الأصناف الإستراتيجية"],
+                    ["training","تدريب البائعين"],
+                    ["weak_seller_training","تنفيذ التدريب الفردي للبائع الأضعف"],
+                  ].map(([key, label]) => {
+                    const val = evaluationForm[key];
+                    const labelMap: Record<string, string> = { "100%": "ممتاز", "75%": "جيد", "50%": "متوسط", "25%": "سيء" };
+                    const display = val ? `${labelMap[val] || val} - ${val}` : "غير مقيّم";
+                    const color = val === "100%" ? "text-emerald-600" : val === "75%" ? "text-sky-600" : val === "50%" ? "text-amber-600" : val === "25%" ? "text-red-600" : "text-neutral-400";
+                    return (
+                      <div key={key} className="flex items-center justify-between py-2 border-b border-neutral-100 dark:border-neutral-700 last:border-0">
+                        <span className="text-sm text-neutral-700 dark:text-neutral-200">{label}</span>
+                        <span className={cn("text-sm font-bold", color)}>{display}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-sm font-bold text-neutral-800 dark:text-white">التقييم العام</span>
+                    <div className="flex items-center gap-0.5 text-amber-500">{evaluatingVisit.rating ? Array.from({ length: evaluatingVisit.rating }).map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />) : <span className="text-neutral-400 text-sm">بدون تقييم</span>}</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-neutral-50 dark:bg-neutral-700/30 rounded-xl border border-neutral-200 dark:border-neutral-600 p-3">
+                    <label className="block text-[11px] font-bold text-neutral-600 dark:text-neutral-300 mb-1">تقييم الكل بنسبة معينة</label>
+                    <EvalSelect
+                      fieldKey="bulk"
+                      value=""
+                      placeholder="اختر نسبة لتطبيقها على الكل"
+                      options={[
+                        { value: "", label: "اختر نسبة لتطبيقها على الكل" },
+                        { value: "100%", label: "ممتاز - 100%" },
+                        { value: "75%", label: "جيد - 75%" },
+                        { value: "50%", label: "متوسط - 50%" },
+                        { value: "25%", label: "سيء - 25%" },
+                      ]}
+                      onChange={val => {
+                        if (!val) return;
+                        const keys = ["cleanliness","display_clean","single_display","new_products","promo_materials","warehouse","uniform","attendance","fragrance","google_reviews","customer_data","seller_kpis","display_kpis","new_items_sales","strategic_items","training","weak_seller_training"];
+                        setEvaluationForm(prev => {
+                          const next = { ...prev };
+                          keys.forEach(k => { next[k] = val; });
+                          return next;
+                        });
+                      }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      ["cleanliness","نظافة الواجهة واللوحة"],
+                      ["display_clean","نظافة العرض والأرفف والأرضيات"],
+                      ["single_display","تطبيق العرض الواحد"],
+                      ["new_products","عرض المنتجات الجديدة"],
+                      ["promo_materials","عرض وحالة المواد الترويجية"],
+                      ["warehouse","ترتيب المستودع والبضاعة والأدراج"],
+                      ["uniform","الزي الرسمي للبائعين"],
+                      ["attendance","التزام البائعين بفترات الدوام"],
+                      ["fragrance","توافر النسائم"],
+                      ["google_reviews","مراجعة تقييمات جوجل ماب مع البائعين"],
+                      ["customer_data","مراجعة نسب تسجيل بيانات العملاء"],
+                      ["seller_kpis","مناقشة مؤشرات ومبيعات البائعين"],
+                      ["display_kpis","مناقشة مؤشرات ومبيعات العرض"],
+                      ["new_items_sales","مناقشة مبيعات الأصناف الجديدة والمستهدفة"],
+                      ["strategic_items","مراجعة توافر الأصناف الإستراتيجية"],
+                      ["training","تدريب البائعين"],
+                      ["weak_seller_training","تنفيذ التدريب الفردي للبائع الأضعف"],
+                    ].map(([key, label]) => (
+                      <div key={key}>
+                        <label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">{label}</label>
+                        <EvalSelect
+                          fieldKey={key}
+                          value={evaluationForm[key] || ""}
+                          placeholder="اختر"
+                          options={evalOptions}
+                          onChange={val => setEvaluationForm(prev => ({ ...prev, [key]: val }))}
+                        />
+                      </div>
+                    ))}
+                    <div>
+                      <label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">التقييم العام (نجوم)</label>
+                      <EvalSelect
+                        fieldKey="rating"
+                        value={evaluationForm.rating || ""}
+                        placeholder="بدون تقييم"
+                        options={ratingOptions}
+                        onChange={val => setEvaluationForm(prev => ({ ...prev, rating: val }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 pt-3">
+                    <button onClick={() => {
+                      const ratingVal = evaluationForm.rating ? Number(evaluationForm.rating) : undefined;
+                      setVisits(prev => prev.map(v => v.id === evaluatingVisit.id ? { ...v, rating: ratingVal } : v));
+                      setEvalModalTab("results");
+                    }} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors text-sm shadow-sm shadow-indigo-200/50">حفظ التقييم</button>
+                    <button onClick={() => { setEvalModalOpen(false); setEvaluatingVisit(null); }} className="flex-1 py-3 rounded-xl text-sm font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">إلغاء</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

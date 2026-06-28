@@ -105,7 +105,7 @@ export default function AnnualLeaveForm({ onCancel, onSubmit }: AnnualLeaveFormP
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[radial-gradient(40%_40%_at_100%_0%,#eef2ff_0%,transparent_60%),radial-gradient(50%_40%_at_0%_100%,#fff1f2_0%,transparent_60%)]">
+    <div dir="rtl" className="min-h-screen">
       <div className="mx-auto max-w-[1400px] p-3 sm:p-6 space-y-4 sm:space-y-6">
 
         {/* Header Card */}

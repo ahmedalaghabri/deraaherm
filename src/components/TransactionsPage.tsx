@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { FilePlus, Inbox, Send, Archive, Car, Plane, Heart, GraduationCap, Baby, FileText, MessageSquare, ChevronLeft, User, Calendar } from "lucide-react";
 import { cn } from "../lib/utils";
+import PageTabs from "./PageTabs";
 
 type Tab = "new" | "inbox" | "outbox" | "archive";
 type StatusFilter = "all" | "completed" | "pending" | "urgent" | "rejected";
@@ -75,38 +76,26 @@ export default function TransactionsPage({ onNewTransaction }: Props) {
   }, [activeTab, statusFilter]);
 
   return (
-    <div dir="rtl" className="min-h-screen" style={{ backgroundColor: "#F4F8FE" }}>
+    <div dir="rtl" className="min-h-screen">
       {/* Sub-tabs */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700 shadow-sm">
-        <div className="px-1 sm:px-4 py-2">
-          <div className="flex items-center gap-1 bg-neutral-0 dark:bg-neutral-800 rounded-full p-1 w-full min-w-0 sm:max-w-[60%] sm:mx-auto">
-            {TABS.map(([key, label]) => (
-              <button key={key} onClick={() => { setActiveTab(key); setStatusFilter("all"); }}
-                className={cn(
-                  "flex flex-1 items-center justify-center py-1.5 px-2 sm:px-3 rounded-full text-[13px] sm:text-[14px] font-bold transition-all duration-200 min-w-0",
-                  activeTab === key
-                    ? "bg-neutral-900 text-white shadow-sm"
-                    : "bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 hover:text-neutral-900 dark:hover:text-white"
-                )}>
-                {label}
-              </button>
-            ))}
-          </div>
+      <PageTabs
+        tabs={TABS.map(([key, label]) => [key, label]) as [Tab, string][]}
+        active={activeTab}
+        onChange={(key) => { setActiveTab(key as Tab); setStatusFilter("all"); }}
+      />
+      {activeTab !== "new" && (
+        <div className="px-4 py-2.5 flex gap-2 overflow-x-auto scrollbar-hide bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700">
+          {STATUS_FILTERS.map(([key, label]) => (
+            <button key={key} onClick={() => setStatusFilter(key)}
+              className={cn(
+                "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0",
+                statusFilter === key ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
+              )}>
+              {label}
+            </button>
+          ))}
         </div>
-        {activeTab !== "new" && (
-          <div className="px-4 pb-2.5 flex gap-2 overflow-x-auto scrollbar-hide">
-            {STATUS_FILTERS.map(([key, label]) => (
-              <button key={key} onClick={() => setStatusFilter(key)}
-                className={cn(
-                  "px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0",
-                  statusFilter === key ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
-                )}>
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
 
       <div className="p-3 sm:p-5 max-w-5xl mx-auto">
         {/* New Transaction */}

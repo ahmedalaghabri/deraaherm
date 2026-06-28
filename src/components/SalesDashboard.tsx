@@ -45,10 +45,10 @@ export default function SalesDashboard({ onBack }: SalesDashboardProps) {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen flex flex-col font-sans antialiased" style={{ backgroundColor: '#FAFCFF' }}>
+    <div dir="rtl" className="min-h-screen flex flex-col font-sans antialiased">
 
       {/* ─── Top Header ─── */}
-      <header className="sticky top-0 z-30 backdrop-blur border-b border-neutral-200" style={{ backgroundColor: '#FAFCFF' }}>
+      <header className="sticky top-0 z-30 backdrop-blur border-b border-neutral-200 bg-white/80">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="h-16 flex items-center gap-3">
 

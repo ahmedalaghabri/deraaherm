@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo, useRef, Fragment } from "react";
-import { Plus, Search, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, MoreHorizontal, List, LayoutGrid, Calendar as CalendarIcon, ArrowUpDown, Megaphone, Briefcase, Flag, UserCircle, Paperclip, Bell, Calendar, Users, Building2, FolderOpen, Inbox, Clock, CheckSquare, Circle, Send, Star, Hash, Play, FilePlus, Pencil, Trash2, Printer, FileDown } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, MoreHorizontal, List, LayoutGrid, Calendar as CalendarIcon, ArrowUpDown, Megaphone, Briefcase, Flag, UserCircle, Paperclip, Bell, Calendar, Users, Building2, FolderOpen, Inbox, Clock, CheckSquare, Circle, Send, Star, Hash, Play, FilePlus, Pencil, Trash2, Printer, FileDown, MapPin, Store } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../lib/utils";
+import PageTabs from "./PageTabs";
 import CampaignsPage from "./CampaignsPage";
 import TeamsPage from "./TeamsPage";
 import VisitsPage from "./VisitsPage";
+import TeamSchedulePage from "./TeamSchedulePage";
 
 type TaskStatus = "todo" | "in-progress" | "in-review" | "completed" | "overdue";
 type TaskPriority = "low" | "medium" | "high" | "urgent";
@@ -145,7 +147,7 @@ const PRIORITY_CONFIG: Record<TaskPriority, { label: string; bg: string; text: s
   low:    { label: "منخفضة",  bg: "bg-gray-100",   text: "text-gray-600",   flag: "text-gray-400" },
 };
 
-interface TasksPageProps { onBack?: () => void; onNewCampaign?: () => void; onNewProject?: () => void; }
+interface TasksPageProps { onBack?: () => void; onNewCampaign?: () => void; }
 
 const COLS = [
   { key: "title",       label: "اسم المهمة" },
@@ -162,7 +164,7 @@ const COLS = [
   { key: "action",      label: "إجراء" },
 ] as const;
 
-export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject }: TasksPageProps) {
+export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageProps) {
   const [tasks, setTasks] = useState<Task[]>(() => getInitialTasks());
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -174,7 +176,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
   const [form, setForm] = useState<Partial<Task>>({ status: "todo", priority: "medium", progress: 0 });
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState<"tasks" | "campaigns" | "projects" | "teams" | "visits">("tasks");
+  const [activeTab, setActiveTab] = useState<"tasks" | "campaigns" | "teams" | "visits" | "team_schedule">("tasks");
   const [detailMobileTab, setDetailMobileTab] = useState<"details" | "activity">("details");
   const [detailDropdown, setDetailDropdown] = useState<"status" | "assignee" | "priority" | "dueDate" | "source" | "project" | "tags" | null>(null);
   const [formDropdown, setFormDropdown] = useState<"status" | "assignee" | "dueDate" | "priority" | "tags" | "source" | "project" | null>(null);
@@ -227,6 +229,39 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
   const [formTouched, setFormTouched] = useState<Set<string>>(new Set());
   const [formCommentAttachments, setFormCommentAttachments] = useState<{ id: string; name: string; size: string; type: string; url: string }[]>([]);
   const [formMention, setFormMention] = useState<{ query: string; startIndex: number } | null>(null);
+
+  // Team schedule showroom state
+  const [tsShowroom, setTsShowroom] = useState<string>("");
+  const [tsShowroomOpen, setTsShowroomOpen] = useState(false);
+  const [tsShowroomSearch, setTsShowroomSearch] = useState("");
+  const tsShowroomRef = useRef<HTMLDivElement>(null);
+  const TS_SHOWROOMS = [
+    "معرض الرياض - العليا",
+    "معرض جدة - التحلية",
+    "معرض الدمام - الشاطئ",
+    "معرض مكة - العزيزية",
+    "معرض المدينة - قباء",
+    "معرض أبها - الخالدية",
+    "معرض تبوك - المروج",
+    "معرض حائل - السمراء",
+  ];
+
+  // Visits supervisor state
+  const [svSupervisor, setSvSupervisor] = useState<string>("");
+  const [svSupervisorOpen, setSvSupervisorOpen] = useState(false);
+  const [svSupervisorSearch, setSvSupervisorSearch] = useState("");
+  const svSupervisorRef = useRef<HTMLDivElement>(null);
+  const SV_SUPERVISORS = [
+    { id: "s1", name: "محمد القحطاني" },
+    { id: "s2", name: "خالد الشمري" },
+    { id: "s3", name: "فهد العنزي" },
+    { id: "s4", name: "عبدالرحمن الدوسري" },
+    { id: "s5", name: "سعد الحربي" },
+    { id: "s6", name: "طلال الراشد" },
+    { id: "s7", name: "سلطان العتيبي" },
+    { id: "s8", name: "نواف المطيري" },
+  ];
+
   const detailFileInputRef = useRef<HTMLInputElement>(null);
   const formFileInputRef = useRef<HTMLInputElement>(null);
   const taskFileInputRef = useRef<HTMLInputElement>(null);
@@ -272,6 +307,34 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (tsShowroomRef.current && !tsShowroomRef.current.contains(e.target as Node)) setTsShowroomOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (svSupervisorRef.current && !svSupervisorRef.current.contains(e.target as Node)) setSvSupervisorOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const tsFilteredShowrooms = useMemo(() => {
+    const q = tsShowroomSearch.trim();
+    if (!q) return TS_SHOWROOMS;
+    return TS_SHOWROOMS.filter(s => s.includes(q));
+  }, [tsShowroomSearch]);
+
+  const svFilteredSupervisors = useMemo(() => {
+    const q = svSupervisorSearch.trim();
+    if (!q) return SV_SUPERVISORS;
+    return SV_SUPERVISORS.filter(s => s.name.includes(q));
+  }, [svSupervisorSearch]);
 
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }, [tasks]);
   useEffect(() => {
@@ -354,10 +417,23 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
   const order: TaskStatus[] = ["todo", "in-progress", "in-review", "overdue", "completed"];
 
   return (
-    <div className="min-h-screen bg-[#0000000] dark:bg-neutral-900 font-sans" dir="rtl">
+    <div className="min-h-screen font-sans" dir="rtl">
       {/* Top bar: Tabs + Toolbar */}
       <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700 rounded-xl">
         <div className="max-w-[1400px] mx-auto">
+          {/* Tabs row — always sticky and visible */}
+          <PageTabs
+            tabs={[
+              ["tasks", "المهام", CheckSquare],
+              ["campaigns", "الحملات", Megaphone],
+              ["teams", "الفرق", Users],
+              ["visits", "الزيارات", MapPin],
+              ["team_schedule", "دوام الفريق", Clock],
+            ]}
+            active={activeTab}
+            onChange={(key) => setActiveTab(key as typeof activeTab)}
+          />
+
           <AnimatePresence initial={false}>
           {!headerCollapsed && (
           <motion.div
@@ -369,34 +445,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
             initial="hide"
             animate="show"
             exit="hide"
-            className="overflow-hidden"
+            className="overflow-visible"
           >
-          {/* Tabs row */}
-          <div className="px-1 sm:px-4 py-2 border-b border-neutral-100 dark:border-neutral-700">
-            <div className="flex items-center gap-1 bg-neutral-50 dark:bg-neutral-700 rounded-full p-1 w-full min-w-0 sm:max-w-[60%] sm:mx-auto">
-            {([
-              { key: "tasks" as const, label: "المهام" },
-              { key: "campaigns" as const, label: "الحملات" },
-              { key: "projects" as const, label: "المشاريع" },
-              { key: "teams" as const, label: "الفرق" },
-              { key: "visits" as const, label: "الزيارات" },
-            ]).map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key)}
-                className={cn(
-                  "flex flex-1 items-center justify-center py-1.5 px-2 sm:px-3 rounded-full text-[13px] sm:text-[14px] font-bold transition-all duration-200 min-w-0",
-                  activeTab === key
-                    ? "bg-neutral-900 text-white shadow-sm"
-                    : "bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 hover:text-neutral-900 dark:hover:text-white"
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          </div>
-
           {/* Toolbar row + Add button */}
           <div className="px-2 sm:px-6 py-2 sm:py-[14px] flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <div className="flex-1 min-w-0">
@@ -690,7 +740,81 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
             </div>
           )}
 
-          {activeTab !== "tasks" && activeTab !== "teams" && activeTab !== "campaigns" && activeTab !== "visits" && <div className="flex-1" />}
+          {activeTab === "team_schedule" && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <span className="text-sm font-bold text-neutral-800 dark:text-white">دوام الفريق</span>
+              </div>
+              <div className="relative flex-1 min-w-0 max-w-[280px]" ref={tsShowroomRef}>
+                <button onClick={() => setTsShowroomOpen(v => !v)} className={cn("w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all text-right", tsShowroomOpen ? "border-indigo-400 ring-2 ring-indigo-400/20" : "border-neutral-200 dark:border-neutral-600 hover:border-neutral-300")}>
+                  <Store className="w-4 h-4 text-neutral-400 shrink-0" />
+                  <span className={cn("truncate flex-1", tsShowroom ? "text-neutral-800 dark:text-white" : "text-neutral-400")}>{tsShowroom || "اختر المعرض"}</span>
+                  <ChevronLeft className={cn("w-3.5 h-3.5 text-neutral-400 transition-transform shrink-0", tsShowroomOpen && "-rotate-90")} />
+                </button>
+                <AnimatePresence>
+                  {tsShowroomOpen && (
+                    <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute top-full left-0 right-0 mt-2 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden">
+                      <div className="p-2 border-b border-neutral-100 dark:border-neutral-700">
+                        <div className="relative">
+                          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                          <input value={tsShowroomSearch} onChange={e => setTsShowroomSearch(e.target.value)} placeholder="بحث..." className="w-full pr-9 pl-3 py-2 text-sm rounded-lg border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 text-right" />
+                        </div>
+                      </div>
+                      <div className="max-h-[200px] overflow-y-auto py-1">
+                        {tsFilteredShowrooms.map(s => (
+                          <button key={s} onClick={() => { setTsShowroom(s); setTsShowroomOpen(false); setTsShowroomSearch(""); }} className={cn("w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-right", tsShowroom === s ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-bold" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
+                            <Store className="w-4 h-4 text-neutral-400 shrink-0" /><span>{s}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "visits" && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                  <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <span className="text-sm font-bold text-neutral-800 dark:text-white">خط سير الزيارات</span>
+              </div>
+              <div className="relative flex-1 min-w-0 max-w-[280px]" ref={svSupervisorRef}>
+                <button onClick={() => setSvSupervisorOpen(v => !v)} className={cn("w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all text-right", svSupervisorOpen ? "border-emerald-400 ring-2 ring-emerald-400/20" : "border-neutral-200 dark:border-neutral-600 hover:border-neutral-300")}>
+                  <UserCircle className="w-4 h-4 text-neutral-400 shrink-0" />
+                  <span className={cn("truncate flex-1", svSupervisor ? "text-neutral-800 dark:text-white" : "text-neutral-400")}>{SV_SUPERVISORS.find(s => s.id === svSupervisor)?.name || "اختر المشرف"}</span>
+                  <ChevronLeft className={cn("w-3.5 h-3.5 text-neutral-400 transition-transform shrink-0", svSupervisorOpen && "-rotate-90")} />
+                </button>
+                <AnimatePresence>
+                  {svSupervisorOpen && (
+                    <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute top-full left-0 right-0 mt-2 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden">
+                      <div className="p-2 border-b border-neutral-100 dark:border-neutral-700">
+                        <div className="relative">
+                          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                          <input value={svSupervisorSearch} onChange={e => setSvSupervisorSearch(e.target.value)} placeholder="بحث..." className="w-full pr-9 pl-3 py-2 text-sm rounded-lg border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 text-right" />
+                        </div>
+                      </div>
+                      <div className="max-h-[200px] overflow-y-auto py-1">
+                        {svFilteredSupervisors.map(s => (
+                          <button key={s.id} onClick={() => { setSvSupervisor(s.id); setSvSupervisorOpen(false); setSvSupervisorSearch(""); }} className={cn("w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-right", svSupervisor === s.id ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
+                            <UserCircle className="w-4 h-4 text-neutral-400 shrink-0" /><span>{s.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          )}
+
+          {activeTab !== "tasks" && activeTab !== "teams" && activeTab !== "campaigns" && activeTab !== "visits" && activeTab !== "team_schedule" && <div className="flex-1" />}
             </div>
             </div>
             </div>
@@ -703,11 +827,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
             {activeTab === "campaigns" && (
               <button onClick={() => onNewCampaign?.()} className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-lg transition-colors shadow-sm shrink-0">
                 <Plus className="w-4 h-4" /> <span className="hidden sm:inline">حملة جديدة</span><span className="sm:hidden">حملة</span>
-              </button>
-            )}
-            {activeTab === "projects" && (
-              <button onClick={() => onNewProject?.()} className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors shadow-sm shrink-0">
-                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">مشروع جديد</span><span className="sm:hidden">مشروع</span>
               </button>
             )}
             {activeTab === "teams" && (
@@ -1215,15 +1334,9 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign, onNewProject
 
       {activeTab === "teams" && <TeamsPage filter={teamsFilter} search={teamsSearch} view={teamsView} />}
 
-      {activeTab === "visits" && <VisitsPage />}
+      {activeTab === "visits" && <VisitsPage selectedSupervisor={svSupervisor} />}
 
-      {activeTab === "projects" && (
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-20 text-center">
-          <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-gray-700 dark:text-gray-200 mb-2">المشاريع</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">صفحة المشاريع قيد التطوير</p>
-        </div>
-      )}
+      {activeTab === "team_schedule" && <TeamSchedulePage selectedShowroom={tsShowroom} />}
 
       {/* ── Task Detail Drawer ── */}
       <AnimatePresence>

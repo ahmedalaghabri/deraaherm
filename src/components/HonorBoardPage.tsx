@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Star, Award, TrendingUp, Medal, Crown, MapPin, Store, ChevronUp, ChevronDown } from "lucide-react";
+import { Trophy, Star, Award, TrendingUp, Medal, Crown, MapPin, Store, Users, ChevronUp, ChevronDown } from "lucide-react";
+import { cn } from "../lib/utils";
+import PageTabs from "./PageTabs";
 
 const MONTHS_AR = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
@@ -111,20 +113,14 @@ export default function HonorBoardPage() {
       </motion.div>
 
       {/* Sub-tabs */}
-      <div className="flex items-center gap-0.5 mb-6 p-0.5 bg-neutral-100 border border-neutral-200 rounded-xl w-fit">
-        <button
-          onClick={() => setTab("employees")}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150 ${tab === "employees" ? "bg-[#B21063] text-white shadow-sm" : "text-neutral-500 hover:text-neutral-800"}`}
-        >
-          المندوبون
-        </button>
-        <button
-          onClick={() => setTab("showrooms")}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150 ${tab === "showrooms" ? "bg-[#B21063] text-white shadow-sm" : "text-neutral-500 hover:text-neutral-800"}`}
-        >
-          المعارض
-        </button>
-      </div>
+      <PageTabs
+        tabs={[
+          ["employees", "المندوبون", Users],
+          ["showrooms", "المعارض", Store],
+        ]}
+        active={tab}
+        onChange={(key) => setTab(key as typeof tab)}
+      />
 
       {/* Table */}
       <motion.div

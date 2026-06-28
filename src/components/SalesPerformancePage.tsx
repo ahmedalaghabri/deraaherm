@@ -22,8 +22,12 @@ import {
   Filter,
   MoreVertical,
   Users,
+  UserCircle,
+  Store,
+  Search,
 } from "lucide-react";
 import { cn } from "../lib/utils";
+import PageTabs from "./PageTabs";
 
 // ─────────────────────────────────────────
 // Constants
@@ -136,12 +140,12 @@ const SELLERS = Array.from({ length: 500 }, (_, i) => {
 });
 
 const CATEGORIES = [
-  { name: "الهدايا", pct: 100, color: "#00C9A7" },
-  { name: "العطور", pct: 100, color: "#00B4D8" },
-  { name: "العناية", pct: 100, color: "#F9A825" },
-  { name: "التجميل", pct: 99, color: "#4D8AFF" },
-  { name: "العود", pct: 93, color: "#845EC2" },
-  { name: "الإكسيسوار", pct: 0, color: "#E91E8C" },
+  { name: "الهدايا", pct: 90, color: "#00C9A7" },
+  { name: "العطور", pct: 80, color: "#00B4D8" },
+  { name: "العناية", pct: 78, color: "#F9A825" },
+  { name: "التجميل", pct: 64, color: "#4D8AFF" },
+  { name: "العود", pct: 45, color: "#845EC2" },
+  { name: "الإكسيسوار", pct: 31, color: "#E91E8C" },
 ];
 
 // ─────────────────────────────────────────
@@ -1141,25 +1145,29 @@ function TeamSummary({ data }: { data: { label: string; value: number; pct: numb
   const top3 = [...data].sort((a, b) => b.pct - a.pct).slice(0, 3);
 
   return (
-    <div className="space-y-3">
+    <motion.div className="space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
       {/* Stacked distribution bar */}
       <div className="flex h-2.5 rounded-full overflow-hidden" style={{ gap: 2 }}>
         {buckets.map((b, i) => (
-          <div key={i} title={`${b.label}: ${b.count}`}
+          <motion.div key={i} title={`${b.label}: ${b.count}`}
             style={{ width: `${(b.count / total) * 100}%`, backgroundColor: b.color, minWidth: b.count ? 4 : 0 }}
-            className="h-full transition-all duration-500" />
+            className="h-full"
+            initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: i * 0.08 + 0.1, duration: 0.5, ease: "easeOut" }} />
         ))}
       </div>
 
       {/* Tier rows */}
       <div className="space-y-2">
         {buckets.map((b, i) => (
-          <div key={i} className="flex items-center gap-2">
+          <motion.div key={i} className="flex items-center gap-2" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 + 0.2, duration: 0.4 }}>
             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: b.color }} />
             <span className="text-[12px] font-semibold text-neutral-600 dark:text-neutral-400 w-10 shrink-0">{b.label}</span>
             <div className="flex-1 bg-neutral-100 dark:bg-neutral-700 rounded-full h-1.5 overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${(b.count / total) * 100}%`, backgroundColor: b.color }} />
+              <motion.div className="h-full rounded-full"
+                style={{ backgroundColor: b.color }}
+                initial={{ width: 0 }}
+                animate={{ width: `${(b.count / total) * 100}%` }}
+                transition={{ delay: i * 0.08 + 0.3, duration: 0.6, ease: "easeOut" }} />
             </div>
             <span className={cn("text-[11px] font-bold min-w-[28px] text-center rounded-md px-1.5 py-0.5", b.bg, b.text)}>
               {b.count}
@@ -1167,29 +1175,29 @@ function TeamSummary({ data }: { data: { label: string; value: number; pct: numb
             <span className="text-[12px] text-neutral-400 w-7 text-right shrink-0">
               {Math.round((b.count / total) * 100)}%
             </span>
-          </div>
+          </motion.div>
         ))}
       </div>
 
       {/* Top performers */}
       {top3.length > 0 && (
-        <div className="border-t border-neutral-100 dark:border-neutral-700 pt-2.5 space-y-1.5">
+        <motion.div className="border-t border-neutral-100 dark:border-neutral-700 pt-2.5 space-y-1.5" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.4 }}>
           <p className="text-[12px] font-semibold text-neutral-400 mb-1">الأعلى أداءً</p>
           {top3.map((d, i) => (
-            <div key={i} className="flex items-center gap-2">
+            <motion.div key={i} className="flex items-center gap-2" initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.55 + i * 0.08, duration: 0.35 }}>
               <span className="text-[12px] font-bold text-neutral-300 w-3 shrink-0">{i + 1}</span>
               <span className="text-[11px] text-neutral-700 dark:text-neutral-300 truncate flex-1">
                 {d.label.split(" ").slice(0, 2).join(" ")}
               </span>
               <span className="text-[11px] font-bold tabular-nums" style={{ color: pctColor(d.pct) }}>{d.pct}%</span>
               <span className="text-[12px] text-neutral-400 tabular-nums">{formatNum(d.value)}</span>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
 
-      <p className="text-[12px] text-neutral-400 text-center pt-0.5">{total.toLocaleString()} عنصر</p>
-    </div>
+      <motion.p className="text-[12px] text-neutral-400 text-center pt-0.5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7, duration: 0.3 }}>{total.toLocaleString()} عنصر</motion.p>
+    </motion.div>
   );
 }
 
@@ -1208,7 +1216,8 @@ function AreaChart({ data, height = 120 }: { data: { day: number | string; curre
   const xLabels = data.filter((_, i) => i === 0 || i === data.length - 1 || i % Math.ceil(data.length / 5) === 0);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: W, height }} preserveAspectRatio="none">
+    <motion.svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: W, height }} preserveAspectRatio="none"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
       <defs>
         <linearGradient id="gc" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#00C9A7" stopOpacity="0.3" />
@@ -1220,22 +1229,28 @@ function AreaChart({ data, height = 120 }: { data: { day: number | string; curre
         </linearGradient>
       </defs>
       {[0, 0.25, 0.5, 0.75, 1].map(t => (
-        <line key={t} x1="0" y1={H - 10 - t * (H - 20)} x2={W} y2={H - 10 - t * (H - 20)}
-          stroke="#f0f0f0" strokeWidth="0.6" />
+        <motion.line key={t} x1="0" y1={H - 10 - t * (H - 20)} x2={W} y2={H - 10 - t * (H - 20)}
+          stroke="#f0f0f0" strokeWidth="0.6"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: t * 0.1, duration: 0.3 }} />
       ))}
-      <path d={area("prev")} fill="url(#gp)" />
-      <path d={polyline("prev")} fill="none" stroke="#F9A825" strokeWidth="1.2" strokeDasharray="4 2" strokeLinejoin="round" />
-      <path d={area("current")} fill="url(#gc)" />
-      <path d={polyline("current")} fill="none" stroke="#00C9A7" strokeWidth="1.8" strokeLinejoin="round" />
+      <motion.path d={area("prev")} fill="url(#gp)"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2, duration: 0.6 }} />
+      <motion.path d={polyline("prev")} fill="none" stroke="#F9A825" strokeWidth="1.2" strokeDasharray="4 2" strokeLinejoin="round"
+        initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.3, duration: 1.2, ease: "easeInOut" }} />
+      <motion.path d={area("current")} fill="url(#gc)"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.6 }} />
+      <motion.path d={polyline("current")} fill="none" stroke="#00C9A7" strokeWidth="1.8" strokeLinejoin="round"
+        initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.5, duration: 1.2, ease: "easeInOut" }} />
       {xLabels.map((d, i) => {
         const idx = data.indexOf(d);
         return (
-          <text key={i} x={idx * 22 + 11} y={H - 1} textAnchor="middle" fontSize="6" fill="#9ca3af">
+          <motion.text key={i} x={idx * 22 + 11} y={H - 1} textAnchor="middle" fontSize="6" fill="#9ca3af"
+            initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 + i * 0.05, duration: 0.3 }}>
             {d.day}
-          </text>
+          </motion.text>
         );
       })}
-    </svg>
+    </motion.svg>
   );
 }
 
@@ -1481,10 +1496,10 @@ function DateRangePicker({ dateFrom, dateTo, onFromChange, onToChange, iconOnly,
           onClick={openDropdown}
           title={`${displayFrom} — ${displayTo}`}
           className={cn(
-            "px-2 sm:px-2.5 py-1 rounded-xl text-[11px] sm:text-[14px] font-semibold sm:font-bold transition-all whitespace-nowrap",
-            open || active
-              ? "bg-neutral-800 text-white shadow-sm"
-              : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:text-neutral-300"
+            "px-3 sm:px-4 py-2 text-[13px] font-semibold transition-all whitespace-nowrap flex-1 text-center",
+            active
+              ? "bg-neutral-900 dark:bg-neutral-700 text-white"
+              : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700"
           )}
         >
           محدد
@@ -1556,7 +1571,7 @@ function MultiSelectDropdown({ options, selected, onChange, placeholder, activeC
   const label = hasSelection
     ? selected.size === 1
       ? options.find(o => o.id === [...selected][0])?.name ?? placeholder
-      : `${selected.size} محدد`
+      : `محدد: ${selected.size}`
     : placeholder;
 
   return (
@@ -1564,12 +1579,12 @@ function MultiSelectDropdown({ options, selected, onChange, placeholder, activeC
       <button
         onClick={() => setOpen(v => !v)}
         className={cn(
-          "flex items-center gap-1 sm:gap-1.5 text-[12px] sm:text-[14px] border rounded-xl px-2 sm:px-2.5 py-1 sm:py-1.5 bg-white dark:bg-neutral-800 focus:outline-none cursor-pointer font-medium sm:font-bold transition-colors whitespace-nowrap",
-          hasSelection ? "border-[#B21063] text-[#B21063]" : "border-neutral-200 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300"
+          "flex items-center gap-1.5 sm:gap-2 text-[12px] sm:text-[14px] border rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 bg-white dark:bg-neutral-800 focus:outline-none cursor-pointer font-semibold sm:font-bold transition-colors whitespace-nowrap",
+          hasSelection ? "border-indigo-500 text-indigo-600 dark:text-indigo-400" : "border-neutral-200 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300"
         )}
       >
-        <span className="max-w-[80px] sm:max-w-[110px] truncate">{label}</span>
-        <ChevronDown className={cn("w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0 transition-transform", open ? "rotate-180" : "", hasSelection ? "text-[#B21063]" : "text-neutral-400")} />
+        <span className="max-w-[100px] sm:max-w-[140px] truncate">{label}</span>
+        <ChevronDown className={cn("w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 transition-transform", open ? "rotate-180" : "", hasSelection ? "text-indigo-500" : "text-neutral-400")} />
       </button>
 
       {open && createPortal(
@@ -1580,28 +1595,31 @@ function MultiSelectDropdown({ options, selected, onChange, placeholder, activeC
             top: (ref.current?.getBoundingClientRect().bottom ?? 0) + 4,
             right: window.innerWidth - (ref.current?.getBoundingClientRect().right ?? 0),
             zIndex: 9999,
-            width: "min(220px, calc(100vw - 2rem))",
+            width: "min(260px, calc(100vw - 2rem))",
             maxWidth: "calc(100vw - 2rem)",
           }}
           className="dropdown-menu bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-2xl shadow-xl overflow-hidden"
           dir="rtl"
         >
-          <div className="p-2 border-b border-neutral-100 dark:border-neutral-700">
-            <input
-              autoFocus
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="بحث..."
-              className="w-full text-[12px] sm:text-[12px] border border-neutral-200 dark:border-neutral-600 rounded-lg px-2 sm:px-2.5 py-1 sm:py-1.5 focus:outline-none focus:ring-1 focus:ring-[#B21063]/30"
-            />
+          <div className="p-2.5 border-b border-neutral-100 dark:border-neutral-700">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+              <input
+                autoFocus
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="بحث..."
+                className="w-full text-[12px] sm:text-[13px] border border-neutral-200 dark:border-neutral-600 rounded-xl pr-9 pl-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              />
+            </div>
           </div>
-          <div className="p-1 border-b border-neutral-100 dark:border-neutral-700">
+          <div className="p-1.5 border-b border-neutral-100 dark:border-neutral-700">
             <button
               onClick={toggleAll}
-              className="w-full flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2 py-1 sm:py-1.5 rounded-lg text-[12px] sm:text-[12px] font-semibold hover:bg-neutral-50 dark:bg-neutral-700 transition-colors text-neutral-600 dark:text-neutral-400"
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[12px] sm:text-[13px] font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors text-neutral-600 dark:text-neutral-400"
             >
-              <span className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
-                selected.size === options.length ? "bg-[#B21063] border-[#B21063]" : "border-neutral-300"
+              <span className={cn("w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-md border-2 flex items-center justify-center shrink-0 transition-colors",
+                selected.size === options.length ? "bg-indigo-500 border-indigo-500" : "border-neutral-300 dark:border-neutral-500"
               )}>
                 {selected.size === options.length && <Check className="w-2.5 h-2.5 text-white" />}
               </span>
@@ -1609,26 +1627,29 @@ function MultiSelectDropdown({ options, selected, onChange, placeholder, activeC
             </button>
           </div>
           <div className="max-h-56 overflow-y-auto">
-            {filtered.length === 0 && <p className="text-center text-[12px] sm:text-[12px] text-neutral-400 py-2 sm:py-3">لا توجد نتائج</p>}
-            {filtered.map(opt => (
-              <button
-                key={opt.id}
-                onClick={() => toggle(opt.id)}
-                className="w-full flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 sm:py-1.5 text-[12px] sm:text-[12px] hover:bg-neutral-50 dark:bg-neutral-700 transition-colors text-right"
-              >
-                <span className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
-                  selected.has(opt.id) ? "bg-[#B21063] border-[#B21063]" : "border-neutral-300"
-                )}>
-                  {selected.has(opt.id) && <Check className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" />}
-                </span>
-                <span className="truncate text-neutral-700 dark:text-neutral-300 font-medium">{opt.name}</span>
-              </button>
-            ))}
+            {filtered.length === 0 && <p className="text-center text-[12px] sm:text-[13px] text-neutral-400 py-3">لا توجد نتائج</p>}
+            {filtered.map(opt => {
+              const isSelected = selected.has(opt.id);
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => toggle(opt.id)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-[12px] sm:text-[13px] hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors text-right"
+                >
+                  <span className={cn("w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-md border-2 flex items-center justify-center shrink-0 transition-colors",
+                    isSelected ? "bg-indigo-500 border-indigo-500" : "border-neutral-300 dark:border-neutral-500"
+                  )}>
+                    {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                  </span>
+                  <span className="truncate text-neutral-700 dark:text-neutral-300 font-medium flex-1">{opt.name}</span>
+                </button>
+              );
+            })}
           </div>
           {hasSelection && (
             <div className="p-2 border-t border-neutral-100 dark:border-neutral-700">
               <button onClick={() => { onChange(new Set()); setOpen(false); }}
-                className="w-full text-[12px] sm:text-[12px] text-neutral-400 hover:text-red-500 transition-colors font-medium">
+                className="w-full text-[12px] sm:text-[13px] text-neutral-400 hover:text-red-500 transition-colors font-medium py-1">
                 مسح التحديد
               </button>
             </div>
@@ -1940,49 +1961,18 @@ export default function SalesPerformancePage({ onBack }: Props) {
       {/* ── Fixed Header (filters + tabs) ── */}
       <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700 rounded-xl">
         <div className="max-w-[1400px] mx-auto px-0 sm:px-2 rounded-xl overflow-hidden">
-          {/* Filter type tabs */}
-          <AnimatePresence initial={false}>
-          {(!headerCollapsed || viewMode !== "table") && (
-          <motion.div
-            key="tabs-row"
-            variants={{
-              show: { height: "auto", opacity: 1, transition: { height: { type: "spring", stiffness: 700, damping: 42, mass: 0.4 }, opacity: { duration: 0.07 } } },
-              hide: { height: 0, opacity: 0, transition: { height: { type: "spring", stiffness: 500, damping: 38, mass: 0.8 }, opacity: { duration: 0.1 } } }
-            }}
-            initial="hide"
-            animate="show"
-            exit="hide"
-            className="overflow-hidden"
-          >
-          <div className="px-1 sm:px-4 py-2 border-b border-neutral-100 dark:border-neutral-700">
-            <div className="flex items-center gap-1 bg-neutral-[0] dark:bg-neutral-800 rounded-full p-1 w-full min-w-0 sm:max-w-[60%] sm:mx-auto">
-            {([
-              ["team","الفريق"],
-              ["areas","المناطق"],
-              ["supervisors","المشرفين"],
-              ["showrooms","المعارض"],
-              ["sellers","البائعين"]
-            ] as [FilterType, string][]).map(([type, label]) => (
-              <motion.button
-                key={type}
-                onClick={() => { setFilterType(type); resetTableFilters(); }}
-                layout
-                transition={{ type: "spring", stiffness: 100, damping: 30 }}
-                className={cn(
-                  "flex flex-1 items-center justify-center py-1.5 px-2 sm:px-3 rounded-full text-[13px] sm:text-[14px] font-bold transition-all duration-200 min-w-0",
-                  filterType === type
-                    ? "bg-neutral-900 text-white shadow-sm"
-                    : "bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 hover:text-neutral-900 dark:hover:text-white"
-                )}
-              >
-                {label}
-              </motion.button>
-            ))}
-          </div>
-          </div>
-          </motion.div>
-          )}
-          </AnimatePresence>
+          {/* Filter type tabs — always sticky and visible */}
+          <PageTabs
+            tabs={[
+              ["team","الفريق", Users],
+              ["areas","المناطق", MapPin],
+              ["supervisors","المشرفين", UserCircle],
+              ["showrooms","المعارض", Store],
+              ["sellers","البائعين", ShoppingBag]
+            ]}
+            active={filterType}
+            onChange={(type) => { setFilterType(type as FilterType); resetTableFilters(); }}
+          />
 
           {/* Filters and view mode */}
           <AnimatePresence initial={false}>
@@ -2083,11 +2073,11 @@ export default function SalesPerformancePage({ onBack }: Props) {
                   </div>
                   <div className="hidden sm:block flex-1 min-w-[1px]" />
                   <div className="hidden sm:flex items-center gap-2 shrink-0">
-                    <div className="flex items-center gap-0.5 bg-white dark:bg-neutral-800 rounded-2xl p-0.5 border border-neutral-200 dark:border-neutral-600">
+                    <div className="flex items-center bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-600 overflow-hidden">
                       {([["day","يومي"],["month","شهري"]] as [Period, string][]).map(([p, l]) => (
-                        <button key={p} onClick={() => setPeriod(p as Period)}
-                          className={cn("px-2 sm:px-2.5 py-1 rounded-2xl text-[14px] font-bold transition-all whitespace-nowrap",
-                            period === p ? "bg-neutral-800 dark:bg-neutral-600 text-white shadow-sm" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-neutral-200")}>
+                        <button key={p} onClick={() => { setPeriod(p as Period); setCustomRangeActive(false); }}
+                          className={cn("px-3 sm:px-4 py-2 text-[13px] font-semibold transition-all whitespace-nowrap flex-1 text-center",
+                            period === p && !customRangeActive ? "bg-neutral-900 dark:bg-neutral-700 text-white" : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
                           {l}
                         </button>
                       ))}
@@ -2137,11 +2127,11 @@ export default function SalesPerformancePage({ onBack }: Props) {
                     </div>
                     <div className="hidden sm:block flex-1 min-w-[1px]" />
                     <div className="hidden sm:flex items-center gap-2 shrink-0">
-                      <div className="flex items-center gap-0.5 bg-white dark:bg-neutral-800 rounded-2xl p-0.5 border border-neutral-200 dark:border-neutral-600">
+                      <div className="flex items-center bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-600 overflow-hidden">
                         {([["day","يومي"],["month","شهري"]] as [Period, string][]).map(([p, l]) => (
-                          <button key={p} onClick={() => setPeriod(p as Period)}
-                            className={cn("px-2 sm:px-2.5 py-1 rounded-2xl text-[14px] font-bold transition-all whitespace-nowrap",
-                              period === p ? "bg-neutral-800 dark:bg-neutral-600 text-white shadow-sm" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-neutral-200")}>
+                          <button key={p} onClick={() => { setPeriod(p as Period); setCustomRangeActive(false); }}
+                            className={cn("px-3 sm:px-4 py-2 text-[13px] font-semibold transition-all whitespace-nowrap flex-1 text-center",
+                              period === p && !customRangeActive ? "bg-neutral-900 dark:bg-neutral-700 text-white" : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
                             {l}
                           </button>
                         ))}
@@ -2192,11 +2182,11 @@ export default function SalesPerformancePage({ onBack }: Props) {
           {/* ── Calendar / Period Navigator ── */}
           <div className="border-b border-neutral-100 dark:border-neutral-700 px-1 py-2 -mx-1 mb-3 mt-1">
             <div className="flex items-center gap-2 mb-2 sm:hidden">
-              <div className="flex items-center gap-0.5 bg-white dark:bg-neutral-800 rounded-2xl p-0.5 border border-neutral-200 dark:border-neutral-600">
+              <div className="flex items-center bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-600 overflow-hidden">
                 {([["day","يومي"],["month","شهري"]] as [Period, string][]).map(([p, l]) => (
-                  <button key={p} onClick={() => setPeriod(p as Period)}
-                    className={cn("px-2 sm:px-2.5 py-1 rounded-2xl text-[12px] font-semibold transition-all whitespace-nowrap",
-                      period === p ? "bg-neutral-800 dark:bg-neutral-600 text-white shadow-sm" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-neutral-200")}>
+                  <button key={p} onClick={() => { setPeriod(p as Period); setCustomRangeActive(false); }}
+                    className={cn("px-3 sm:px-4 py-2 text-[11px] font-semibold transition-all whitespace-nowrap flex-1 text-center",
+                      period === p && !customRangeActive ? "bg-neutral-900 dark:bg-neutral-700 text-white" : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
                     {l}
                   </button>
                 ))}
@@ -2542,7 +2532,7 @@ export default function SalesPerformancePage({ onBack }: Props) {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
                 {/* Team/Showrooms/Sellers bar chart */}
-                <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4">
+                <motion.div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} whileHover={{ scale: 1.01 }}>
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
                       {{ team: "أداء الفريق", areas: "أداء المناطق", supervisors: "أداء المشرفين", showrooms: "أداء المعارض", sellers: "أداء البائعين" }[filterType]}
@@ -2552,47 +2542,69 @@ export default function SalesPerformancePage({ onBack }: Props) {
                     </span>
                   </div>
                   <TeamSummary data={barData} />
-                </div>
+                </motion.div>
 
-                {/* Category bar chart */}
+                {/* Category radial gauge chart */}
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">تحقيق الفئات</h3>
                     <span className="text-xs bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 px-2.5 py-0.5 rounded-full font-medium">توزيع المبيعات</span>
                   </div>
                   {(() => {
-                    const maxPct = Math.max(...CATEGORIES.map(c => c.pct), 1);
-                    const BAR_AREA_H = 90;
+                    const activeCats = CATEGORIES.filter(c => c.pct > 0);
+                    const size = 200;
+                    const cx = size / 2;
+                    const cy = size / 2;
+                    const maxR = 85;
+                    const strokeW = 8;
+                    const gap = 6;
                     return (
-                      <div className="flex items-end gap-1.5 px-1">
-                        {CATEGORIES.map((cat, i) => {
-                          const barH = Math.max((cat.pct / maxPct) * BAR_AREA_H, 6);
-                          return (
-                            <div key={i} className="flex flex-col items-center flex-1 min-w-0" style={{ gap: 3 }}>
-                              <span className="text-[11px] font-bold" style={{ color: cat.color }}>{cat.pct}%</span>
-                              <div className="w-full flex justify-center items-end" style={{ height: BAR_AREA_H }}>
-                                <div className="rounded-t-lg transition-all duration-500 w-full max-w-[32px]"
-                                  style={{ height: barH, backgroundColor: cat.color }} />
+                      <div className="flex items-center gap-4">
+                        {/* Labels on the left */}
+                        <div className="flex flex-col gap-2 flex-1">
+                          {activeCats.map((cat, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                                <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200">{cat.name}</span>
                               </div>
-                              <span className="text-[12px] text-neutral-500 dark:text-neutral-400 text-center leading-tight font-medium">{cat.name}</span>
+                              <span className="text-sm font-bold" style={{ color: cat.color }}>{cat.pct}</span>
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
+                        {/* SVG radial gauge */}
+                        <motion.div className="shrink-0 flex flex-col items-center gap-2" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: "easeOut" }} whileHover={{ scale: 1.03 }}>
+                          <div style={{ width: size, height: size }}>
+                            <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="transform -rotate-90">
+                              {activeCats.map((cat, i) => {
+                                const r = maxR - i * (strokeW + gap);
+                                const circ = 2 * Math.PI * r;
+                                const arcLen = circ * 0.75; // 270 degree arc
+                                const filled = (cat.pct / 100) * arcLen;
+                                return (
+                                  <motion.g key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.08, duration: 0.4 }}>
+                                    {/* background track — full gray circle */}
+                                    <circle cx={cx} cy={cy} r={r} fill="none" stroke="#E5E7EB" strokeWidth={strokeW}
+                                      strokeLinecap="round" />
+                                    {/* filled arc */}
+                                    <motion.circle cx={cx} cy={cy} r={r} fill="none" stroke={cat.color} strokeWidth={strokeW}
+                                      strokeDasharray={`${filled} ${circ - filled}`} strokeLinecap="round"
+                                      initial={{ pathLength: 0 }}
+                                      animate={{ pathLength: cat.pct / 100 }}
+                                      transition={{ delay: i * 0.12 + 0.2, duration: 0.8, ease: "easeOut" }} />
+                                  </motion.g>
+                                );
+                              })}
+                            </svg>
+                          </div>
+                        </motion.div>
                       </div>
                     );
                   })()}
-                  <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-neutral-50">
-                    {CATEGORIES.map((cat, i) => (
-                      <div key={i} className="flex items-center gap-1">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
-                        <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium">{cat.name}</span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
 
                 {/* Sales trend chart */}
-                <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4">
+                <motion.div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }} whileHover={{ scale: 1.01 }}>
                   <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                     <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
                       {period === "day" ? `مبيعات يوم ${selectedDay} ${MONTHS_AR[month]}` :
@@ -2614,22 +2626,22 @@ export default function SalesPerformancePage({ onBack }: Props) {
                     <AreaChart data={chartData} height={130} />
                   </div>
                   <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-neutral-50">
-                    <div className="text-center">
+                    <motion.div className="text-center" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.35 }}>
                       <div className="text-xs text-neutral-400 font-medium">حالي</div>
-                      <div className="text-sm font-bold text-emerald-600">{formatNum(currentSales)}</div>
-                    </div>
-                    <div className="text-center">
+                      <motion.div className="text-sm font-bold text-emerald-600" initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ delay: 0.85, duration: 0.3, type: "spring", stiffness: 200 }}>{formatNum(currentSales)}</motion.div>
+                    </motion.div>
+                    <motion.div className="text-center" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.35 }}>
                       <div className="text-xs text-neutral-400 font-medium">سابق</div>
-                      <div className="text-sm font-bold text-amber-600">{formatNum(prevSalesChart)}</div>
-                    </div>
-                    <div className="text-center">
+                      <motion.div className="text-sm font-bold text-amber-600" initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ delay: 0.95, duration: 0.3, type: "spring", stiffness: 200 }}>{formatNum(prevSalesChart)}</motion.div>
+                    </motion.div>
+                    <motion.div className="text-center" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.35 }}>
                       <div className="text-xs text-neutral-400 font-medium">النمو</div>
-                      <div className={cn("text-sm font-bold", growthPct >= 0 ? "text-emerald-600" : "text-rose-500")}>
+                      <motion.div className={cn("text-sm font-bold", growthPct >= 0 ? "text-emerald-600" : "text-rose-500")} initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ delay: 1.05, duration: 0.3, type: "spring", stiffness: 200 }}>
                         {growthPct >= 0 ? "+" : ""}{growthPct}%
-                      </div>
-                    </div>
+                      </motion.div>
+                    </motion.div>
                   </div>
-                </div>
+                </motion.div>
               </div>
 
               {/* Target achievement — filter + drill aware mini cards */}

@@ -920,6 +920,13 @@ export default function ResponsiveDashboard() {
   const [transactionsSubTab, setTransactionsSubTab] = useState<'new'|'inbox'|'outbox'|'archive'>('inbox');
   const [attendanceSubTab, setAttendanceSubTab] = useState<'report'|'permit'|'hazer'|'calendar'>('report');
 
+  // Reset sidebar selection when on dashboard
+  useEffect(() => {
+    if (view === "dashboard") {
+      setActiveKey("dashboard");
+    }
+  }, [view]);
+
   // صفحة تسجيل الدخول
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -2160,8 +2167,8 @@ export default function ResponsiveDashboard() {
                       <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-neutral-800 dark:text-neutral-100 leading-tight">مسابقة البائعين</h4>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">منطقة الشرقية</p>
+                      <h4 className="text-[15px] font-bold text-neutral-800 dark:text-neutral-100 leading-tight">مسابقة البائعين</h4>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">منطقة الشرقية</p>
                     </div>
                   </div>
                   <div className="relative">
@@ -2192,16 +2199,16 @@ export default function ResponsiveDashboard() {
                     )}
                   </div>
                 </div>
-                <div className="relative flex items-center gap-3 text-[11px] text-neutral-600 dark:text-neutral-400">
+                <div className="relative flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
                   <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-neutral-400" /> حتى 26 يونيو</span>
                   <span className="flex items-center gap-1"><Users className="w-3 h-3 text-neutral-400" /> 48 بائع</span>
                 </div>
                 <div className="relative flex items-center gap-1.5 pt-2 border-t border-neutral-100 dark:border-neutral-700">
-                  <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">الجوائز:</span>
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥇 10000</span>
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥈 5000</span>
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥉 2000</span>
-                  <span className="text-[9px] text-neutral-400 dark:text-neutral-500 mr-auto">ريال</span>
+                  <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">الجوائز:</span>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥇 10000</span>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥈 5000</span>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥉 2000</span>
+                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mr-auto">ريال</span>
                 </div>
               </div>
 
@@ -2219,8 +2226,8 @@ export default function ResponsiveDashboard() {
                       <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-neutral-800 dark:text-neutral-100 leading-tight">أفضل فرع</h4>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">موسم رمضان 2026</p>
+                      <h4 className="text-[15px] font-bold text-neutral-800 dark:text-neutral-100 leading-tight">أفضل فرع</h4>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">موسم رمضان 2026</p>
                     </div>
                   </div>
                   <div className="relative">
@@ -2251,16 +2258,16 @@ export default function ResponsiveDashboard() {
                     )}
                   </div>
                 </div>
-                <div className="relative flex items-center gap-3 text-[11px] text-neutral-600 dark:text-neutral-400">
+                <div className="relative flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
                   <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-neutral-400" /> حتى 9 يوليو</span>
                   <span className="flex items-center gap-1"><Users className="w-3 h-3 text-neutral-400" /> 12 فرع</span>
                 </div>
                 <div className="relative flex items-center gap-1.5 pt-2 border-t border-neutral-100 dark:border-neutral-700">
-                  <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">الجوائز:</span>
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥇 10000</span>
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥈 5000</span>
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥉 2000</span>
-                  <span className="text-[9px] text-neutral-400 dark:text-neutral-500 mr-auto">ريال</span>
+                  <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">الجوائز:</span>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥇 10000</span>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥈 5000</span>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥉 2000</span>
+                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mr-auto">ريال</span>
                 </div>
               </div>
 
@@ -2278,8 +2285,8 @@ export default function ResponsiveDashboard() {
                       <Award className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-neutral-800 dark:text-neutral-100 leading-tight">أفضل خدمة عملاء</h4>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-400">الربع الثالث 2026</p>
+                      <h4 className="text-[15px] font-bold text-neutral-800 dark:text-neutral-100 leading-tight">أفضل خدمة عملاء</h4>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">الربع الثالث 2026</p>
                     </div>
                   </div>
                   <div className="relative">
@@ -2310,16 +2317,16 @@ export default function ResponsiveDashboard() {
                     )}
                   </div>
                 </div>
-                <div className="relative flex items-center gap-3 text-[11px] text-neutral-600 dark:text-neutral-400">
+                <div className="relative flex items-center gap-3 text-xs text-neutral-600 dark:text-neutral-400">
                   <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-neutral-400" /> حتى 30 سبتمبر</span>
                   <span className="flex items-center gap-1"><Users className="w-3 h-3 text-neutral-400" /> 35 موظف</span>
                 </div>
                 <div className="relative flex items-center gap-1.5 pt-2 border-t border-neutral-100 dark:border-neutral-700">
-                  <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">الجوائز:</span>
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥇 10000</span>
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥈 5000</span>
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">🥉 2000</span>
-                  <span className="text-[9px] text-neutral-400 dark:text-neutral-500 mr-auto">ريال</span>
+                  <span className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">الجوائز:</span>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥇 10000</span>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥈 5000</span>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥉 2000</span>
+                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mr-auto">ريال</span>
                 </div>
               </div>
             </div>
@@ -2342,8 +2349,8 @@ export default function ResponsiveDashboard() {
                     {activeContest === 1 ? <TrendingUp className="w-4 h-4" /> : activeContest === 2 ? <Building2 className="w-4 h-4" /> : <Award className="w-4 h-4" />}
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-100">{activeContest === 1 ? 'مسابقة البائعين' : activeContest === 2 ? 'أفضل فرع' : 'أفضل خدمة عملاء'}</h3>
-                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{activeContest === 1 ? 'منطقة الشرقية' : activeContest === 2 ? 'موسم رمضان 2026' : 'الربع الثالث 2026'}</p>
+                    <h3 className="text-[15px] font-bold text-neutral-800 dark:text-neutral-100">{activeContest === 1 ? 'مسابقة البائعين' : activeContest === 2 ? 'أفضل فرع' : 'أفضل خدمة عملاء'}</h3>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{activeContest === 1 ? 'منطقة الشرقية' : activeContest === 2 ? 'موسم رمضان 2026' : 'الربع الثالث 2026'}</p>
                   </div>
                 </div>
                 <button onClick={() => setContestModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
@@ -2355,13 +2362,13 @@ export default function ResponsiveDashboard() {
               <div className="flex border-b border-neutral-100 dark:border-neutral-700">
                 <button
                   onClick={() => setContestModalTab('details')}
-                  className={`flex-1 py-3 text-xs font-bold transition-colors ${contestModalTab === 'details' ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-500' : 'text-neutral-500 dark:text-neutral-400'}`}
+                  className={`flex-1 py-3 text-sm font-bold transition-colors ${contestModalTab === 'details' ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-500' : 'text-neutral-500 dark:text-neutral-400'}`}
                 >
                   تفاصيل المسابقة
                 </button>
                 <button
                   onClick={() => setContestModalTab('myResult')}
-                  className={`flex-1 py-3 text-xs font-bold transition-colors ${contestModalTab === 'myResult' ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-500' : 'text-neutral-500 dark:text-neutral-400'}`}
+                  className={`flex-1 py-3 text-sm font-bold transition-colors ${contestModalTab === 'myResult' ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-500' : 'text-neutral-500 dark:text-neutral-400'}`}
                 >
                   نتيجتي الحالية
                 </button>
@@ -2397,8 +2404,8 @@ export default function ResponsiveDashboard() {
                           ))}
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">100%</span>
-                          <span className="text-[9px] text-neutral-500 dark:text-neutral-400">اجمالي المعايير</span>
+                          <span className="text-[15px] font-bold text-emerald-600 dark:text-emerald-400">100%</span>
+                          <span className="text-[10px] text-neutral-500 dark:text-neutral-400">اجمالي المعايير</span>
                         </div>
                       </div>
                       <div className="flex flex-col gap-2">
@@ -2421,8 +2428,8 @@ export default function ResponsiveDashboard() {
                         ]).map((m) => (
                           <div key={m.label} className="flex items-center gap-2">
                             <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: m.color }} />
-                            <span className="text-xs text-neutral-600 dark:text-neutral-400">{m.label}</span>
-                            <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300 mr-auto">{m.weight}%</span>
+                            <span className="text-sm text-neutral-600 dark:text-neutral-400">{m.label}</span>
+                            <span className="text-sm font-bold text-neutral-700 dark:text-neutral-300 mr-auto">{m.weight}%</span>
                           </div>
                         ))}
                       </div>
@@ -2431,14 +2438,14 @@ export default function ResponsiveDashboard() {
                     {/* Motivational Note */}
                     <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/20 rounded-xl p-3 flex items-center gap-2">
                       <span className="text-lg">💡</span>
-                      <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400 leading-relaxed">
+                      <p className="text-sm font-medium text-amber-700 dark:text-amber-400 leading-relaxed">
                         على المتسابق محاولة تحقيق أعلى نسبة من جميع المعايير ليضمن الفوز
                       </p>
                     </div>
 
                     {/* Prize Table */}
                     <div className="bg-neutral-50 dark:bg-neutral-700/30 rounded-xl p-3">
-                      <p className="text-xs font-bold text-neutral-700 dark:text-neutral-200 mb-2">الجوائز</p>
+                      <p className="text-sm font-bold text-neutral-700 dark:text-neutral-200 mb-2">الجوائز</p>
                       <div className="grid grid-cols-3 gap-2">
                         {[
                           { rank: '🥇 الأول', amount: '10000', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20' },
@@ -2446,16 +2453,16 @@ export default function ResponsiveDashboard() {
                           { rank: '🥉 الثالث', amount: '2000', color: 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20' },
                         ].map((p) => (
                           <div key={p.rank} className={`rounded-lg p-2 text-center ${p.color}`}>
-                            <p className="text-[10px] font-medium">{p.rank}</p>
-                            <p className="text-sm font-bold">{p.amount}</p>
-                            <p className="text-[9px] text-neutral-500 dark:text-neutral-400">ريال</p>
+                            <p className="text-xs font-medium">{p.rank}</p>
+                            <p className="text-[15px] font-bold">{p.amount}</p>
+                            <p className="text-[10px] text-neutral-500 dark:text-neutral-400">ريال</p>
                           </div>
                         ))}
                       </div>
                     </div>
 
                     {/* Info */}
-                    <div className="flex items-center justify-between text-xs text-neutral-600 dark:text-neutral-400">
+                    <div className="flex items-center justify-between text-sm text-neutral-600 dark:text-neutral-400">
                       <span>عدد المشاركين: {activeContest === 1 ? '48 بائع' : activeContest === 2 ? '12 فرع' : '35 موظف'}</span>
                       <span>ينتهي: {activeContest === 1 ? '26 يونيو' : activeContest === 2 ? '9 يوليو' : '30 سبتمبر'}</span>
                     </div>
@@ -2463,16 +2470,16 @@ export default function ResponsiveDashboard() {
                     {/* Managers */}
                     <div className="bg-neutral-50 dark:bg-neutral-700/30 rounded-xl p-3 flex flex-col gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 w-24">مشرف المسابقة</span>
-                        <span className="text-xs font-bold text-neutral-700 dark:text-neutral-200">{activeContest === 1 ? 'محمد القحطاني' : activeContest === 2 ? 'خالد الشمري' : 'فهد العنزي'}</span>
+                        <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 w-24">مشرف المسابقة</span>
+                        <span className="text-sm font-bold text-neutral-700 dark:text-neutral-200">{activeContest === 1 ? 'محمد القحطاني' : activeContest === 2 ? 'خالد الشمري' : 'فهد العنزي'}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 w-24">مدير المنطقة</span>
-                        <span className="text-xs font-bold text-neutral-700 dark:text-neutral-200">{activeContest === 1 ? 'عبدالرحمن الدوسري' : activeContest === 2 ? 'سعد الحربي' : 'طلال الراشد'}</span>
+                        <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 w-24">مدير المنطقة</span>
+                        <span className="text-sm font-bold text-neutral-700 dark:text-neutral-200">{activeContest === 1 ? 'عبدالرحمن الدوسري' : activeContest === 2 ? 'سعد الحربي' : 'طلال الراشد'}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 w-24">المدير الإقليمي</span>
-                        <span className="text-xs font-bold text-neutral-700 dark:text-neutral-200">{activeContest === 1 ? 'سلطان العتيبي' : activeContest === 2 ? 'نواف المطيري' : 'مشعل السبيعي'}</span>
+                        <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 w-24">المدير الإقليمي</span>
+                        <span className="text-sm font-bold text-neutral-700 dark:text-neutral-200">{activeContest === 1 ? 'سلطان العتيبي' : activeContest === 2 ? 'نواف المطيري' : 'مشعل السبيعي'}</span>
                       </div>
                     </div>
                   </div>
@@ -2484,18 +2491,18 @@ export default function ResponsiveDashboard() {
                         <UserCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-neutral-800 dark:text-neutral-100">أحمد عبدالقادر</p>
-                        <p className="text-[11px] text-neutral-500 dark:text-neutral-400">{activeContest === 3 ? 'ممثل خدمة عملاء — فرع الدمام' : 'بائع — فرع الدمام الرئيسي'}</p>
+                        <p className="text-[15px] font-bold text-neutral-800 dark:text-neutral-100">أحمد عبدالقادر</p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{activeContest === 3 ? 'ممثل خدمة عملاء — فرع الدمام' : 'بائع — فرع الدمام الرئيسي'}</p>
                       </div>
                       <div className="mr-auto text-center">
                         <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">#{activeContest === 1 ? '3' : activeContest === 2 ? '5' : '2'}</p>
-                        <p className="text-[10px] text-neutral-500 dark:text-neutral-400">ترتيبك</p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">ترتيبك</p>
                       </div>
                     </div>
 
                     {/* Stats Bars */}
                     <div className="flex flex-col gap-3">
-                      <p className="text-xs font-bold text-neutral-700 dark:text-neutral-200">إحصائياتك</p>
+                      <p className="text-sm font-bold text-neutral-700 dark:text-neutral-200">إحصائياتك</p>
                       {(activeContest === 1 ? [
                         { label: 'إجمالي المبيعات', current: 195000, target: 200000, weight: 30 },
                         { label: 'نسبة التحقيق', current: 92, target: 100, weight: 25 },
@@ -2516,14 +2523,14 @@ export default function ResponsiveDashboard() {
                         const pct = Math.min(100, Math.round((s.current / s.target) * 100));
                         return (
                           <div key={s.label} className="flex flex-col gap-1">
-                            <div className="flex items-center justify-between text-[11px]">
+                            <div className="flex items-center justify-between text-xs">
                               <span className="font-medium text-neutral-700 dark:text-neutral-300">{s.label} ({s.weight}%)</span>
                               <span className="font-bold text-neutral-700 dark:text-neutral-200">{s.current.toLocaleString()} / {s.target.toLocaleString()}</span>
                             </div>
                             <div className="h-2 rounded-full bg-neutral-100 dark:bg-neutral-700 overflow-hidden">
                               <div className={`h-full rounded-full transition-all ${pct >= 90 ? 'bg-emerald-500' : pct >= 70 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${pct}%` }} />
                             </div>
-                            <span className="text-[10px] text-neutral-500 dark:text-neutral-400 self-end">{pct}%</span>
+                            <span className="text-xs text-neutral-500 dark:text-neutral-400 self-end">{pct}%</span>
                           </div>
                         );
                       })}
@@ -2532,8 +2539,8 @@ export default function ResponsiveDashboard() {
                     {/* Overall Score */}
                     <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 flex items-center gap-3">
                       <div className="flex-1">
-                        <p className="text-xs font-bold text-neutral-700 dark:text-neutral-200">إجمالي تقييمك</p>
-                        <p className="text-[10px] text-neutral-500 dark:text-neutral-400">{activeContest === 1 ? '92% — مؤهّل للجائزة الأولى 🥇' : activeContest === 2 ? '86% — مؤهّل للجائزة الثانية 🥈' : '89% — مؤهّل للجائزة الأولى 🥇'}</p>
+                        <p className="text-sm font-bold text-neutral-700 dark:text-neutral-200">إجمالي تقييمك</p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">{activeContest === 1 ? '92% — مؤهّل للجائزة الأولى 🥇' : activeContest === 2 ? '86% — مؤهّل للجائزة الثانية 🥈' : '89% — مؤهّل للجائزة الأولى 🥇'}</p>
                       </div>
                       <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{activeContest === 1 ? '92%' : activeContest === 2 ? '86%' : '89%'}</span>
                     </div>
@@ -3246,11 +3253,11 @@ export default function ResponsiveDashboard() {
         <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 rounded-xl">
           <div className="max-w-[1400px] mx-auto px-0 sm:px-2 rounded-xl overflow-hidden">
             <div className="px-2 sm:px-4 py-2 border-b border-neutral-100">
-              <div className="flex items-center gap-1 bg-neutral-0 rounded-full p-1 min-w-0">
+              <div className="flex items-center gap-7 bg-neutral-50 dark:bg-neutral-800 rounded-full p-1 w-fit mx-auto">
               {ATTEND_TABS.map(([key, label]) => (
                 <button key={key} onClick={() => setAttendanceSubTab(key)}
                   className={cn(
-                    'flex flex-1 items-center justify-center px-2 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-[13px] font-semibold transition-all duration-200 min-w-0',
+                    'flex items-center justify-center px-4 sm:px-6 py-1.5 rounded-full text-[13px] sm:text-[14px] font-bold transition-all duration-200 min-w-0',
                     attendanceSubTab === key
                       ? 'bg-neutral-900 text-white shadow-sm'
                       : 'bg-neutral-50 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600 hover:text-neutral-900 dark:hover:text-white'
@@ -3278,16 +3285,16 @@ export default function ResponsiveDashboard() {
       ['archive', 'أرشيف الصادر', Archive],
     ];
     return (
-      <div dir="rtl" className="min-h-screen" style={{ backgroundColor: dark ? '#0a0a0a' : '#F4F8FE' }}>
+      <div dir="rtl" className="min-h-screen">
         {/* Tab Bar */}
         <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700">
           <div className="max-w-[1400px] mx-auto px-0 sm:px-2 overflow-hidden">
-            <div className="px-1 sm:px-4 py-2">
-              <div className="flex items-center gap-1 bg-neutral-0 dark:bg-neutral-800 rounded-full p-1 w-full min-w-0 sm:max-w-[60%] sm:mx-auto">
+            <div className="px-2 sm:px-4 py-2">
+              <div className="flex items-center gap-7 bg-neutral-50 dark:bg-neutral-800 rounded-full p-1 w-fit mx-auto">
               {TRANS_TABS.map(([key, label]) => (
                 <button key={key} onClick={() => setTransactionsSubTab(key)}
                   className={cn(
-                    'flex flex-1 items-center justify-center py-1.5 px-2 sm:px-3 rounded-full text-[13px] sm:text-[14px] font-bold transition-all duration-200 min-w-0',
+                    'flex items-center justify-center px-4 sm:px-6 py-1.5 rounded-full text-[13px] sm:text-[14px] font-bold transition-all duration-200 min-w-0',
                     transactionsSubTab === key
                       ? 'bg-neutral-900 text-white shadow-sm'
                       : 'bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 hover:text-neutral-900 dark:hover:text-white'
@@ -3347,7 +3354,7 @@ export default function ResponsiveDashboard() {
     if (view === "inbox") return renderInboxView();
     if (view === "transaction_details") return renderTransactionDetailsView();
     if (view === "sales_kpi") return <SalesPerformancePage onBack={() => setView("dashboard")} />;
-    if (view === "tasks") return <TasksPage onBack={() => setView("dashboard")} onNewCampaign={() => setView("campaigns")} onNewProject={() => alert("صفحة المشاريع قيد التطوير")} />;
+    if (view === "tasks") return <TasksPage onBack={() => setView("dashboard")} onNewCampaign={() => setView("campaigns")} />;
     if (view === "campaigns") return <CampaignsPage onBack={() => setView("dashboard")} />;
     if (view === "shortcuts") return renderShortcutsPage();
     if (view === "notifications") return renderNotificationsPage();
@@ -3444,7 +3451,7 @@ export default function ResponsiveDashboard() {
 
   function renderMainDashboard() {
     return (
-      <div dir="rtl" className={cn(rootClass, "overflow-x-hidden")} style={backgroundStyle}>
+      <div dir="rtl" className={cn(rootClass)} style={backgroundStyle}>
 
 
         {/* Body */}

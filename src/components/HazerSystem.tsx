@@ -34,12 +34,12 @@ function parseStatValue(value: string): { num: number; suffix: string } {
   return { num: parseFloat(match[1]), suffix: match[2] ? " " + match[2].trim() : "" };
 }
 
-function StatCard({ title, value, icon: Icon, tone = "sky" as "sky" | "emerald" | "amber" | "rose" }) {
+function StatCard({ title, value, icon: Icon, tone = "sky" }: { title: string; value: string; icon: React.ElementType; tone?: "sky" | "emerald" | "amber" | "rose" }) {
   const toneClasses = {
-    sky: "bg-gradient-to-b from-sky-50/80 to-white border-sky-100",
-    emerald: "bg-gradient-to-b from-emerald-50/80 to-white border-emerald-100",
-    amber: "bg-gradient-to-b from-amber-50/80 to-white border-amber-100",
-    rose: "bg-gradient-to-b from-rose-50/80 to-white border-rose-100",
+    sky: "bg-white border-neutral-100",
+    emerald: "bg-white border-neutral-100",
+    amber: "bg-white border-neutral-100",
+    rose: "bg-white border-neutral-100",
   };
 
   const iconToneClasses = {
@@ -123,10 +123,10 @@ export default function HazerSystem() {
   ];
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[radial-gradient(40%_40%_at_100%_0%,#eef2ff_0%,transparent_60%),radial-gradient(50%_40%_at_0%_100%,#fff1f2_0%,transparent_60%)]">
+    <div dir="rtl" className="min-h-screen">
       <div className="mx-auto max-w-[1200px] p-3 sm:p-6 space-y-4 sm:space-y-6">
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <Card className="rounded-2xl border bg-gradient-to-b from-sky-50/70 to-white shadow-sm">
+          <Card className="rounded-2xl border bg-white border-neutral-100 shadow-sm">
             <CardHeader className="px-4 sm:px-6">
               <CardTitle className="text-lg sm:text-xl">نظام حاضر</CardTitle>
             </CardHeader>

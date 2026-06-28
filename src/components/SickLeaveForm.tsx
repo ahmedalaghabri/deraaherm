@@ -116,7 +116,7 @@ export default function SickLeaveForm({ onCancel, onSaved }: SickLeaveFormProps)
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[radial-gradient(40%_40%_at_100%_0%,#eef2ff_0%,transparent_60%),radial-gradient(50%_40%_at_0%_100%,#fff1f2_0%,transparent_60%)]">
+    <div dir="rtl" className="min-h-screen">
       <div className="mx-auto max-w-[1200px] p-3 sm:p-6 space-y-4 sm:space-y-6">
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <Card className="rounded-2xl border bg-gradient-to-b from-rose-50/70 to-white border-rose-100 shadow-sm">

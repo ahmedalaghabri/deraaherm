@@ -213,23 +213,23 @@ function AlertCard({ title, description, tone = "info" as "info" | "warn" | "ok"
 function toneClasses(tone: "sky" | "rose" | "violet" | "emerald" | "amber") {
   const map = {
     sky: {
-      card: "bg-gradient-to-b from-sky-50/80 to-white border-sky-100",
+      card: "bg-white border-neutral-100",
       iconWrap: "bg-sky-100/60 text-sky-700 border-sky-200",
     },
     rose: {
-      card: "bg-gradient-to-b from-rose-50/80 to-white border-rose-100",
+      card: "bg-white border-neutral-100",
       iconWrap: "bg-rose-100/60 text-rose-700 border-rose-200",
     },
     violet: {
-      card: "bg-gradient-to-b from-violet-50/80 to-white border-violet-100",
+      card: "bg-white border-neutral-100",
       iconWrap: "bg-violet-100/60 text-violet-700 border-violet-200",
     },
     emerald: {
-      card: "bg-gradient-to-b from-emerald-50/80 to-white border-emerald-100",
+      card: "bg-white border-neutral-100",
       iconWrap: "bg-emerald-100/60 text-emerald-700 border-emerald-200",
     },
     amber: {
-      card: "bg-gradient-to-b from-amber-50/80 to-white border-amber-100",
+      card: "bg-white border-neutral-100",
       iconWrap: "bg-amber-100/60 text-amber-700 border-amber-200",
     },
   } as const;
@@ -258,7 +258,7 @@ function parseStatValue(value: string): { num: number; suffix: string } {
   return { num: parseFloat(match[1]), suffix: match[2] ? " " + match[2].trim() : "" };
 }
 
-function StatCard({ title, value, icon: Icon, hint, tone = "sky" as "sky" | "rose" | "violet" | "emerald" | "amber" }) {
+function StatCard({ title, value, icon: Icon, hint, tone = "sky" }: { title: string; value: string; icon: React.ElementType; hint?: string; tone?: "sky" | "rose" | "violet" | "emerald" | "amber" }) {
   const t = toneClasses(tone);
   const { num, suffix } = parseStatValue(value);
   const animated = useCountUp(num);
@@ -320,11 +320,11 @@ export default function AttendanceDashboard() {
   }, [rows]);
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[radial-gradient(40%_40%_at_100%_0%,#eef2ff_0%,transparent_60%),radial-gradient(50%_40%_at_0%_100%,#fff1f2_0%,transparent_60%)]">
+    <div dir="rtl" className="min-h-screen">
       <div className="mx-auto max-w-[1400px] p-3 sm:p-6 space-y-4 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:gap-4">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <Card className="rounded-2xl border bg-gradient-to-b from-sky-50/70 to-white shadow-sm">
+            <Card className="rounded-2xl border bg-white border-neutral-100 shadow-sm">
               <CardHeader className="pb-3 px-4 sm:px-6">
                 <CardTitle className="text-lg sm:text-xl">سجل الحضور والانصراف</CardTitle>
               </CardHeader>
@@ -621,7 +621,7 @@ export default function AttendanceDashboard() {
         </Card>
 
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
-          <Card className="rounded-2xl border bg-gradient-to-b from-slate-50 to-white shadow-sm">
+          <Card className="rounded-2xl border bg-white border-neutral-100 shadow-sm">
             <CardHeader className="px-4 sm:px-6">
               <CardTitle className="text-base sm:text-lg">ملاحظات وتنبيهات</CardTitle>
             </CardHeader>

@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, ChevronUp, ChevronDown, AlertCircle, CheckCircle2, FileText, Send, User, Building2 } from 'lucide-react';
+import { Calendar, Clock, ChevronUp, ChevronDown, AlertCircle, CheckCircle2, FileText, Send, User, Building2, Briefcase, CheckSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import PageTabs from './PageTabs';
 
 interface ExitPermit {
   id: string;
@@ -277,7 +278,7 @@ export default function ExitPermitForm() {
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[radial-gradient(40%_40%_at_100%_0%,#eef2ff_0%,transparent_60%),radial-gradient(50%_40%_at_0%_100%,#fff1f2_0%,transparent_60%)]">
+    <div dir="rtl" className="min-h-screen">
       <div className="mx-auto max-w-[1400px] p-3 sm:p-6 space-y-4 sm:space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -613,30 +614,14 @@ export default function ExitPermitForm() {
                 سجل الأذونات والمأموريات
               </CardTitle>
 
-              <div className="flex gap-0.5 p-0.5 bg-neutral-100 border border-neutral-200 rounded-xl w-fit">
-                <button
-                  onClick={() => setActiveTab('external')}
-                  className={cn(
-                    'px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150',
-                    activeTab === 'external'
-                      ? 'bg-[#B21063] text-white shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-800'
-                  )}
-                >
-                  مأموريات العمل الخارجية
-                </button>
-                <button
-                  onClick={() => setActiveTab('tasks')}
-                  className={cn(
-                    'px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150',
-                    activeTab === 'tasks'
-                      ? 'bg-[#B21063] text-white shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-800'
-                  )}
-                >
-                  أذونات المهام
-                </button>
-              </div>
+              <PageTabs
+                tabs={[
+                  ["external", "مأموريات العمل الخارجية", Briefcase],
+                  ["tasks", "أذونات المهام", CheckSquare],
+                ]}
+                active={activeTab}
+                onChange={(key) => setActiveTab(key as typeof activeTab)}
+              />
             </CardHeader>
 
             <CardContent className="p-0">

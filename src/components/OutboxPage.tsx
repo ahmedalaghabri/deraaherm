@@ -84,23 +84,23 @@ const sampleTransactions: Transaction[] = [
 function toneClasses(tone: 'sky' | 'rose' | 'violet' | 'emerald' | 'amber') {
   const map = {
     sky: {
-      card: 'bg-gradient-to-b from-sky-50/80 to-white border-sky-100',
+      card: 'bg-white border-neutral-100',
       iconWrap: 'bg-sky-100/60 text-sky-700 border-sky-200',
     },
     rose: {
-      card: 'bg-gradient-to-b from-rose-50/80 to-white border-rose-100',
+      card: 'bg-white border-neutral-100',
       iconWrap: 'bg-rose-100/60 text-rose-700 border-rose-200',
     },
     violet: {
-      card: 'bg-gradient-to-b from-violet-50/80 to-white border-violet-100',
+      card: 'bg-white border-neutral-100',
       iconWrap: 'bg-violet-100/60 text-violet-700 border-violet-200',
     },
     emerald: {
-      card: 'bg-gradient-to-b from-emerald-50/80 to-white border-emerald-100',
+      card: 'bg-white border-neutral-100',
       iconWrap: 'bg-emerald-100/60 text-emerald-700 border-emerald-200',
     },
     amber: {
-      card: 'bg-gradient-to-b from-amber-50/80 to-white border-amber-100',
+      card: 'bg-white border-neutral-100',
       iconWrap: 'bg-amber-100/60 text-amber-700 border-amber-200',
     },
   } as const;
@@ -253,7 +253,7 @@ const OutboxPage: React.FC<OutboxPageProps> = ({ onViewDetails, transactions: pr
   return (
     <div
       dir="rtl"
-      className="min-h-screen bg-[radial-gradient(40%_40%_at_100%_0%,#dbeafe_0%,transparent_60%),radial-gradient(50%_40%_at_0%_100%,#ede9fe_0%,transparent_60%)]"
+      className="min-h-screen"
     >
       <div className="mx-auto max-w-[1400px] p-3 sm:p-6 space-y-4 sm:space-y-6">
         <motion.div
