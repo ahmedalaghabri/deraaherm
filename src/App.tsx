@@ -885,6 +885,70 @@ function ReminderCarousel({ setView, setActiveKey, setTransactionsSubTab }: {
 }
 
 // ====== الواجهة الرئيسية ======
+function AIPageContextSync({
+  view,
+  activeKey,
+  transactionsSubTab,
+  attendanceSubTab,
+  allTransactions,
+}: {
+  view: string;
+  activeKey: string;
+  transactionsSubTab: string;
+  attendanceSubTab: string;
+  allTransactions: any[];
+}) {
+  const { setPageContext } = useAI();
+
+  useEffect(() => {
+    const viewTitles: Record<string, string> = {
+      dashboard: "لوحة التحكم الرئيسية",
+      settings: "إعدادات النظام",
+      transactions: "المعاملات الإدارية",
+      attendance: "الحضور والانصراف",
+      attendance_report: "تقرير الحضور",
+      exit_permission: "طلب إذن خروج",
+      hazer_system: "نظام حاضر",
+      tasks: "المهام والمشاريع",
+      campaigns: "الحملات التسويقية",
+      sales_kpi: "أداء المبيعات",
+      annual_leave: "طلب إجازة سنوية",
+      transport_allowance: "بدل النقل",
+      add: "إضافة معاملة جديدة",
+      transaction_selection: "اختيار نوع المعاملة",
+      inbox: "الوارد",
+      outbox: "الصادر",
+      transaction_details: "تفاصيل المعاملة",
+      shortcuts: "الاختصارات",
+      notifications: "الإشعارات",
+    };
+
+    let dataSummary = "";
+
+    if (view === "dashboard") {
+      dataSummary = `أداء الموظف: 92%\nالمهام المنجزة: 124\nمعدل الحضور: 98%\nالمعاملات: 156\nلا يوجد تأخير\nأيام إجازة مستخدمة: 4 من 12`;
+    }
+
+    if ((view === "transactions" || view === "inbox" || view === "outbox") && allTransactions.length > 0) {
+      const counts: Record<string, number> = {};
+      allTransactions.forEach((t: any) => { counts[t.status] = (counts[t.status] || 0) + 1; });
+      dataSummary = `إجمالي المعاملات: ${allTransactions.length}\n${Object.entries(counts).map(([s, c]) => `- ${s}: ${c}`).join("\n")}`;
+    }
+
+    if (view === "attendance" || view === "attendance_report") {
+      dataSummary = `تقرير الحضور للموظف: أحمد عبدالقادر\nالقسم: الإدارة وإدارة تقنية المعلومات\nعدد أيام الدوام: 20 يوم\nعدد أيام الغياب: 2\nإجمالي ساعات التأخير: 15.6 ساعة\nإجمالي ساعات العمل الإضافي: 4.6 ساعة`;
+    }
+
+    setPageContext({
+      route: view,
+      title: viewTitles[view] || view,
+      dataSummary,
+    });
+  }, [view, activeKey, transactionsSubTab, attendanceSubTab, allTransactions]);
+
+  return null;
+}
+
 export default function ResponsiveDashboard() {
   const [currentPage, setCurrentPage] = useState("main-dashboard");
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -927,58 +991,6 @@ export default function ResponsiveDashboard() {
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [allTransactions, setAllTransactions] = useState([]);
   const [transactionsLoaded, setTransactionsLoaded] = useState(false);
-
-  const { setPageContext } = useAI();
-
-  // Push current view info to AI assistant
-  useEffect(() => {
-    const viewTitles: Record<string, string> = {
-      dashboard: "لوحة التحكم الرئيسية",
-      settings: "إعدادات النظام",
-      transactions: "المعاملات الإدارية",
-      attendance: "الحضور والانصراف",
-      attendance_report: "تقرير الحضور",
-      exit_permission: "طلب إذن خروج",
-      hazer_system: "نظام حاضر",
-      tasks: "المهام والمشاريع",
-      campaigns: "الحملات التسويقية",
-      sales_kpi: "أداء المبيعات",
-      annual_leave: "طلب إجازة سنوية",
-      transport_allowance: "بدل النقل",
-      add: "إضافة معاملة جديدة",
-      transaction_selection: "اختيار نوع المعاملة",
-      inbox: "الوارد",
-      outbox: "الصادر",
-      transaction_details: "تفاصيل المعاملة",
-      shortcuts: "الاختصارات",
-      notifications: "الإشعارات",
-    };
-
-    let dataSummary = "";
-
-    // Dashboard stats
-    if (view === "dashboard") {
-      dataSummary = `أداء الموظف: 92%\nالمهام المنجزة: 124\nمعدل الحضور: 98%\nالمعاملات: 156\nلا يوجد تأخير\nأيام إجازة مستخدمة: 4 من 12`;
-    }
-
-    // Transactions summary
-    if ((view === "transactions" || view === "inbox" || view === "outbox") && allTransactions.length > 0) {
-      const counts: Record<string, number> = {};
-      allTransactions.forEach((t: any) => { counts[t.status] = (counts[t.status] || 0) + 1; });
-      dataSummary = `إجمالي المعاملات: ${allTransactions.length}\n${Object.entries(counts).map(([s, c]) => `- ${s}: ${c}`).join("\n")}`;
-    }
-
-    // Attendance summary
-    if (view === "attendance" || view === "attendance_report") {
-      dataSummary = `تقرير الحضور للموظف: أحمد عبدالقادر\nالقسم: الإدارة وإدارة تقنية المعلومات\nعدد أيام الدوام: 20 يوم\nعدد أيام الغياب: 2\nإجمالي ساعات التأخير: 15.6 ساعة\nإجمالي ساعات العمل الإضافي: 4.6 ساعة`;
-    }
-
-    setPageContext({
-      route: view,
-      title: viewTitles[view] || view,
-      dataSummary,
-    });
-  }, [view, activeKey, transactionsSubTab, attendanceSubTab, allTransactions]);
 
   // Reset sidebar selection when on dashboard
   useEffect(() => {
@@ -3507,6 +3519,13 @@ export default function ResponsiveDashboard() {
   function renderMainDashboard() {
     return (
       <AIProvider>
+        <AIPageContextSync
+          view={view}
+          activeKey={activeKey}
+          transactionsSubTab={transactionsSubTab}
+          attendanceSubTab={attendanceSubTab}
+          allTransactions={allTransactions}
+        />
         <div dir="rtl" className={cn(rootClass)} style={backgroundStyle}>
 
 
