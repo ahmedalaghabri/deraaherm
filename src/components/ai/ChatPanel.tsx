@@ -1,10 +1,10 @@
 import { useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Mic, Bot, User, Trash2, Sparkles } from "lucide-react";
+import { X, Send, Mic, Bot, Plus } from "lucide-react";
 import { useAI } from "./AIContext";
 
 export function ChatPanel() {
-  const { isOpen, setIsOpen, messages, sendMessage, clearChat, isTyping } = useAI();
+  const { isOpen, setIsOpen, messages, sendMessage, isTyping } = useAI();
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -44,31 +44,20 @@ export function ChatPanel() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-neutral-700 bg-gradient-to-r from-indigo-50 to-white dark:from-indigo-950/30 dark:to-neutral-900">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-neutral-800 dark:text-white">المساعد الذكي</h3>
-                  <p className="text-[10px] text-neutral-400 dark:text-neutral-500">يقرأ بيانات الصفحة ويرد عليك</p>
-                </div>
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+              <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
+                <Bot className="w-5 h-5 text-white" />
               </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={clearChat}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
-                  title="مسح المحادثة"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-neutral-400" />
-                </button>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
-                >
-                  <X className="w-4 h-4 text-neutral-500" />
-                </button>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-neutral-800 dark:text-white leading-tight">المساعد الذكي</h3>
+                <p className="text-[10px] text-neutral-400 dark:text-neutral-500 leading-tight">يقرأ بيانات الصفحة ويرد عليك</p>
               </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+              >
+                <X className="w-4 h-4 text-neutral-600 dark:text-neutral-300" />
+              </button>
             </div>
 
             {/* Messages */}
@@ -81,23 +70,10 @@ export function ChatPanel() {
                   className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
                 >
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                    className={`max-w-[82%] px-4 py-2.5 rounded-2xl text-[13px] leading-relaxed ${
                       msg.role === "user"
-                        ? "bg-neutral-200 dark:bg-neutral-600"
-                        : "bg-gradient-to-br from-indigo-500 to-purple-600"
-                    }`}
-                  >
-                    {msg.role === "user" ? (
-                      <User className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-300" />
-                    ) : (
-                      <Bot className="w-3.5 h-3.5 text-white" />
-                    )}
-                  </div>
-                  <div
-                    className={`max-w-[80%] px-3.5 py-2.5 rounded-2xl text-[13px] leading-relaxed ${
-                      msg.role === "user"
-                        ? "bg-indigo-600 text-white rounded-tr-md"
-                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 rounded-tl-md"
+                        ? "bg-blue-500 text-white rounded-br-none"
+                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 rounded-bl-none border border-neutral-200/60 dark:border-neutral-700/60"
                     }`}
                   >
                     {msg.content}
@@ -107,10 +83,10 @@ export function ChatPanel() {
 
               {isTyping && (
                 <div className="flex gap-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0">
-                    <Bot className="w-3.5 h-3.5 text-white" />
+                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
+                    <Bot className="w-4 h-4 text-white" />
                   </div>
-                  <div className="px-4 py-3 rounded-2xl rounded-tl-md bg-neutral-100 dark:bg-neutral-800">
+                  <div className="px-4 py-3 rounded-2xl rounded-bl-none bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700/60">
                     <div className="flex gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: "0ms" }} />
                       <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -124,28 +100,33 @@ export function ChatPanel() {
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSubmit} className="p-3 border-t border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-900">
-              <div className="flex items-center gap-2 bg-neutral-50 dark:bg-neutral-800 rounded-2xl px-3 py-2 border border-neutral-200 dark:border-neutral-600">
+            <form onSubmit={handleSubmit} className="p-3 border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+              <div className="flex items-center gap-2 bg-neutral-50 dark:bg-neutral-800 rounded-full px-3 py-2 border border-neutral-200 dark:border-neutral-700">
                 <button
                   type="button"
-                  className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors shrink-0"
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors shrink-0"
                 >
-                  <Mic className="w-4 h-4 text-neutral-400" />
+                  <Plus className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                 </button>
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="اسأل أي شيء أو ابحث..."
+                  placeholder="Chat here..."
                   className="flex-1 bg-transparent text-sm text-neutral-800 dark:text-white placeholder:text-neutral-400 focus:outline-none"
-                  dir="rtl"
                 />
+                <button
+                  type="button"
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors shrink-0"
+                >
+                  <Mic className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+                </button>
                 <button
                   type="submit"
                   disabled={!input.trim()}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:hover:bg-indigo-600 transition-colors shrink-0"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-900 dark:bg-white hover:opacity-80 disabled:opacity-40 disabled:hover:bg-neutral-900 dark:disabled:hover:bg-white transition-colors shrink-0"
                 >
-                  <Send className="w-3.5 h-3.5 text-white" />
+                  <Send className="w-3.5 h-3.5 text-white dark:text-neutral-900" />
                 </button>
               </div>
             </form>

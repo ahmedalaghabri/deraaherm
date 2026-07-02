@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Mic, Send, Sparkles } from "lucide-react";
+import { Mic, Send, Plus } from "lucide-react";
 import { useAI } from "./AIContext";
 
 export function FloatingAssistant() {
@@ -16,17 +16,17 @@ export function FloatingAssistant() {
     >
       <button
         onClick={() => setIsOpen(true)}
-        className="w-full group relative flex items-center gap-3 px-2 py-2 rounded-[28px] bg-white/80 dark:bg-neutral-800/80 backdrop-blur-xl border border-neutral-200/80 dark:border-neutral-700/50 shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.18)] transition-all duration-300"
+        className="w-full group relative flex items-center gap-2 px-2 py-2 rounded-full bg-white dark:bg-neutral-800 backdrop-blur-xl border border-neutral-200/80 dark:border-neutral-700/50 shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.18)] transition-all duration-300"
       >
-        {/* Orange robot icon circle */}
-        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-orange-400 to-amber-600 flex items-center justify-center shadow-md shrink-0">
-          <Sparkles className="w-5 h-5 text-white" />
+        {/* Plus icon */}
+        <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center shadow-sm shrink-0">
+          <Plus className="w-4 h-4 text-white" />
         </div>
 
         {/* Search text */}
         <div className="flex-1 text-right">
           <span className="text-sm text-neutral-400 dark:text-neutral-500 group-hover:text-neutral-500 dark:group-hover:text-neutral-400 transition-colors">
-            اسأل أي شيء أو ابحث...
+            Chat here...
           </span>
         </div>
 
@@ -36,8 +36,8 @@ export function FloatingAssistant() {
         </div>
 
         {/* Send button */}
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-700 flex items-center justify-center shadow-md shrink-0">
-          <Send className="w-4 h-4 text-white rotate-180" />
+        <div className="w-9 h-9 rounded-full bg-neutral-900 dark:bg-white flex items-center justify-center shadow-sm shrink-0">
+          <Send className="w-4 h-4 text-white dark:text-neutral-900 -rotate-90" />
         </div>
       </button>
     </motion.div>
