@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ChevronLeft, ChevronRight,
-  Calendar as CalendarIcon, Clock,
+  Calendar as CalendarIcon, Clock, Settings,
   Sun, Moon, Umbrella, AlertTriangle,
   Heart, Award, RotateCcw, X, Pencil
 } from "lucide-react";
@@ -21,6 +21,200 @@ const MONTHS_AR = [
 ];
 
 const DAYS_SHORT = ["سبت", "أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة"];
+const statusList: EmployeeStatus[] = [
+  "present", "absent", "weekly_leave", "annual_leave",
+  "sick_leave", "emergency_leave", "compensatory", "cover"
+];
+
+interface WeeklyLeaveSelectProps {
+  employeeId: string;
+  year: number;
+  month: number;
+  setSchedules: React.Dispatch<React.SetStateAction<MonthScheduleMap>>;
+  getDefaultRecordForDay: (empId: string, dayNum: number) => EmployeeDayRecord;
+}
+
+function WeeklyLeaveSelect({ employeeId, year, month, setSchedules, getDefaultRecordForDay }: WeeklyLeaveSelectProps) {
+  const [open, setOpen] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [dayStatus, setDayStatus] = useState<EmployeeStatus>("present");
+  const [dayShiftType, setDayShiftType] = useState<"single" | "double">("single");
+  const [dayShift1Start, setDayShift1Start] = useState("09:00");
+  const [dayShift1End, setDayShift1End] = useState("17:00");
+  const [dayShift2Start, setDayShift2Start] = useState("17:00");
+  const [dayShift2End, setDayShift2End] = useState("22:00");
+  const ref = useRef<HTMLDivElement>(null);
+  const isAll = employeeId === "all";
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const daysInMonth = getDaysInMonth(year, month);
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const startOffset = (firstDayOfMonth + 1) % 7;
+
+  const toggleDay = (day: number) => {
+    setSelectedDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+  };
+
+  const applyConfig = () => {
+    if (isAll || selectedDays.length === 0) return;
+    setSchedules(prev => {
+      const next = { ...prev };
+      for (const day of selectedDays) {
+        const dk = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const existing = next[dk] || {};
+        const rec = existing[employeeId] || getDefaultRecordForDay(employeeId, day);
+        next[dk] = {
+          ...existing,
+          [employeeId]: {
+            ...rec,
+            status: dayStatus,
+            shiftType: dayShiftType,
+            shift1: { start: dayShift1Start, end: dayShift1End },
+            ...(dayShiftType === "double" ? { shift2: { start: dayShift2Start, end: dayShift2End } } : {}),
+          }
+        };
+      }
+      return next;
+    });
+    setSelectedDays([]);
+  };
+
+  const label = isAll
+    ? "الأيام: اختر موظفاً"
+    : selectedDays.length === 0
+      ? "الأيام: اختر الأيام"
+      : `الأيام: ${selectedDays.length} يوم مختار`;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => { if (!isAll) setOpen(o => !o); }}
+        disabled={isAll}
+        className={cn(
+          "text-[11px] font-bold px-2 py-1 rounded-lg border flex items-center gap-1 min-w-[120px] justify-between",
+          isAll
+            ? "border-neutral-100 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-600 cursor-not-allowed"
+            : "border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+        )}
+      >
+        <span className="truncate">{label}</span>
+        <svg className={cn("w-3 h-3 transition-transform", open && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1 right-0 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-2.5 min-w-[220px]">
+          <p className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 text-center mb-1.5">{MONTHS_AR[month]} {year}</p>
+          {/* Day names */}
+          <div className="grid grid-cols-7 gap-0.5 mb-1">
+            {DAYS_SHORT.map(d => (
+              <div key={d} className="text-center text-[9px] font-bold text-neutral-400 dark:text-neutral-500 py-0.5">{d}</div>
+            ))}
+          </div>
+          {/* Calendar grid */}
+          <div className="grid grid-cols-7 gap-0.5">
+            {Array.from({ length: startOffset }).map((_, i) => (
+              <div key={`empty-${i}`} className="w-7 h-7" />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const isSelected = selectedDays.includes(day);
+              return (
+                <button
+                  key={day}
+                  onClick={() => toggleDay(day)}
+                  className={cn(
+                    "w-7 h-7 rounded-md text-[11px] font-bold flex items-center justify-center transition-all",
+                    isSelected
+                      ? "bg-amber-500 text-white shadow-sm"
+                      : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                  )}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+          {/* Config panel */}
+          <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-700 space-y-2">
+            <p className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 text-center">إعدادات الأيام المختارة</p>
+            <select
+              value={dayStatus}
+              onChange={e => setDayStatus(e.target.value as EmployeeStatus)}
+              className="w-full text-[11px] font-bold px-2 py-1 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+            >
+              {statusList.map(s => (
+                <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
+              ))}
+            </select>
+            <select
+              value={dayShiftType}
+              onChange={e => setDayShiftType(e.target.value as "single" | "double")}
+              className="w-full text-[11px] font-bold px-2 py-1 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+            >
+              <option value="single">فترة واحدة</option>
+              <option value="double">فترتين</option>
+            </select>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-400 shrink-0 w-8">الأولى</span>
+              <input
+                type="time"
+                value={dayShift1Start}
+                onChange={e => setDayShift1Start(e.target.value)}
+                className="flex-1 text-[11px] font-bold px-1.5 py-1 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+              />
+              <span className="text-[10px] text-neutral-400">—</span>
+              <input
+                type="time"
+                value={dayShift1End}
+                onChange={e => setDayShift1End(e.target.value)}
+                className="flex-1 text-[11px] font-bold px-1.5 py-1 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+              />
+            </div>
+            {dayShiftType === "double" && (
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-neutral-500 dark:text-neutral-400 shrink-0 w-8">الثانية</span>
+                <input
+                  type="time"
+                  value={dayShift2Start}
+                  onChange={e => setDayShift2Start(e.target.value)}
+                  className="flex-1 text-[11px] font-bold px-1.5 py-1 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+                />
+                <span className="text-[10px] text-neutral-400">—</span>
+                <input
+                  type="time"
+                  value={dayShift2End}
+                  onChange={e => setDayShift2End(e.target.value)}
+                  className="flex-1 text-[11px] font-bold px-1.5 py-1 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+                />
+              </div>
+            )}
+            <button
+              onClick={applyConfig}
+              disabled={selectedDays.length === 0}
+              className={cn(
+                "w-full py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1",
+                selectedDays.length === 0
+                  ? "bg-neutral-100 dark:bg-neutral-700 text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
+                  : "border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/30"
+              )}
+            >
+              <RotateCcw className="w-3 h-3" />
+              تطبيق على {selectedDays.length} يوم
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 type EmployeeStatus =
   | "present" | "absent" | "weekly_leave" | "annual_leave"
@@ -67,6 +261,9 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
   const [modalOpen, setModalOpen] = useState(false);
   const [showroomShiftStart, setShowroomShiftStart] = useState(9);
   const [showroomShiftEnd, setShowroomShiftEnd] = useState(22);
+  const [showroomSettingsOpen, setShowroomSettingsOpen] = useState(false);
+  const [timelineEmployeeFilter, setTimelineEmployeeFilter] = useState<string>("all");
+  const [hourPopup, setHourPopup] = useState<{day: number; hour: number} | null>(null);
 
   const [schedules, setSchedules] = useState<MonthScheduleMap>({});
 
@@ -85,8 +282,14 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
     setSelectedDay(null); setSelectedEmployeeId(null); setSelectedHour(null);
   };
 
+  const getDefaultRecordForDay = (_empId: string, _dayNum: number): EmployeeDayRecord => {
+    return { status: "present", shiftType: "single", shift1: { start: "09:00", end: "17:00" } };
+  };
+
   const getEmployeeRecord = (empId: string): EmployeeDayRecord => {
-    return daySchedule[empId] || { status: "present", shiftType: "single", shift1: { start: "09:00", end: "17:00" } };
+    if (daySchedule[empId]) return daySchedule[empId];
+    if (!selectedDay) return getDefaultRecordForDay(empId, 1);
+    return getDefaultRecordForDay(empId, selectedDay);
   };
 
   const setEmployeeRecord = (empId: string, record: EmployeeDayRecord) => {
@@ -100,10 +303,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
   const firstDayOfMonth = new Date(year, month, 1).getDay();
   const startOffset = (firstDayOfMonth + 1) % 7;
 
-  const statusList: EmployeeStatus[] = [
-    "present", "absent", "weekly_leave", "annual_leave",
-    "sick_leave", "emergency_leave", "compensatory", "cover"
-  ];
+  // statusList is defined at module level
 
   const displayDay = selectedDay || (today.getMonth() === month && today.getFullYear() === year ? today.getDate() : 1);
   const displayDayKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(displayDay).padStart(2, "0")}`;
@@ -120,7 +320,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
       }
       let count = 0;
       EMPLOYEES.forEach((emp) => {
-        const rec = displayDaySched?.[emp.id] || { status: "present", shiftType: "single", shift1: { start: "09:00", end: "17:00" } };
+        const rec = displayDaySched?.[emp.id] || getDefaultRecordForDay(emp.id, displayDay);
         if (["absent", "weekly_leave", "annual_leave", "sick_leave", "emergency_leave"].includes(rec.status)) return;
         const s1 = parseInt(rec.shift1.start.split(":")[0]);
         const e1 = parseInt(rec.shift1.end.split(":")[0]);
@@ -222,31 +422,29 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                 const isSelected = selectedDay === day;
                 const hasSchedule = !!daySched;
                 const getRecordForDay = (empId: string): EmployeeDayRecord => {
-                  return daySched?.[empId] || { status: "present", shiftType: "single", shift1: { start: "09:00", end: "17:00" } };
+                  return daySched?.[empId] || getDefaultRecordForDay(empId, day);
                 };
                 return (
                   <div
                     key={day}
+                    onClick={() => { setSelectedDay(day); setSelectedEmployeeId(EMPLOYEES[0].id); setModalOpen(true); }}
                     className={cn(
-                      "min-h-[82px] sm:min-h-[132px] p-4 sm:p-6 rounded-xl border transition-all text-right relative flex flex-col justify-between shadow-sm overflow-hidden",
+                      "min-h-[82px] sm:min-h-[132px] p-4 sm:p-6 rounded-xl border transition-all text-right relative flex flex-col justify-between shadow-sm overflow-hidden cursor-pointer",
                       isSelected
                         ? "bg-white dark:bg-neutral-800 border-indigo-400 dark:border-indigo-500"
                         : isToday
                           ? "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800"
                           : isFuture && !hasSchedule
                             ? "bg-neutral-50/70 dark:bg-neutral-800/40 border-neutral-200/70 dark:border-neutral-700/50 opacity-70"
-                            : "bg-white dark:bg-neutral-800 border-neutral-100 dark:border-neutral-700"
+                            : "bg-white dark:bg-neutral-800 border-neutral-100 dark:border-neutral-700 hover:border-indigo-200 dark:hover:border-indigo-700"
                     )}
                   >
-                    {/* Edit icon */}
-                    {!isFuture && (
-                      <button
-                        onClick={() => { setSelectedDay(day); setSelectedEmployeeId(EMPLOYEES[0].id); setModalOpen(true); }}
-                        className="absolute top-1 right-1 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors z-10"
-                      >
-                        <Pencil className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-neutral-400 dark:text-neutral-500" />
-                      </button>
-                    )}
+                    {/* Edit icon (visual hint only, card click opens modal) */}
+                    <div
+                      className="absolute top-1 right-1 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors z-10 pointer-events-none"
+                    >
+                      <Pencil className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-neutral-400 dark:text-neutral-500" />
+                    </div>
                     {/* Top accent strip */}
                     <div className={cn(
                       "absolute top-0 left-0 right-0 h-1",
@@ -255,7 +453,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                     {/* Day name + big day number */}
                     <div className="flex items-center justify-end gap-1 mt-0.5 sm:gap-1.5 sm:mt-1">
                       <span className={cn(
-                        "text-[10px] font-bold",
+                        "text-[11px] font-bold",
                         isSelected ? "text-indigo-400 dark:text-indigo-500" :
                         isToday ? "text-amber-400 dark:text-amber-500" :
                         "text-neutral-400 dark:text-neutral-500"
@@ -271,35 +469,29 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                         {day}
                       </span>
                     </div>
-                    {isFuture && !hasSchedule ? (
-                      <div className="flex items-center justify-center mt-auto">
-                        <span className="text-[10px] text-neutral-400 dark:text-neutral-500">لم تجدول بعد</span>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-1 sm:gap-2 mt-auto">
-                        {EMPLOYEES.map((emp) => {
-                          const rec = getRecordForDay(emp.id);
-                          const sCfg = STATUS_CONFIG[rec.status];
-                          const isWorking = ["present", "cover", "compensatory"].includes(rec.status);
-                          const timeLabel = isWorking
-                            ? (rec.shiftType === "double"
-                                ? `${to12HourShift(rec.shift1.start)}–${to12HourShift(rec.shift1.end)}|${to12HourShift(rec.shift2!.start)}–${to12HourShift(rec.shift2!.end)}`
-                                : `${to12HourShift(rec.shift1.start)}–${to12HourShift(rec.shift1.end)}`)
-                            : sCfg.label;
-                          return (
-                            <div key={emp.id} className="flex items-center justify-between gap-1">
-                              <div className="flex items-center gap-1 min-w-0">
-                                <svg className={cn("w-1 h-1 sm:w-1.5 sm:h-1.5 shrink-0", sCfg.color)} viewBox="0 0 24 24" fill="currentColor">
-                                  <circle cx="12" cy="12" r="12" />
-                                </svg>
-                                <span className={cn("text-[10px] font-bold truncate px-0.5 py-0 sm:px-1 sm:py-0.5 rounded text-neutral-700 dark:text-neutral-200", sCfg.bg)}>{(() => { const parts = emp.name.split(" "); return parts.length > 2 ? `${parts[0]} ${parts[parts.length - 1]}` : emp.name; })()}</span>
-                              </div>
-                              <span className={cn("text-[9px] shrink-0", isWorking ? "text-neutral-400 dark:text-neutral-500" : sCfg.color)}>{timeLabel}</span>
+                    <div className="flex flex-col gap-1 sm:gap-2 mt-auto">
+                      {(timelineEmployeeFilter === "all" ? EMPLOYEES : EMPLOYEES.filter(e => e.id === timelineEmployeeFilter)).map((emp) => {
+                        const rec = getRecordForDay(emp.id);
+                        const sCfg = STATUS_CONFIG[rec.status];
+                        const isWorking = ["present", "cover", "compensatory"].includes(rec.status);
+                        const timeLabel = isWorking
+                          ? (rec.shiftType === "double"
+                              ? `${to12HourShift(rec.shift1.start)}–${to12HourShift(rec.shift1.end)}|${to12HourShift(rec.shift2!.start)}–${to12HourShift(rec.shift2!.end)}`
+                              : `${to12HourShift(rec.shift1.start)}–${to12HourShift(rec.shift1.end)}`)
+                          : sCfg.label;
+                        return (
+                          <div key={emp.id} className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1 min-w-0">
+                              <svg className={cn("w-1.5 h-1.5 sm:w-2 sm:h-2 shrink-0", sCfg.color)} viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="12" />
+                              </svg>
+                              <span className={cn("text-xs font-bold truncate px-0.5 py-0 sm:px-1 sm:py-0.5 rounded text-neutral-700 dark:text-neutral-200", sCfg.bg)}>{(() => { const parts = emp.name.split(" "); return parts.length > 2 ? `${parts[0]} ${parts[parts.length - 1]}` : emp.name; })()}</span>
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                            <span className={cn("text-[11px] shrink-0 mr-3", isWorking ? "text-neutral-400 dark:text-neutral-500" : sCfg.color)}>{timeLabel}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })}
@@ -323,28 +515,69 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                     <p className="text-[10px] text-neutral-400 dark:text-neutral-500">{MONTHS_AR[month]} {year} — التغطية الساعية</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-neutral-500 dark:text-neutral-400">دوام المعرض الافتراضي:</span>
+                <div className="flex items-center gap-2 flex-wrap">
                   <select
-                    value={showroomShiftStart}
-                    onChange={e => setShowroomShiftStart(parseInt(e.target.value))}
+                    value={timelineEmployeeFilter}
+                    onChange={e => setTimelineEmployeeFilter(e.target.value)}
                     className="text-[11px] font-bold px-2 py-1 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
                   >
-                    {Array.from({ length: 24 }).map((_, i) => (
-                      <option key={i} value={i}>{to12Hour(i)}</option>
+                    <option value="all">الموظف — الكل</option>
+                    {EMPLOYEES.map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.name}</option>
                     ))}
                   </select>
-                  <span className="text-[11px] text-neutral-400">—</span>
-                  <select
-                    value={showroomShiftEnd}
-                    onChange={e => setShowroomShiftEnd(parseInt(e.target.value))}
-                    className="text-[11px] font-bold px-2 py-1 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
-                  >
-                    {Array.from({ length: 24 }).map((_, i) => (
-                      <option key={i} value={i}>{to12Hour(i)}</option>
-                    ))}
-                  </select>
+                  <WeeklyLeaveSelect
+                    employeeId={timelineEmployeeFilter}
+                    year={year}
+                    month={month}
+                    setSchedules={setSchedules}
+                    getDefaultRecordForDay={getDefaultRecordForDay}
+                  />
                 </div>
+                {/* Settings icon with showroom shift dropdown */}
+                <div className="relative">
+                    <button
+                      onClick={() => setShowroomSettingsOpen(o => !o)}
+                      className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center border transition-all",
+                        showroomSettingsOpen
+                          ? "bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400"
+                          : "bg-white dark:bg-neutral-700 border-neutral-200 dark:border-neutral-600 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-600"
+                      )}
+                      title="إعدادات دوام المعرض"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                    {showroomSettingsOpen && (
+                      <div className="absolute left-0 top-full mt-2 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-3 min-w-[220px] space-y-2">
+                        <p className="text-[11px] font-bold text-neutral-700 dark:text-neutral-200">دوام المعرض</p>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-neutral-500 dark:text-neutral-400 shrink-0">من</span>
+                          <select
+                            value={showroomShiftStart}
+                            onChange={e => setShowroomShiftStart(parseInt(e.target.value))}
+                            className="flex-1 text-[11px] font-bold px-2 py-1 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+                          >
+                            {Array.from({ length: 24 }).map((_, i) => (
+                              <option key={i} value={i}>{to12Hour(i)}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-neutral-500 dark:text-neutral-400 shrink-0">إلى</span>
+                          <select
+                            value={showroomShiftEnd}
+                            onChange={e => setShowroomShiftEnd(parseInt(e.target.value))}
+                            className="flex-1 text-[11px] font-bold px-2 py-1 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+                          >
+                            {Array.from({ length: 24 }).map((_, i) => (
+                              <option key={i} value={i}>{to12Hour(i)}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -391,27 +624,76 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                       const dk = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
                       const daySched = schedules[dk];
                       let count = 0;
-                      EMPLOYEES.forEach((emp) => {
-                        const rec = daySched?.[emp.id] || { status: "present", shiftType: "single", shift1: { start: "09:00", end: "17:00" } };
-                        if (["absent", "weekly_leave", "annual_leave", "sick_leave", "emergency_leave"].includes(rec.status)) return;
-                        const s1 = parseInt(rec.shift1.start.split(":")[0]);
-                        const e1 = parseInt(rec.shift1.end.split(":")[0]);
-                        if (h >= s1 && h < e1) count++;
-                        if (rec.shift2) {
-                          const s2 = parseInt(rec.shift2.start.split(":")[0]);
-                          const e2 = parseInt(rec.shift2.end.split(":")[0]);
-                          if (h >= s2 && h < e2) count++;
+                      if (timelineEmployeeFilter === "all") {
+                        EMPLOYEES.forEach((emp) => {
+                          const rec = daySched?.[emp.id] || getDefaultRecordForDay(emp.id, day);
+                          if (["absent", "weekly_leave", "annual_leave", "sick_leave", "emergency_leave"].includes(rec.status)) return;
+                          const s1 = parseInt(rec.shift1.start.split(":")[0]);
+                          const e1 = parseInt(rec.shift1.end.split(":")[0]);
+                          if (h >= s1 && h < e1) count++;
+                          if (rec.shift2) {
+                            const s2 = parseInt(rec.shift2.start.split(":")[0]);
+                            const e2 = parseInt(rec.shift2.end.split(":")[0]);
+                            if (h >= s2 && h < e2) count++;
+                          }
+                        });
+                      } else {
+                        const rec = daySched?.[timelineEmployeeFilter] || getDefaultRecordForDay(timelineEmployeeFilter, day);
+                        if (!["absent", "weekly_leave", "annual_leave", "sick_leave", "emergency_leave"].includes(rec.status)) {
+                          const s1 = parseInt(rec.shift1.start.split(":")[0]);
+                          const e1 = parseInt(rec.shift1.end.split(":")[0]);
+                          if (h >= s1 && h < e1) count = 1;
+                          if (rec.shift2) {
+                            const s2 = parseInt(rec.shift2.start.split(":")[0]);
+                            const e2 = parseInt(rec.shift2.end.split(":")[0]);
+                            if (h >= s2 && h < e2) count = 1;
+                          }
                         }
-                      });
+                      }
                       const colors = hourColor(count);
                       const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+                      const workingEmps = (() => {
+                        const list: typeof EMPLOYEES = [];
+                        if (timelineEmployeeFilter === "all") {
+                          EMPLOYEES.forEach((emp) => {
+                            const rec = daySched?.[emp.id] || getDefaultRecordForDay(emp.id, day);
+                            if (["absent", "weekly_leave", "annual_leave", "sick_leave", "emergency_leave"].includes(rec.status)) return;
+                            const s1 = parseInt(rec.shift1.start.split(":")[0]);
+                            const e1 = parseInt(rec.shift1.end.split(":")[0]);
+                            if (h >= s1 && h < e1) { list.push(emp); return; }
+                            if (rec.shift2) {
+                              const s2 = parseInt(rec.shift2.start.split(":")[0]);
+                              const e2 = parseInt(rec.shift2.end.split(":")[0]);
+                              if (h >= s2 && h < e2) { list.push(emp); }
+                            }
+                          });
+                        } else {
+                          const emp = EMPLOYEES.find(e => e.id === timelineEmployeeFilter);
+                          if (emp) {
+                            const rec = daySched?.[timelineEmployeeFilter] || getDefaultRecordForDay(timelineEmployeeFilter, day);
+                            if (!["absent", "weekly_leave", "annual_leave", "sick_leave", "emergency_leave"].includes(rec.status)) {
+                              const s1 = parseInt(rec.shift1.start.split(":")[0]);
+                              const e1 = parseInt(rec.shift1.end.split(":")[0]);
+                              if (h >= s1 && h < e1) { list.push(emp); }
+                              else if (rec.shift2) {
+                                const s2 = parseInt(rec.shift2.start.split(":")[0]);
+                                const e2 = parseInt(rec.shift2.end.split(":")[0]);
+                                if (h >= s2 && h < e2) { list.push(emp); }
+                              }
+                            }
+                          }
+                        }
+                        return list;
+                      })();
                       return (
                         <div
                           key={day}
+                          onClick={() => { if (workingEmps.length > 0) setHourPopup({ day, hour: h }); }}
                           className={cn(
                             "w-10 sm:w-12 shrink-0 flex items-center justify-center py-2 border-l border-neutral-50 dark:border-neutral-700/50",
                             isToday ? "ring-1 ring-inset ring-amber-200 dark:ring-amber-800" : "",
-                            count > 0 ? colors.bg : "bg-neutral-50/30 dark:bg-neutral-800/20"
+                            count > 0 ? colors.bg : "bg-neutral-50/30 dark:bg-neutral-800/20",
+                            workingEmps.length > 0 ? "cursor-pointer hover:opacity-80" : ""
                           )}
                           title={`${day} ${MONTHS_AR[month]} الساعة ${to12Hour(h)} — ${count} موظف`}
                         >
@@ -430,6 +712,116 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
       )}
     </div>
     </div>
+
+    {/* Hour popup */}
+    {hourPopup && (
+      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center" onClick={() => setHourPopup(null)}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-xl w-72 overflow-hidden"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 dark:border-neutral-700">
+            <div>
+              <h3 className="text-sm font-bold text-neutral-800 dark:text-white">
+                {hourPopup.day} {MONTHS_AR[month]} — الساعة {to12Hour(hourPopup.hour)}
+              </h3>
+              <p className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                {(() => {
+                  const dk = `${year}-${String(month + 1).padStart(2, "0")}-${String(hourPopup.day).padStart(2, "0")}`;
+                  const daySched = schedules[dk];
+                  const list: typeof EMPLOYEES = [];
+                  if (timelineEmployeeFilter === "all") {
+                    EMPLOYEES.forEach((emp) => {
+                      const rec = daySched?.[emp.id] || getDefaultRecordForDay(emp.id, hourPopup.day);
+                      if (["absent", "weekly_leave", "annual_leave", "sick_leave", "emergency_leave"].includes(rec.status)) return;
+                      const s1 = parseInt(rec.shift1.start.split(":")[0]);
+                      const e1 = parseInt(rec.shift1.end.split(":")[0]);
+                      if (hourPopup.hour >= s1 && hourPopup.hour < e1) { list.push(emp); return; }
+                      if (rec.shift2) {
+                        const s2 = parseInt(rec.shift2.start.split(":")[0]);
+                        const e2 = parseInt(rec.shift2.end.split(":")[0]);
+                        if (hourPopup.hour >= s2 && hourPopup.hour < e2) { list.push(emp); }
+                      }
+                    });
+                  } else {
+                    const emp = EMPLOYEES.find(e => e.id === timelineEmployeeFilter);
+                    if (emp) {
+                      const rec = daySched?.[timelineEmployeeFilter] || getDefaultRecordForDay(timelineEmployeeFilter, hourPopup.day);
+                      if (!["absent", "weekly_leave", "annual_leave", "sick_leave", "emergency_leave"].includes(rec.status)) {
+                        const s1 = parseInt(rec.shift1.start.split(":")[0]);
+                        const e1 = parseInt(rec.shift1.end.split(":")[0]);
+                        if (hourPopup.hour >= s1 && hourPopup.hour < e1) { list.push(emp); }
+                        else if (rec.shift2) {
+                          const s2 = parseInt(rec.shift2.start.split(":")[0]);
+                          const e2 = parseInt(rec.shift2.end.split(":")[0]);
+                          if (hourPopup.hour >= s2 && hourPopup.hour < e2) { list.push(emp); }
+                        }
+                      }
+                    }
+                  }
+                  return `${list.length} موظف مداوم`;
+                })()}
+              </p>
+            </div>
+            <button onClick={() => setHourPopup(null)} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
+              <X className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+            </button>
+          </div>
+          <div className="p-3 space-y-1.5 max-h-[240px] overflow-y-auto">
+            {(() => {
+              const dk = `${year}-${String(month + 1).padStart(2, "0")}-${String(hourPopup.day).padStart(2, "0")}`;
+              const daySched = schedules[dk];
+              const list: typeof EMPLOYEES = [];
+              if (timelineEmployeeFilter === "all") {
+                EMPLOYEES.forEach((emp) => {
+                  const rec = daySched?.[emp.id] || getDefaultRecordForDay(emp.id, hourPopup.day);
+                  if (["absent", "weekly_leave", "annual_leave", "sick_leave", "emergency_leave"].includes(rec.status)) return;
+                  const s1 = parseInt(rec.shift1.start.split(":")[0]);
+                  const e1 = parseInt(rec.shift1.end.split(":")[0]);
+                  if (hourPopup.hour >= s1 && hourPopup.hour < e1) { list.push(emp); return; }
+                  if (rec.shift2) {
+                    const s2 = parseInt(rec.shift2.start.split(":")[0]);
+                    const e2 = parseInt(rec.shift2.end.split(":")[0]);
+                    if (hourPopup.hour >= s2 && hourPopup.hour < e2) { list.push(emp); }
+                  }
+                });
+              } else {
+                const emp = EMPLOYEES.find(e => e.id === timelineEmployeeFilter);
+                if (emp) {
+                  const rec = daySched?.[timelineEmployeeFilter] || getDefaultRecordForDay(timelineEmployeeFilter, hourPopup.day);
+                  if (!["absent", "weekly_leave", "annual_leave", "sick_leave", "emergency_leave"].includes(rec.status)) {
+                    const s1 = parseInt(rec.shift1.start.split(":")[0]);
+                    const e1 = parseInt(rec.shift1.end.split(":")[0]);
+                    if (hourPopup.hour >= s1 && hourPopup.hour < e1) { list.push(emp); }
+                    else if (rec.shift2) {
+                      const s2 = parseInt(rec.shift2.start.split(":")[0]);
+                      const e2 = parseInt(rec.shift2.end.split(":")[0]);
+                      if (hourPopup.hour >= s2 && hourPopup.hour < e2) { list.push(emp); }
+                    }
+                  }
+                }
+              }
+              return list.map(emp => {
+                const rec = daySched?.[emp.id] || getDefaultRecordForDay(emp.id, hourPopup.day);
+                const sCfg = STATUS_CONFIG[rec.status];
+                return (
+                  <div key={emp.id} className="flex items-center gap-2 px-2 py-1.5 rounded-xl border border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700/30">
+                    <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0", sCfg.bg, sCfg.color)}>
+                      {emp.name.split(" ")[0][0]}
+                    </div>
+                    <span className="text-[12px] font-bold text-neutral-700 dark:text-neutral-200">{emp.name}</span>
+                    <span className={cn("text-[10px] mr-auto", sCfg.color)}>{sCfg.label}</span>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </motion.div>
+      </div>
+    )}
 
     {/* Day bottom sheet */}
     {modalOpen && selectedDay && (
@@ -611,6 +1003,26 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                         </div>
                       </div>
                     )}
+                    {/* Apply to all days button */}
+                    <button
+                      onClick={() => {
+                        if (!selectedEmployeeId) return;
+                        const recToApply = getEmployeeRecord(selectedEmployeeId);
+                        setSchedules(prev => {
+                          const next = { ...prev };
+                          for (let day = 1; day <= daysInMonth; day++) {
+                            const dk = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                            const existing = next[dk] || {};
+                            next[dk] = { ...existing, [selectedEmployeeId]: recToApply };
+                          }
+                          return next;
+                        });
+                      }}
+                      className="w-full py-1.5 rounded-lg text-[11px] font-bold border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-all flex items-center justify-center gap-1"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      تطبيق على كافة أيام الشهر
+                    </button>
                   </div>
                 );
               })()}
@@ -737,7 +1149,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                   );
                 }
                 const filtered = EMPLOYEES.filter((emp) => {
-                  const rec = displayDaySched?.[emp.id] || { status: "present", shiftType: "single", shift1: { start: "09:00", end: "17:00" } };
+                  const rec = displayDaySched?.[emp.id] || getDefaultRecordForDay(emp.id, displayDay);
                   if (selectedHour === null) return true;
                   const s1 = parseInt(rec.shift1.start.split(":")[0]);
                   const e1 = parseInt(rec.shift1.end.split(":")[0]);
@@ -757,7 +1169,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                   );
                 }
                 return filtered.map((emp) => {
-                  const rec = displayDaySched?.[emp.id] || { status: "present", shiftType: "single", shift1: { start: "09:00", end: "17:00" } };
+                  const rec = displayDaySched?.[emp.id] || getDefaultRecordForDay(emp.id, displayDay);
                   const sCfg = STATUS_CONFIG[rec.status];
                   const isWorking = ["present", "cover", "compensatory"].includes(rec.status);
                   const shiftText = !isWorking
