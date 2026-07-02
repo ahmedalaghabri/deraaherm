@@ -92,31 +92,86 @@ export function useAI() {
   return ctx;
 }
 
-// Simple rule-based reply engine (can be replaced with real AI API)
+// Smart rule-based reply engine that searches within page dataSummary
 function generateReply(userText: string, pageCtx: PageContext | null): string {
-  const t = userText.toLowerCase();
+  const t = userText.toLowerCase().trim();
+  const ds = pageCtx?.dataSummary || "";
 
-  if (t.includes("موظف") || t.includes("عدد") || t.includes("حاضر") || t.includes("دوام")) {
-    return pageCtx?.dataSummary
-      ? `وفقاً للبيانات الحالية في صفحة **${pageCtx.title}**: ${pageCtx.dataSummary}`
-      : "لا توجد بيانات مفصلة متاحة حالياً في هذه الصفحة. يمكنك التنقل إلى صفحة الجدولة لعرض تفاصيل الموظفين.";
-  }
-
-  if (t.includes("جدول") || t.includes("schedule") || t.includes("تقويم")) {
-    return "يمكنك الاطلاع على الجدول الزمني من صفحة الجدولة. هل تريد معرفة عدد الموظفين المداومين في فترة محددة؟";
-  }
-
-  if (t.includes("حالة") || t.includes("status")) {
-    return "الحالات المتاحة هي: حاضر، غائب، إجازة أسبوعية، إجازة سنوية، إجازة مرضية، إجازة طارئة، تعويضي، وتغطية.";
-  }
-
+  // Greetings
   if (t.includes("مرحب") || t.includes("اهلا") || t.includes("سلام")) {
-    return "أهلاً بك! أنا هنا للمساعدة. ماذا تريد أن تعرف عن بيانات نظامك؟";
+    return pageCtx
+      ? `أهلاً بك! أنا أقرأ حالياً بيانات **${pageCtx.title}**. اسألني أي شيء عنها.`
+      : "أهلاً بك! أنا هنا للمساعدة. ماذا تريد أن تعرف عن بيانات نظامك؟";
   }
 
+  // Thanks
   if (t.includes("شكر") || t.includes("thanks")) {
     return "العفو! أنا دائماً في الخدمة. 😊";
   }
 
-  return "أنا مساعدك الذكي. يمكنني قراءة بيانات الصفحة الحالية والإجابة على استفساراتك حول الجداول والموظفين والحضور. ما هو سؤالك؟";
+  // If no page data available
+  if (!ds) {
+    return "لا توجد بيانات متاحة حالياً في هذه الصفحة. جرّب التنقل لصفحة الجدولة أو الحضور.";
+  }
+
+  // Extract employee names from dataSummary lines like "- أحمد: حاضر"
+  const empLines = ds.split("\n").filter(l => l.startsWith("- "));
+  const empNames = empLines.map(l => {
+    const m = l.match(/^-\s+(.+?):/);
+    return m ? m[1].trim() : "";
+  }).filter(Boolean);
+
+  // Search for employee name in question
+  const matchedEmp = empNames.find(name => t.includes(name.toLowerCase()));
+  if (matchedEmp) {
+    const line = empLines.find(l => l.includes(matchedEmp)) || "";
+    return `وجدت **${matchedEmp}** في البيانات: ${line.replace("- ", "").trim()}`;
+  }
+
+  // Count / number questions
+  if (t.includes("عدد") || t.includes("كم") || t.includes("كام")) {
+    if (t.includes("موظف")) {
+      return `عدد الموظفين: **${empNames.length}**.`;
+    }
+    const totalMatch = ds.match(/إجمالي الأيام:\s*(\d+)/);
+    if (totalMatch && (t.includes("يوم") || t.includes("شهر"))) {
+      return `إجمالي الأيام في الشهر: **${totalMatch[1]}** يوم.`;
+    }
+    const schedMatch = ds.match(/أيام مجدولة:\s*(\d+)/);
+    if (schedMatch) {
+      return `الأيام المجدولة: **${schedMatch[1]}** من أصل ${totalMatch ? totalMatch[1] : "?"}.`;
+    }
+    return `حالياً يوجد **${empNames.length}** موظف مسجل.`;
+  }
+
+  // Present / working questions
+  if (t.includes("حاضر") || t.includes("داوم") || t.includes("يعمل")) {
+    const present = empLines.filter(l => l.includes("حاضر") || l.includes("تغطية") || l.includes("تعويضي"));
+    if (present.length > 0) {
+      return `الموظفون المداومون (${present.length}):\n${present.slice(0, 5).map(l => "• " + l.replace("- ", "").trim()).join("\n")}${present.length > 5 ? "\n... وغيرهم" : ""}`;
+    }
+    return "لا يوجد موظفون مداومون في البيانات الحالية.";
+  }
+
+  // Leave / absent questions
+  if (t.includes("غائب") || t.includes("إجازة") || t.includes("اجازة") || t.includes("غياب")) {
+    const absent = empLines.filter(l => l.includes("غائب") || l.includes("إجازة") || l.includes("اجازة") || l.includes("مرضية") || l.includes("طارئة"));
+    if (absent.length > 0) {
+      return `الموظفون في إجازة / غائبون (${absent.length}):\n${absent.slice(0, 5).map(l => "• " + l.replace("- ", "").trim()).join("\n")}${absent.length > 5 ? "\n... وغيرهم" : ""}`;
+    }
+    return "لا يوجد موظفون في إجازة في البيانات الحالية.";
+  }
+
+  // Schedule / shift questions
+  if (t.includes("دوام") || t.includes("فترة") || t.includes("shift") || t.includes("دوام")) {
+    return `بيانات الدوام الحالية:\n${empLines.slice(0, 6).map(l => "• " + l.replace("- ", "").trim()).join("\n")}${empLines.length > 6 ? "\n... وغيرهم" : ""}`;
+  }
+
+  // Specific status questions
+  if (t.includes("حالة")) {
+    return `حالات الموظفين:\n${empLines.slice(0, 6).map(l => "• " + l.replace("- ", "").trim()).join("\n")}${empLines.length > 6 ? "\n... وغيرهم" : ""}`;
+  }
+
+  // Default: show summary
+  return `إليك ملخص **${pageCtx?.title}**:\n${ds.slice(0, 300)}${ds.length > 300 ? "..." : ""}\n\nاسألني عن موظف محدد أو عدد الحاضرين!`;
 }

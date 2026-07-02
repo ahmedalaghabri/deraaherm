@@ -7,6 +7,7 @@ import {
   Heart, Award, RotateCcw, X, Pencil
 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useAI } from "./ai/AIContext";
 
 const EMPLOYEES = [
   { id: "e1", name: "محمد عبدالله" },
@@ -268,6 +269,54 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
   const [schedules, setSchedules] = useState<MonthScheduleMap>({});
 
   const daysInMonth = getDaysInMonth(year, month);
+
+  const { setPageContext } = useAI();
+
+  // Push page data to AI assistant context whenever schedules/month/year change
+  useEffect(() => {
+    const totalDays = daysInMonth;
+    const scheduledDays = Object.keys(schedules).length;
+
+    // Build per-employee summary from all scheduled days
+    const empMap: Record<string, { status: string; shifts: string }> = {};
+    for (const emp of EMPLOYEES) {
+      const rec = getDefaultRecordForDay(emp.id, 1);
+      const sCfg = STATUS_CONFIG[rec.status];
+      const isWorking = ["present", "cover", "compensatory"].includes(rec.status);
+      const shifts = isWorking
+        ? (rec.shiftType === "double"
+            ? `${rec.shift1.start}-${rec.shift1.end}, ${rec.shift2!.start}-${rec.shift2!.end}`
+            : `${rec.shift1.start}-${rec.shift1.end}`)
+        : sCfg.label;
+      empMap[emp.name] = { status: sCfg.label, shifts };
+    }
+
+    // Overlay any real schedule data we have
+    for (const dk of Object.keys(schedules)) {
+      const daySched = schedules[dk];
+      for (const emp of EMPLOYEES) {
+        const rec = daySched?.[emp.id];
+        if (rec) {
+          const sCfg = STATUS_CONFIG[rec.status];
+          const isWorking = ["present", "cover", "compensatory"].includes(rec.status);
+          const shifts = isWorking
+            ? (rec.shiftType === "double"
+                ? `${rec.shift1.start}-${rec.shift1.end}, ${rec.shift2!.start}-${rec.shift2!.end}`
+                : `${rec.shift1.start}-${rec.shift1.end}`)
+            : sCfg.label;
+          empMap[emp.name] = { status: sCfg.label, shifts };
+        }
+      }
+    }
+
+    const lines = Object.entries(empMap).map(([name, info]) => `- ${name}: ${info.status} (${info.shifts})`);
+
+    setPageContext({
+      route: "schedule",
+      title: "جدولة فريق العمل",
+      dataSummary: `إجمالي الأيام: ${totalDays}\nأيام مجدولة: ${scheduledDays}\nالموظفون:\n${lines.join("\n")}`,
+    });
+  }, [schedules, month, year, daysInMonth]);
   const dayKey = selectedDay ? `${year}-${String(month + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}` : "";
   const daySchedule: DayScheduleMap = useMemo(() => dayKey ? (schedules[dayKey] || {}) : {}, [schedules, dayKey]);
 
