@@ -14,6 +14,9 @@ import CampaignsPage from "./components/CampaignsPage";
 import SaudiCalendar from "./components/SaudiCalendar";
 import { supabase } from "./lib/supabase";
 import { Bell, Search, Settings, LogOut, Inbox, Send, FileText, Users, ShieldCheck, ClipboardList, Award, Accessibility, GaugeCircle, Sparkles, ChevronRight, ChevronLeft, ChevronDown, Upload, X, Save, Check, ArrowRight, Tag, Calendar, Building2, Shield, AlertTriangle, Clock, CheckCircle, Phone, Archive, FilePlus, Mail, BarChart3, LayoutDashboard, ArrowLeftRight, ExternalLink, Globe, Database, MessageSquare, TrendingUp, FileSpreadsheet, Briefcase, CreditCard, Home, Car, Plane, Heart, GraduationCap, Baby, MapPin, Zap, User, Lock, Eye, EyeOff, Smartphone, CircleUser as UserCircle, ListTodo, Megaphone, Languages, Type, Moon, Sun, UserPlus, Trophy } from "lucide-react";
+import { AIProvider } from "./components/ai/AIContext";
+import { FloatingAssistant } from "./components/ai/FloatingAssistant";
+import { ChatPanel } from "./components/ai/ChatPanel";
 
 // ====== مجموعات القائمة الجانبية ======
 const sidebarGroups = [
@@ -3451,7 +3454,8 @@ export default function ResponsiveDashboard() {
 
   function renderMainDashboard() {
     return (
-      <div dir="rtl" className={cn(rootClass)} style={backgroundStyle}>
+      <AIProvider>
+        <div dir="rtl" className={cn(rootClass)} style={backgroundStyle}>
 
 
         {/* Body */}
@@ -3820,6 +3824,9 @@ export default function ResponsiveDashboard() {
         </nav>
 
       </div>
+        <FloatingAssistant />
+        <ChatPanel />
+      </AIProvider>
     );
   }
 
