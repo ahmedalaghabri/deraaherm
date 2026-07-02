@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, Fragment } from "react";
 import { Plus, Search, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, MoreHorizontal, List, LayoutGrid, Calendar as CalendarIcon, ArrowUpDown, Megaphone, Briefcase, Flag, UserCircle, Paperclip, Bell, Calendar, Users, Building2, FolderOpen, Inbox, Clock, CheckSquare, Circle, Send, Star, Hash, Play, FilePlus, Pencil, Trash2, Printer, FileDown, MapPin, Store } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../lib/utils";
+import { useAI } from "./ai/AIContext";
 import PageTabs from "./PageTabs";
 import CampaignsPage from "./CampaignsPage";
 import TeamsPage from "./TeamsPage";
@@ -264,6 +265,28 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
   const detailFileInputRef = useRef<HTMLInputElement>(null);
   const formFileInputRef = useRef<HTMLInputElement>(null);
+
+  const { setPageContext } = useAI();
+
+  // Push tasks data to AI assistant
+  useEffect(() => {
+    const byStatus: Record<string, number> = {};
+    const byAssignee: Record<string, number> = {};
+    tasks.forEach((t) => {
+      const st = STATUS_CONFIG[t.status]?.label || t.status;
+      byStatus[st] = (byStatus[st] || 0) + 1;
+      byAssignee[t.assignee] = (byAssignee[t.assignee] || 0) + 1;
+    });
+
+    const statusLines = Object.entries(byStatus).map(([s, c]) => `- ${s}: ${c}`);
+    const assigneeLines = Object.entries(byAssignee).map(([a, c]) => `- ${a}: ${c} مهمة`);
+
+    setPageContext({
+      route: "tasks",
+      title: "المهام والمشاريع",
+      dataSummary: `إجمالي المهام: ${tasks.length}\nالحالات:\n${statusLines.join("\n")}\nالمسؤولون:\n${assigneeLines.join("\n")}`,
+    });
+  }, [tasks]);
   const taskFileInputRef = useRef<HTMLInputElement>(null);
   const detailTitleRef = useRef<HTMLTextAreaElement>(null);
 

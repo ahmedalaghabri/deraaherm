@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTr
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useAI } from "./ai/AIContext";
 
 function useCountUp(target: number, duration = 900) {
   const [current, setCurrent] = useState(0);
@@ -318,6 +319,22 @@ export default function AttendanceDashboard() {
       absentDays: rows.filter((r) => statusOf(r) === "absent").length,
     };
   }, [rows]);
+
+  const { setPageContext } = useAI();
+
+  // Push attendance data to AI assistant
+  useEffect(() => {
+    const present = rows.filter((r) => statusOf(r) === "complete").length;
+    const late = rows.filter((r) => statusOf(r) === "late").length;
+    const absent = rows.filter((r) => statusOf(r) === "absent").length;
+    const partial = rows.filter((r) => statusOf(r) === "partial").length;
+
+    setPageContext({
+      route: "attendance",
+      title: "تقرير الحضور والانصراف",
+      dataSummary: `الموظف: ${demoEmployee.name}\nالقسم: ${demoEmployee.department}\nالفترة: ${demoEmployee.from} - ${demoEmployee.to}\nأيام العمل: ${totals.days}\nالحضور الكامل: ${present}\nالتأخير: ${late}\nالغياب: ${absent}\nالدوام الجزئي: ${partial}\nإجمالي ساعات العمل: ${totals.workingHours.toFixed(1)}\nإجمالي ساعات التأخير: ${totals.delayHours.toFixed(1)}\nإجمالي ساعات إضافية: ${totals.overtimeHours.toFixed(1)}`,
+    });
+  }, [rows, totals]);
 
   return (
     <div dir="rtl" className="min-h-screen">

@@ -14,7 +14,7 @@ import CampaignsPage from "./components/CampaignsPage";
 import SaudiCalendar from "./components/SaudiCalendar";
 import { supabase } from "./lib/supabase";
 import { Bell, Search, Settings, LogOut, Inbox, Send, FileText, Users, ShieldCheck, ClipboardList, Award, Accessibility, GaugeCircle, Sparkles, ChevronRight, ChevronLeft, ChevronDown, Upload, X, Save, Check, ArrowRight, Tag, Calendar, Building2, Shield, AlertTriangle, Clock, CheckCircle, Phone, Archive, FilePlus, Mail, BarChart3, LayoutDashboard, ArrowLeftRight, ExternalLink, Globe, Database, MessageSquare, TrendingUp, FileSpreadsheet, Briefcase, CreditCard, Home, Car, Plane, Heart, GraduationCap, Baby, MapPin, Zap, User, Lock, Eye, EyeOff, Smartphone, CircleUser as UserCircle, ListTodo, Megaphone, Languages, Type, Moon, Sun, UserPlus, Trophy } from "lucide-react";
-import { AIProvider } from "./components/ai/AIContext";
+import { AIProvider, useAI } from "./components/ai/AIContext";
 import { FloatingAssistant } from "./components/ai/FloatingAssistant";
 import { ChatPanel } from "./components/ai/ChatPanel";
 
@@ -923,6 +923,63 @@ export default function ResponsiveDashboard() {
   const [transactionsSubTab, setTransactionsSubTab] = useState<'new'|'inbox'|'outbox'|'archive'>('inbox');
   const [attendanceSubTab, setAttendanceSubTab] = useState<'report'|'permit'|'hazer'|'calendar'>('report');
 
+  // صفحة الصادر والمعاملات
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const [allTransactions, setAllTransactions] = useState([]);
+  const [transactionsLoaded, setTransactionsLoaded] = useState(false);
+
+  const { setPageContext } = useAI();
+
+  // Push current view info to AI assistant
+  useEffect(() => {
+    const viewTitles: Record<string, string> = {
+      dashboard: "لوحة التحكم الرئيسية",
+      settings: "إعدادات النظام",
+      transactions: "المعاملات الإدارية",
+      attendance: "الحضور والانصراف",
+      attendance_report: "تقرير الحضور",
+      exit_permission: "طلب إذن خروج",
+      hazer_system: "نظام حاضر",
+      tasks: "المهام والمشاريع",
+      campaigns: "الحملات التسويقية",
+      sales_kpi: "أداء المبيعات",
+      annual_leave: "طلب إجازة سنوية",
+      transport_allowance: "بدل النقل",
+      add: "إضافة معاملة جديدة",
+      transaction_selection: "اختيار نوع المعاملة",
+      inbox: "الوارد",
+      outbox: "الصادر",
+      transaction_details: "تفاصيل المعاملة",
+      shortcuts: "الاختصارات",
+      notifications: "الإشعارات",
+    };
+
+    let dataSummary = "";
+
+    // Dashboard stats
+    if (view === "dashboard") {
+      dataSummary = `أداء الموظف: 92%\nالمهام المنجزة: 124\nمعدل الحضور: 98%\nالمعاملات: 156\nلا يوجد تأخير\nأيام إجازة مستخدمة: 4 من 12`;
+    }
+
+    // Transactions summary
+    if ((view === "transactions" || view === "inbox" || view === "outbox") && allTransactions.length > 0) {
+      const counts: Record<string, number> = {};
+      allTransactions.forEach((t: any) => { counts[t.status] = (counts[t.status] || 0) + 1; });
+      dataSummary = `إجمالي المعاملات: ${allTransactions.length}\n${Object.entries(counts).map(([s, c]) => `- ${s}: ${c}`).join("\n")}`;
+    }
+
+    // Attendance summary
+    if (view === "attendance" || view === "attendance_report") {
+      dataSummary = `تقرير الحضور للموظف: أحمد عبدالقادر\nالقسم: الإدارة وإدارة تقنية المعلومات\nعدد أيام الدوام: 20 يوم\nعدد أيام الغياب: 2\nإجمالي ساعات التأخير: 15.6 ساعة\nإجمالي ساعات العمل الإضافي: 4.6 ساعة`;
+    }
+
+    setPageContext({
+      route: view,
+      title: viewTitles[view] || view,
+      dataSummary,
+    });
+  }, [view, activeKey, transactionsSubTab, attendanceSubTab, allTransactions]);
+
   // Reset sidebar selection when on dashboard
   useEffect(() => {
     if (view === "dashboard") {
@@ -951,11 +1008,6 @@ export default function ResponsiveDashboard() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
-
-  // صفحة الصادر والمعاملات
-  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
-  const [allTransactions, setAllTransactions] = useState([]);
-  const [transactionsLoaded, setTransactionsLoaded] = useState(false);
 
   React.useEffect(() => {
     if (currentPage === 'main') {
