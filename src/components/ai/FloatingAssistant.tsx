@@ -8,19 +8,20 @@ export function FloatingAssistant() {
   const [isHidden, setIsHidden] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  if (isOpen) return null;
-
-  // Auto-hide after 5 seconds
+  // Must be before any early return (Rules of Hooks)
   useEffect(() => {
+    if (isOpen) return;
     timerRef.current = setTimeout(() => setIsHidden(true), 5000);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, []);
+  }, [isOpen]);
 
   const showFull = () => {
     setIsHidden(false);
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setIsHidden(true), 5000);
   };
+
+  if (isOpen) return null;
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[55]" onMouseEnter={showFull}>

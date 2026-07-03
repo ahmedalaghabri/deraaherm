@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { X, Send, Mic, Bot, Plus } from "lucide-react";
 import { useAI } from "./AIContext";
 
@@ -8,6 +8,16 @@ export function ChatPanel() {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const t = setTimeout(() => setMounted(true), 10);
+      return () => clearTimeout(t);
+    } else {
+      setMounted(false);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (messagesEndRef.current && containerRef.current) {
@@ -25,18 +35,15 @@ export function ChatPanel() {
     setInput("");
   };
 
+  if (!isOpen) return null;
+
   return (
-    <AnimatePresence mode="wait">
-      {isOpen && (
-        <motion.div
-          key="chat-panel"
-          initial={{ y: 60, opacity: 0, scale: 0.96 }}
-          animate={{ y: 0, opacity: 1, scale: 1 }}
-          exit={{ y: 60, opacity: 0, scale: 0.96 }}
-          transition={{ type: "spring", damping: 28, stiffness: 300 }}
-          className="fixed inset-x-3 bottom-[72px] sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[400px] z-[60] bg-white dark:bg-neutral-900 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.15)] border border-neutral-100 dark:border-neutral-700 flex flex-col overflow-hidden"
-          style={{ maxHeight: "min(640px, calc(100vh - 100px))", height: "auto" }}
-        >
+    <div
+      className={`fixed inset-x-3 bottom-[72px] sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[400px] z-[60] bg-white dark:bg-neutral-900 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.15)] border border-neutral-100 dark:border-neutral-700 flex flex-col overflow-hidden transition-all duration-300 ease-out ${
+        mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-95"
+      }`}
+      style={{ maxHeight: "min(640px, calc(100vh - 100px))", height: "auto" }}
+    >
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 rounded-t-2xl shrink-0">
             <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
@@ -126,8 +133,6 @@ export function ChatPanel() {
               </button>
             </div>
           </form>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </div>
   );
 }
