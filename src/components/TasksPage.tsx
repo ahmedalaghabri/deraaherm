@@ -409,7 +409,7 @@ function VideoRecorderOverlay({ onRecorded, onClose }: {
   );
 }
 
-function VideoThumbnail({ url, name }: { url: string; name: string }) {
+function VideoThumbnail({ url, name }: { url?: string; name?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
 
@@ -1335,7 +1335,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "project" ? null : { id: task.id, field: "project", top: r.bottom, right: window.innerWidth - r.right }); }}
                                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-neutral-200 bg-white text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
                                   >
-                                    <Briefcase className="w-3.5 h-3.5 text-blue-500" />
                                     <span className="truncate max-w-[140px]">{task.projectName}</span>
                                     <ChevronDown className="w-3 h-3 opacity-60" />
                                   </button>
@@ -1346,7 +1345,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "source" ? null : { id: task.id, field: "source", top: r.bottom, right: window.innerWidth - r.right }); }}
                                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-neutral-200 bg-white text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800/60 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
                                   >
-                                    <Inbox className="w-3.5 h-3.5 text-amber-500" />
                                     <span className="truncate max-w-[120px]">{task.taskSource || "غير محدد"}</span>
                                     <ChevronDown className="w-3 h-3 opacity-60" />
                                   </button>
@@ -1731,7 +1729,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       {/* Status Pill */}
                       <div className="relative">
                         <button onClick={() => setDetailDropdown(d => d === "status" ? null : "status")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", detailDropdown === "status" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                          <span className={cn("w-2 h-2 rounded-full shrink-0", STATUS_CONFIG[detailTask.status].accent)} />
                           <span className="truncate max-w-[120px]">{STATUS_CONFIG[detailTask.status].label}</span>
                           <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", detailDropdown === "status" ? "rotate-180" : "")} />
                         </button>
@@ -1753,7 +1750,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       {/* Assignee Pill */}
                       <div className="relative">
                         <button onClick={() => setDetailDropdown(d => d === "assignee" ? null : "assignee")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", detailDropdown === "assignee" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                          <UserCircle className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                           <span className="truncate max-w-[120px]">{detailTask.assignee}</span>
                           <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", detailDropdown === "assignee" ? "rotate-180" : "")} />
                         </button>
@@ -1775,7 +1771,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       {/* Priority Pill */}
                       <div className="relative">
                         <button onClick={() => setDetailDropdown(d => d === "priority" ? null : "priority")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", detailDropdown === "priority" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                          <Flag className={cn("w-3.5 h-3.5 shrink-0", PRIORITY_CONFIG[detailTask.priority].flag)} />
                           <span className="truncate max-w-[120px]">{PRIORITY_CONFIG[detailTask.priority].label}</span>
                           <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", detailDropdown === "priority" ? "rotate-180" : "")} />
                         </button>
@@ -1810,7 +1805,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       {/* Source Pill */}
                       <div className="relative">
                         <button onClick={() => setDetailDropdown(d => d === "source" ? null : "source")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", detailDropdown === "source" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                          <Megaphone className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                           <span className="truncate max-w-[120px]">{detailTask.taskSource || "غير محدد"}</span>
                           <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", detailDropdown === "source" ? "rotate-180" : "")} />
                         </button>
@@ -1845,7 +1839,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       {/* Project Pill */}
                       <div className="relative">
                         <button onClick={() => setDetailDropdown(d => d === "project" ? null : "project")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", detailDropdown === "project" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                          <Briefcase className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                           <span className="truncate max-w-[120px]">{detailTask.projectName || "غير محدد"}</span>
                           <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", detailDropdown === "project" ? "rotate-180" : "")} />
                         </button>
@@ -1866,7 +1859,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       {/* Tags Pill */}
                       <div className="relative">
                         <button onClick={() => setDetailDropdown(d => d === "tags" ? null : "tags")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", detailDropdown === "tags" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                          <Hash className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                           <div className="flex items-center gap-1 flex-wrap max-w-[120px]">
                             {(detailTask.tags || []).length > 0 ? (detailTask.tags || []).slice(0, 2).map(tag => <span key={tag} className="text-neutral-700 dark:text-neutral-200 truncate">{tag}</span>) : <span className="text-neutral-400 truncate">فارغ</span>}
                             {(detailTask.tags || []).length > 2 && <span className="text-neutral-400">+{(detailTask.tags || []).length - 2}</span>}
@@ -2320,7 +2312,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   {/* Status Pill */}
                   <div className="relative">
                     <button onClick={() => setFormDropdown(d => d === "status" ? null : "status")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", formDropdown === "status" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                      <span className={cn("w-2 h-2 rounded-full shrink-0", formTouched.has("status") ? STATUS_CONFIG[form.status || "todo"].accent : "bg-neutral-300")} />
                       <span className="truncate max-w-[120px]">{formTouched.has("status") ? STATUS_CONFIG[form.status || "todo"].label : "الحالة"}</span>
                       <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "status" ? "rotate-180" : "")} />
                     </button>
@@ -2472,7 +2463,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   {/* Priority Pill */}
                   <div className="relative">
                     <button onClick={() => setFormDropdown(d => d === "priority" ? null : "priority")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", formDropdown === "priority" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                      <Flag className={cn("w-3.5 h-3.5 shrink-0", formTouched.has("priority") ? PRIORITY_CONFIG[form.priority || "medium"].flag : "text-neutral-400")} />
                       <span className="truncate max-w-[120px]">{formTouched.has("priority") ? PRIORITY_CONFIG[form.priority || "medium"].label : "أولوية التنفيذ"}</span>
                       <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "priority" ? "rotate-180" : "")} />
                     </button>
