@@ -409,6 +409,45 @@ function VideoRecorderOverlay({ onRecorded, onClose }: {
   );
 }
 
+function VideoThumbnail({ url, name }: { url: string; name: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+
+  const toggle = () => {
+    if (!videoRef.current) return;
+    if (playing) {
+      videoRef.current.pause();
+      setPlaying(false);
+    } else {
+      videoRef.current.play();
+      setPlaying(true);
+    }
+  };
+
+  return (
+    <div className="w-[140px] rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 bg-black relative group">
+      <video
+        ref={videoRef}
+        src={url}
+        className="w-full h-28 object-cover"
+        preload="metadata"
+        onEnded={() => setPlaying(false)}
+        onClick={toggle}
+      />
+      {!playing && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/50 transition-colors cursor-pointer" onClick={toggle}>
+          <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+            <Play className="w-5 h-5 text-neutral-800 ml-0.5" />
+          </div>
+        </div>
+      )}
+      <div className="px-2 py-1 bg-neutral-50 dark:bg-neutral-800 border-t border-neutral-100 dark:border-neutral-700">
+        <span className="text-[8px] text-neutral-500 dark:text-neutral-400 truncate block text-center">{name}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageProps) {
   const [tasks, setTasks] = useState<Task[]>(() => getInitialTasks());
   const [search, setSearch] = useState("");
@@ -2129,12 +2168,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                           <img src={att.url} alt={att.name} className="w-24 h-24 object-cover" />
                                         </a>
                                       ) : att.type?.startsWith("video/") ? (
-                                        <div key={att.id} className="w-[140px] rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 bg-black">
-                                          <video src={att.url} controls className="w-full h-24 object-cover" preload="metadata" />
-                                          <div className="px-2 py-1 bg-neutral-50 dark:bg-neutral-800 border-t border-neutral-100 dark:border-neutral-700">
-                                            <span className="text-[8px] text-neutral-500 dark:text-neutral-400 truncate block text-center">{att.name}</span>
-                                          </div>
-                                        </div>
+                                        <VideoThumbnail key={att.id} url={att.url} name={att.name} />
                                       ) : att.type === "application/pdf" ? (
                                         <div key={att.id} className="relative group w-[110px]">
                                           <a href={att.url} target="_blank" rel="noopener noreferrer" className="block rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 overflow-hidden hover:shadow-md transition-all">
@@ -2824,12 +2858,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                           <img src={att.url} alt={att.name} className="w-24 h-24 object-cover" />
                                         </a>
                                       ) : att.type?.startsWith("video/") ? (
-                                        <div key={att.id} className="w-[140px] rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 bg-black">
-                                          <video src={att.url} controls className="w-full h-24 object-cover" preload="metadata" />
-                                          <div className="px-2 py-1 bg-neutral-50 dark:bg-neutral-800 border-t border-neutral-100 dark:border-neutral-700">
-                                            <span className="text-[8px] text-neutral-500 dark:text-neutral-400 truncate block text-center">{att.name}</span>
-                                          </div>
-                                        </div>
+                                        <VideoThumbnail key={att.id} url={att.url} name={att.name} />
                                       ) : att.type === "application/pdf" ? (
                                         <div key={att.id} className="relative group w-[110px]">
                                           <a href={att.url} target="_blank" rel="noopener noreferrer" className="block rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 overflow-hidden hover:shadow-md transition-all">
