@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, Fragment } from "react";
-import { Plus, Search, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, MoreHorizontal, List, LayoutGrid, Calendar as CalendarIcon, ArrowUpDown, Megaphone, Briefcase, Flag, UserCircle, Paperclip, Bell, Calendar, Users, Building2, FolderOpen, Inbox, Clock, CheckSquare, Circle, Send, Star, Hash, Play, FilePlus, Pencil, Trash2, Printer, FileDown, MapPin, Store } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, MoreHorizontal, List, LayoutGrid, Calendar as CalendarIcon, ArrowUpDown, Megaphone, Briefcase, Flag, UserCircle, Paperclip, Bell, Calendar, Users, Building2, FolderOpen, Inbox, Clock, CheckSquare, Circle, Send, Star, Hash, Play, FilePlus, Pencil, Trash2, Printer, FileDown, MapPin, Store, ExternalLink, Video } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../lib/utils";
 import { useAI } from "./ai/AIContext";
@@ -165,6 +165,250 @@ const COLS = [
   { key: "action",      label: "إجراء" },
 ] as const;
 
+const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+
+function getYouTubeId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be')) {
+      if (u.pathname.startsWith('/watch')) return u.searchParams.get('v');
+      if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('/')[0];
+      if (u.pathname.startsWith('/shorts/') || u.pathname.startsWith('/live/')) return u.pathname.split('/')[2];
+    }
+  } catch { /* invalid URL */ }
+  return null;
+}
+
+function LinkPreview({ url }: { url: string }) {
+  const [meta, setMeta] = useState<{ title?: string; author?: string; thumbnail?: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchMeta() {
+      try {
+        const videoId = getYouTubeId(url);
+        if (videoId) {
+          const res = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+          if (!cancelled && res.ok) {
+            const data = await res.json();
+            setMeta({ title: data.title, author: data.author_name, thumbnail: data.thumbnail_url });
+          }
+          return;
+        }
+        // Try noembed for other sites
+        const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}&format=json`);
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          if (data.title) {
+            setMeta({ title: data.title, author: data.author_name, thumbnail: data.thumbnail_url });
+          }
+        }
+      } catch {
+        // ignore fetch errors
+      }
+    }
+    fetchMeta();
+    return () => { cancelled = true; };
+  }, [url]);
+
+  const videoId = getYouTubeId(url);
+  if (videoId) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" className="block mt-1.5 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 hover:opacity-90 transition-opacity">
+        <img
+          src={meta?.thumbnail || `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`}
+          alt={meta?.title || "YouTube thumbnail"}
+          className="w-full h-28 object-cover"
+          loading="lazy"
+        />
+        <div className="px-2 py-1.5 bg-neutral-50 dark:bg-neutral-800">
+          <div className="text-[11px] font-medium text-neutral-800 dark:text-neutral-200 truncate">{meta?.title || "YouTube"}</div>
+          {meta?.author && <div className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">{meta.author}</div>}
+        </div>
+      </a>
+    );
+  }
+  try {
+    const u = new URL(url);
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" className="block mt-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 px-2.5 py-2 bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
+        <div className="flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-blue-400 truncate">
+          <ExternalLink className="w-3 h-3" /> {meta?.title || u.hostname}
+        </div>
+        {meta?.author && (
+          <div className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">{meta.author}</div>
+        )}
+        {!meta?.title && <div className="text-[10px] text-neutral-500 dark:text-neutral-400 truncate">{url}</div>}
+      </a>
+    );
+  } catch {
+    return null;
+  }
+}
+
+function LinkifyText({ text }: { text: string }) {
+  const parts = text.split(URL_REGEX);
+  const urls = text.match(URL_REGEX) || [];
+  let urlIndex = 0;
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part && part.match(/^https?:\/\/[^\s]+$/)) {
+          const url = urls[urlIndex++];
+          return (
+            <Fragment key={i}>
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 hover:underline break-all"
+              >
+                {url}
+              </a>
+              <LinkPreview url={url} />
+            </Fragment>
+          );
+        }
+        return <Fragment key={i}>{part}</Fragment>;
+      })}
+    </>
+  );
+}
+
+function PdfThumbnail({ url, name }: { url?: string; name?: string }) {
+  if (!url) {
+    return (
+      <div className="h-28 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/10 flex flex-col items-center justify-center gap-1">
+        <span className="text-[9px] font-bold text-red-600 dark:text-red-400">PDF</span>
+      </div>
+    );
+  }
+  return (
+    <div className="relative h-28 bg-white overflow-hidden">
+      <iframe
+        src={url}
+        title={name || "PDF"}
+        className="absolute inset-0 w-full h-full border-0"
+        style={{ pointerEvents: 'none' }}
+      />
+    </div>
+  );
+}
+
+function VideoRecorderOverlay({ onRecorded, onClose }: {
+  onRecorded: (att: { id: string; name: string; size: string; type: string; url: string }) => void;
+  onClose: () => void;
+}) {
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordTime, setRecordTime] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const onCloseRef = useRef(onClose);
+  const onRecordedRef = useRef(onRecorded);
+  onCloseRef.current = onClose;
+  onRecordedRef.current = onRecorded;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function init() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+        streamRef.current = stream;
+        if (videoRef.current) videoRef.current.srcObject = stream;
+      } catch {
+        alert('لا يمكن الوصول إلى الكاميرا. تأكد من منح الإذن.');
+        onCloseRef.current();
+      }
+    }
+    init();
+    return () => {
+      cancelled = true;
+      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, []);
+
+  // Auto-stop at 59 seconds
+  useEffect(() => {
+    if (isRecording && recordTime >= 59) {
+      handleStop();
+    }
+  }, [recordTime, isRecording]);
+
+  const handleStart = () => {
+    if (!streamRef.current) return;
+    const mr = new MediaRecorder(streamRef.current);
+    mediaRecorderRef.current = mr;
+    chunksRef.current = [];
+    mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    mr.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const url = e.target?.result as string;
+        onRecordedRef.current({
+          id: String(Date.now()) + Math.random().toString(36).slice(2, 8),
+          name: 'تسجيل فيديو.webm',
+          size: `${(blob.size / 1024 / 1024).toFixed(1)} MB`,
+          type: 'video/webm',
+          url,
+        });
+      };
+      reader.readAsDataURL(blob);
+      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+    };
+    mr.start();
+    setIsRecording(true);
+    setRecordTime(0);
+    timerRef.current = setInterval(() => {
+      setRecordTime(t => t + 1);
+    }, 1000);
+  };
+
+  const handleStop = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-neutral-900 rounded-2xl p-4 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+        <div className="relative rounded-xl overflow-hidden bg-black aspect-[3/4]">
+          <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+          {isRecording && (
+            <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-red-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              {Math.floor(recordTime / 60)}:{String(recordTime % 60).padStart(2, '0')}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-center gap-3 mt-4">
+          {!isRecording ? (
+            <button onClick={handleStart} className="w-14 h-14 rounded-full bg-red-500 flex items-center justify-center hover:bg-red-600 transition-colors">
+              <div className="w-5 h-5 rounded-full bg-white" />
+            </button>
+          ) : (
+            <button onClick={handleStop} className="w-14 h-14 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors">
+              <div className="w-5 h-5 rounded-sm bg-red-500" />
+            </button>
+          )}
+          <button onClick={onClose} className="text-sm text-neutral-500 hover:text-neutral-700 px-3 py-2">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageProps) {
   const [tasks, setTasks] = useState<Task[]>(() => getInitialTasks());
   const [search, setSearch] = useState("");
@@ -230,6 +474,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
   const [formTouched, setFormTouched] = useState<Set<string>>(new Set());
   const [formCommentAttachments, setFormCommentAttachments] = useState<{ id: string; name: string; size: string; type: string; url: string }[]>([]);
   const [formMention, setFormMention] = useState<{ query: string; startIndex: number } | null>(null);
+  const [videoRecorderTarget, setVideoRecorderTarget] = useState<'detail' | 'form' | null>(null);
 
   // Team schedule showroom state
   const [tsShowroom, setTsShowroom] = useState<string>("");
@@ -1875,7 +2120,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                               </div>
                             ) : (
                               <>
-                                {c.text && <p className="text-xs text-neutral-600 dark:text-neutral-300 mt-1 leading-relaxed text-right">{c.text}</p>}
+                                {c.text && <p className="text-xs text-neutral-600 dark:text-neutral-300 mt-1 leading-relaxed text-right"><LinkifyText text={c.text} /></p>}
                                 {(c.attachments || []).length > 0 && (
                                   <div className="flex flex-wrap gap-1.5 mt-2">
                                     {(c.attachments || []).map(att => (
@@ -1883,6 +2128,25 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                         <a key={att.id} href={att.url} download={att.name} className="block rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 hover:opacity-90 transition-opacity">
                                           <img src={att.url} alt={att.name} className="w-24 h-24 object-cover" />
                                         </a>
+                                      ) : att.type?.startsWith("video/") ? (
+                                        <div key={att.id} className="w-[140px] rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 bg-black">
+                                          <video src={att.url} controls className="w-full h-24 object-cover" preload="metadata" />
+                                          <div className="px-2 py-1 bg-neutral-50 dark:bg-neutral-800 border-t border-neutral-100 dark:border-neutral-700">
+                                            <span className="text-[8px] text-neutral-500 dark:text-neutral-400 truncate block text-center">{att.name}</span>
+                                          </div>
+                                        </div>
+                                      ) : att.type === "application/pdf" ? (
+                                        <div key={att.id} className="relative group w-[110px]">
+                                          <a href={att.url} target="_blank" rel="noopener noreferrer" className="block rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 overflow-hidden hover:shadow-md transition-all">
+                                            <PdfThumbnail url={att.url} name={att.name} />
+                                            <div className="px-2 py-1 border-t border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700/30">
+                                              <span className="text-[8px] text-neutral-500 dark:text-neutral-400 truncate block text-center">{att.name}</span>
+                                            </div>
+                                          </a>
+                                          <a href={att.url} download={att.name} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white dark:bg-neutral-700 shadow-sm border border-neutral-200 dark:border-neutral-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" title="تحميل">
+                                            <FileDown className="w-2.5 h-2.5 text-neutral-500" />
+                                          </a>
+                                        </div>
                                       ) : (
                                         <a key={att.id} href={att.url} download={att.name} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-[11px] hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
                                           <Paperclip className="w-3 h-3 text-neutral-400" />
@@ -1952,6 +2216,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       <div className="absolute left-2 bottom-2 flex items-center gap-1">
                         <button onClick={() => detailFileInputRef.current?.click()} className="p-2 rounded-lg text-neutral-400 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"><Paperclip className="w-4 h-4" /></button>
                         <input ref={detailFileInputRef} type="file" multiple className="hidden" onChange={async (e) => { const files = e.target.files; if (!files) return; const newAtts = await Promise.all(Array.from(files).map(async (file) => { const data = await readFile(file); return { id: String(Date.now()) + Math.random().toString(36).slice(2, 8), ...data }; })); setDetailCommentAttachments(p => [...p, ...newAtts]); e.target.value = ""; }} />
+                        <button onClick={() => setVideoRecorderTarget('detail')} className="p-2 rounded-lg text-neutral-400 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"><Video className="w-4 h-4" /></button>
                         <button onClick={() => { if (!detailComment.trim() && detailCommentAttachments.length === 0) return; const newComment = { id: String(Date.now()), author: "أنت", text: detailComment.trim(), date: "الآن", createdAt: Date.now(), attachments: detailCommentAttachments }; const next = [...(detailTask.comments || []), newComment]; setDetailTask(t => t ? { ...t, comments: next } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, comments: next } : x)); setDetailComment(""); setDetailCommentAttachments([]); setDetailMention(null); }} className="p-2 rounded-lg bg-teal-50 dark:bg-teal-900/20 text-teal-500 hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors"><Send className="w-4 h-4" /></button>
                       </div>
                     </div>
@@ -2550,7 +2815,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                               </div>
                             ) : (
                               <>
-                                {c.text && <p className="text-xs text-neutral-600 dark:text-neutral-300 mt-1 leading-relaxed text-right">{c.text}</p>}
+                                {c.text && <p className="text-xs text-neutral-600 dark:text-neutral-300 mt-1 leading-relaxed text-right"><LinkifyText text={c.text} /></p>}
                                 {(c.attachments || []).length > 0 && (
                                   <div className="flex flex-wrap gap-1.5 mt-2">
                                     {(c.attachments || []).map(att => (
@@ -2558,6 +2823,25 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                         <a key={att.id} href={att.url} download={att.name} className="block rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 hover:opacity-90 transition-opacity">
                                           <img src={att.url} alt={att.name} className="w-24 h-24 object-cover" />
                                         </a>
+                                      ) : att.type?.startsWith("video/") ? (
+                                        <div key={att.id} className="w-[140px] rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 bg-black">
+                                          <video src={att.url} controls className="w-full h-24 object-cover" preload="metadata" />
+                                          <div className="px-2 py-1 bg-neutral-50 dark:bg-neutral-800 border-t border-neutral-100 dark:border-neutral-700">
+                                            <span className="text-[8px] text-neutral-500 dark:text-neutral-400 truncate block text-center">{att.name}</span>
+                                          </div>
+                                        </div>
+                                      ) : att.type === "application/pdf" ? (
+                                        <div key={att.id} className="relative group w-[110px]">
+                                          <a href={att.url} target="_blank" rel="noopener noreferrer" className="block rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 overflow-hidden hover:shadow-md transition-all">
+                                            <PdfThumbnail url={att.url} name={att.name} />
+                                            <div className="px-2 py-1 border-t border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700/30">
+                                              <span className="text-[8px] text-neutral-500 dark:text-neutral-400 truncate block text-center">{att.name}</span>
+                                            </div>
+                                          </a>
+                                          <a href={att.url} download={att.name} className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white dark:bg-neutral-700 shadow-sm border border-neutral-200 dark:border-neutral-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" title="تحميل">
+                                            <FileDown className="w-2.5 h-2.5 text-neutral-500" />
+                                          </a>
+                                        </div>
                                       ) : (
                                         <a key={att.id} href={att.url} download={att.name} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-[11px] hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
                                           <Paperclip className="w-3 h-3 text-neutral-400" />
@@ -2632,6 +2916,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       <div className="absolute left-2 bottom-2 flex items-center gap-1">
                         <button onClick={() => formFileInputRef.current?.click()} className="p-2 rounded-lg text-neutral-400 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"><Paperclip className="w-4 h-4" /></button>
                         <input ref={formFileInputRef} type="file" multiple className="hidden" onChange={async (e) => { const files = e.target.files; if (!files) return; const newAtts = await Promise.all(Array.from(files).map(async (file) => { const data = await readFile(file); return { id: String(Date.now()) + Math.random().toString(36).slice(2, 8), ...data }; })); setFormCommentAttachments(p => [...p, ...newAtts]); e.target.value = ""; }} />
+                        <button onClick={() => setVideoRecorderTarget('form')} className="p-2 rounded-lg text-neutral-400 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"><Video className="w-4 h-4" /></button>
                         <button onClick={() => { if (!formComment.trim() && formCommentAttachments.length === 0) return; const newComment = { id: String(Date.now()), author: "أنت", text: formComment.trim(), date: "الآن", createdAt: Date.now(), attachments: formCommentAttachments }; const currentComments = editing ? (editing.comments || []) : (form.comments || []); const next = [...currentComments, newComment]; if (editing) { setForm(f => ({ ...f, comments: next })); setTasks(p => p.map(t => t.id === editing.id ? { ...t, comments: next } : t)); } else { setForm(f => ({ ...f, comments: next })); } setFormComment(""); setFormCommentAttachments([]); setFormMention(null); }} className="p-2 rounded-lg bg-teal-50 dark:bg-teal-900/20 text-teal-500 hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors"><Send className="w-4 h-4" /></button>
                       </div>
                     </div>
@@ -2730,6 +3015,19 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
           </div>
         );
       })()}
+      {videoRecorderTarget && (
+        <VideoRecorderOverlay
+          onRecorded={(att) => {
+            if (videoRecorderTarget === 'detail') {
+              setDetailCommentAttachments(p => [...p, att]);
+            } else {
+              setFormCommentAttachments(p => [...p, att]);
+            }
+            setVideoRecorderTarget(null);
+          }}
+          onClose={() => setVideoRecorderTarget(null)}
+        />
+      )}
     </div>
   );
 }
