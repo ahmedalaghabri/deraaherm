@@ -63,6 +63,10 @@ function WeeklyLeaveSelect({ employeeId, year, month, setSchedules, getDefaultRe
     setSelectedDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
   };
 
+  const toggleAllDays = () => {
+    setSelectedDays(prev => prev.length === daysInMonth ? [] : Array.from({ length: daysInMonth }, (_, i) => i + 1));
+  };
+
   const applyConfig = () => {
     if (isAll || selectedDays.length === 0) return;
     setSchedules(prev => {
@@ -143,6 +147,19 @@ function WeeklyLeaveSelect({ employeeId, year, month, setSchedules, getDefaultRe
               );
             })}
           </div>
+          {/* Select all days checkbox */}
+          <label className="flex items-center gap-2 mt-2 px-1 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={selectedDays.length === daysInMonth && daysInMonth > 0}
+              onChange={toggleAllDays}
+              className="w-3.5 h-3.5 rounded border-neutral-300 dark:border-neutral-600 text-amber-500 focus:ring-amber-400/40 cursor-pointer"
+            />
+            <span className="text-[11px] font-bold text-neutral-600 dark:text-neutral-300">كل الأيام</span>
+            <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mr-auto">
+              {selectedDays.length > 0 ? `${selectedDays.length} يوم مختار` : ""}
+            </span>
+          </label>
           {/* Config panel */}
           <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-700 space-y-2">
             <p className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 text-center">إعدادات الأيام المختارة</p>
