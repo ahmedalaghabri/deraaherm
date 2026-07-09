@@ -76,17 +76,17 @@ const TransactionReplyModal: React.FC<TransactionReplyModalProps> = ({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            className="relative bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             dir="rtl"
           >
-            <div className="sticky top-0 bg-gradient-to-b from-blue-50 to-white px-6 py-4 border-b border-blue-100 flex items-center justify-between z-10">
+            <div className="sticky top-0 bg-white dark:bg-neutral-800 px-6 py-4 border-b border-neutral-100 dark:border-neutral-700 flex items-center justify-between z-10">
               <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-100 text-blue-700 border border-blue-200">
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
                   <MessageSquare className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">الرد على المعاملة</h2>
-                  <p className="text-sm text-gray-600 truncate max-w-md">{transactionTitle}</p>
+                  <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-100">الرد على المعاملة</h2>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 truncate max-w-md">{transactionTitle}</p>
                 </div>
               </div>
               <Button
@@ -107,14 +107,14 @@ const TransactionReplyModal: React.FC<TransactionReplyModalProps> = ({
                     onClick={() => setAction('approve')}
                     className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
                       action === 'approve'
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-gray-200 hover:border-green-300 hover:bg-green-50/50'
+                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                        : 'border-neutral-200 dark:border-neutral-600 hover:border-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10'
                     }`}
                   >
-                    <CheckCircle className={`h-6 w-6 ${action === 'approve' ? 'text-green-600' : 'text-gray-400'}`} />
+                    <CheckCircle className={`h-6 w-6 ${action === 'approve' ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400'}`} />
                     <div className="text-right flex-1">
-                      <p className="font-semibold text-gray-900">الموافقة</p>
-                      <p className="text-sm text-gray-600">إعتماد الطلب ونقله للمرحلة التالية</p>
+                      <p className="font-semibold text-neutral-800 dark:text-neutral-100">الموافقة</p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">إعتماد الطلب ونقله للمرحلة التالية</p>
                     </div>
                   </button>
 
@@ -123,14 +123,14 @@ const TransactionReplyModal: React.FC<TransactionReplyModalProps> = ({
                     onClick={() => setAction('return_for_invoice')}
                     className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
                       action === 'return_for_invoice'
-                        ? 'border-orange-500 bg-orange-50'
-                        : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50/50'
+                        ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                        : 'border-neutral-200 dark:border-neutral-600 hover:border-amber-300 hover:bg-amber-50/50 dark:hover:bg-amber-900/10'
                     }`}
                   >
-                    <AlertTriangle className={`h-6 w-6 ${action === 'return_for_invoice' ? 'text-orange-600' : 'text-gray-400'}`} />
+                    <AlertTriangle className={`h-6 w-6 ${action === 'return_for_invoice' ? 'text-amber-600 dark:text-amber-400' : 'text-neutral-400'}`} />
                     <div className="text-right flex-1">
-                      <p className="font-semibold text-gray-900">إعادة لرفع فاتورة</p>
-                      <p className="text-sm text-gray-600">طلب إرفاق فاتورة أو مستند إضافي</p>
+                      <p className="font-semibold text-neutral-800 dark:text-neutral-100">إعادة لرفع فاتورة</p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">طلب إرفاق فاتورة أو مستند إضافي</p>
                     </div>
                   </button>
 
@@ -139,14 +139,14 @@ const TransactionReplyModal: React.FC<TransactionReplyModalProps> = ({
                     onClick={() => setAction('reject')}
                     className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
                       action === 'reject'
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-gray-200 hover:border-red-300 hover:bg-red-50/50'
+                        ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/20'
+                        : 'border-neutral-200 dark:border-neutral-600 hover:border-rose-300 hover:bg-rose-50/50 dark:hover:bg-rose-900/10'
                     }`}
                   >
-                    <XCircle className={`h-6 w-6 ${action === 'reject' ? 'text-red-600' : 'text-gray-400'}`} />
+                    <XCircle className={`h-6 w-6 ${action === 'reject' ? 'text-rose-600 dark:text-rose-400' : 'text-neutral-400'}`} />
                     <div className="text-right flex-1">
-                      <p className="font-semibold text-gray-900">رفض الطلب</p>
-                      <p className="text-sm text-gray-600">رفض الطلب مع توضيح السبب</p>
+                      <p className="font-semibold text-neutral-800 dark:text-neutral-100">رفض الطلب</p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">رفض الطلب مع توضيح السبب</p>
                     </div>
                   </button>
                 </div>
@@ -155,7 +155,7 @@ const TransactionReplyModal: React.FC<TransactionReplyModalProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="comments" className="text-base font-semibold">
                   التعليق / الملاحظات
-                  <span className="text-red-500 mr-1">*</span>
+                  <span className="text-rose-500 mr-1">*</span>
                 </Label>
                 <textarea
                   id="comments"
@@ -166,10 +166,10 @@ const TransactionReplyModal: React.FC<TransactionReplyModalProps> = ({
                       ? 'الرجاء إرفاق الفاتورة الأصلية أو صورة واضحة منها...'
                       : 'اكتب تعليقك أو ملاحظاتك هنا...'
                   }
-                  className="w-full min-h-[120px] px-4 py-3 rounded-xl border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all resize-none"
+                  className="w-full min-h-[120px] px-4 py-3 rounded-xl border-2 border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 focus:border-neutral-400 dark:focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 dark:focus:ring-neutral-700 outline-none transition-all resize-none"
                   required
                 />
-                <p className="text-xs text-gray-500">سيتم إرسال هذا التعليق إلى مقدم الطلب والجهات المعنية</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">سيتم إرسال هذا التعليق إلى مقدم الطلب والجهات المعنية</p>
               </div>
 
               <div className="space-y-3">
@@ -177,7 +177,7 @@ const TransactionReplyModal: React.FC<TransactionReplyModalProps> = ({
                   <Upload className="h-5 w-5" />
                   المرفقات (اختياري)
                 </Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                <div className="border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-xl p-6 text-center hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors">
                   <input
                     type="file"
                     multiple
@@ -187,27 +187,27 @@ const TransactionReplyModal: React.FC<TransactionReplyModalProps> = ({
                     accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                   />
                   <label htmlFor="reply-file-upload" className="cursor-pointer">
-                    <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600">اضغط لتحميل الملفات</p>
-                    <p className="text-xs text-gray-400 mt-1">PDF, Word, Images (حد أقصى 10MB لكل ملف)</p>
+                    <Upload className="h-8 w-8 mx-auto text-neutral-400 mb-2" />
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">اضغط لتحميل الملفات</p>
+                    <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">PDF, Word, Images (حد أقصى 10MB لكل ملف)</p>
                   </label>
                 </div>
 
                 {attachments.length > 0 && (
                   <div className="space-y-2">
                     {attachments.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div key={index} className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-900/50 rounded-lg border border-neutral-200 dark:border-neutral-600">
                         <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-gray-500" />
-                          <span className="text-sm text-gray-700">{file.name}</span>
-                          <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(2)} KB)</span>
+                          <FileText className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
+                          <span className="text-sm text-neutral-700 dark:text-neutral-300">{file.name}</span>
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">({(file.size / 1024).toFixed(2)} KB)</span>
                         </div>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => removeAttachment(index)}
-                          className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
+                          className="h-8 w-8 p-0 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-900/20 dark:hover:text-rose-400"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -218,9 +218,9 @@ const TransactionReplyModal: React.FC<TransactionReplyModalProps> = ({
               </div>
 
               {action === 'return_for_invoice' && (
-                <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 flex gap-3">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-800">
+                <div className="bg-amber-50 dark:bg-amber-900/10 border-2 border-amber-200 dark:border-amber-900/50 rounded-xl p-4 flex gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-800 dark:text-amber-300">
                     <p className="font-semibold mb-1">تنبيه:</p>
                     <p>سيتم إعادة المعاملة إلى مقدم الطلب لإرفاق الفاتورة المطلوبة. سيظهر طلبك في صندوق الوارد الخاص به.</p>
                   </div>
@@ -228,9 +228,9 @@ const TransactionReplyModal: React.FC<TransactionReplyModalProps> = ({
               )}
 
               {action === 'approve' && (
-                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 flex gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-green-800">
+                <div className="bg-emerald-50 dark:bg-emerald-900/10 border-2 border-emerald-200 dark:border-emerald-900/50 rounded-xl p-4 flex gap-3">
+                  <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-emerald-800 dark:text-emerald-300">
                     <p className="font-semibold mb-1">ملاحظة:</p>
                     <p>بعد الموافقة، سيتم نقل المعاملة تلقائياً إلى المرحلة التالية في مسار المعاملة.</p>
                   </div>
@@ -238,20 +238,20 @@ const TransactionReplyModal: React.FC<TransactionReplyModalProps> = ({
               )}
 
               {action === 'reject' && (
-                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 flex gap-3">
-                  <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-red-800">
+                <div className="bg-rose-50 dark:bg-rose-900/10 border-2 border-rose-200 dark:border-rose-900/50 rounded-xl p-4 flex gap-3">
+                  <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-rose-800 dark:text-rose-300">
                     <p className="font-semibold mb-1">تحذير:</p>
                     <p>رفض المعاملة سيؤدي إلى إنهاء مسارها. تأكد من كتابة سبب واضح للرفض.</p>
                   </div>
                 </div>
               )}
 
-              <div className="flex gap-3 pt-4 border-t">
+              <div className="flex gap-3 pt-4 border-t border-neutral-100 dark:border-neutral-700">
                 <Button
                   type="submit"
                   disabled={!action || !comments.trim()}
-                  className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white h-12 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 rounded-xl bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-white h-12 text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="ml-2 h-5 w-5" />
                   إرسال الرد

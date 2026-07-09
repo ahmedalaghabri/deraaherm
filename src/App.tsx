@@ -12,8 +12,9 @@ import SalesPerformancePage from "./components/SalesPerformancePage";
 import TasksPage from "./components/TasksPage";
 import CampaignsPage from "./components/CampaignsPage";
 import SaudiCalendar from "./components/SaudiCalendar";
+import PageTabs from "./components/PageTabs";
 import { supabase } from "./lib/supabase";
-import { Bell, Search, Settings, LogOut, Inbox, Send, FileText, Users, ShieldCheck, ClipboardList, Award, Accessibility, GaugeCircle, Sparkles, ChevronRight, ChevronLeft, ChevronDown, Upload, X, Save, Check, ArrowRight, Tag, Calendar, Building2, Shield, AlertTriangle, Clock, CheckCircle, Phone, Archive, FilePlus, Mail, BarChart3, LayoutDashboard, ArrowLeftRight, ExternalLink, Globe, Database, MessageSquare, TrendingUp, FileSpreadsheet, Briefcase, CreditCard, Home, Car, Plane, Heart, GraduationCap, Baby, MapPin, Zap, User, Lock, Eye, EyeOff, Smartphone, CircleUser as UserCircle, ListTodo, Megaphone, Languages, Type, Moon, Sun, UserPlus, Trophy } from "lucide-react";
+import { Bell, Search, Settings, LogOut, Inbox, Send, FileText, Users, ShieldCheck, ClipboardList, Award, Accessibility, GaugeCircle, Sparkles, ChevronRight, ChevronLeft, ChevronDown, Upload, X, Save, Check, ArrowRight, Tag, Calendar, Building2, Shield, AlertTriangle, Clock, CheckCircle, Phone, Archive, FilePlus, Mail, BarChart3, LayoutDashboard, ArrowLeftRight, ExternalLink, Globe, Database, MessageSquare, TrendingUp, FileSpreadsheet, Briefcase, CreditCard, Home, Car, Plane, Heart, GraduationCap, Baby, MapPin, Zap, User, Lock, Eye, EyeOff, Smartphone, CircleUser as UserCircle, ListTodo, Megaphone, Languages, Type, Moon, Sun, UserPlus, Trophy, ScanFace } from "lucide-react";
 import { AIProvider, useAI } from "./components/ai/AIContext";
 import { FloatingAssistant } from "./components/ai/FloatingAssistant";
 import { ChatPanel } from "./components/ai/ChatPanel";
@@ -27,7 +28,6 @@ const sidebarGroups = [
       { key: "sales_kpi",    title: "الأداء",     icon: TrendingUp },
       { key: "transactions", title: "المعاملات",  icon: ArrowLeftRight },
       { key: "attendance",   title: "الحضور",     icon: Calendar },
-      { key: "notifications",title: "التنبيهات", icon: Bell },
       { key: "shortcuts",    title: "اختصارات",  icon: Zap },
     ],
   },
@@ -44,7 +44,7 @@ function PageShell({ title, children }) {
       <div className="flex items-center gap-2 text-sm text-neutral-600">
         <span className="font-medium">{title}</span>
       </div>
-      <div className="rounded-2xl border border-neutral-200 bg-white dark:bg-neutral-800 p-4 sm:p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-4 sm:p-6 shadow-sm">
         {children}
       </div>
     </div>
@@ -352,21 +352,6 @@ function TransactionSelectionPage({ onCancel, onTransactionSelect }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("الكل");
 
-  const colorMap: Record<string, { card: string; iconWrap: string }> = {
-    'from-green-500':  { card: 'bg-gradient-to-b from-emerald-50/80 to-white border-emerald-100', iconWrap: 'bg-emerald-100/60 text-emerald-700 border-emerald-200' },
-    'from-red-500':    { card: 'bg-gradient-to-b from-rose-50/80 to-white border-rose-100',       iconWrap: 'bg-rose-100/60 text-rose-700 border-rose-200' },
-    'from-blue-500':   { card: 'bg-gradient-to-b from-sky-50/80 to-white border-sky-100',         iconWrap: 'bg-sky-100/60 text-sky-700 border-sky-200' },
-    'from-purple-500': { card: 'bg-gradient-to-b from-violet-50/80 to-white border-violet-100',   iconWrap: 'bg-violet-100/60 text-violet-700 border-violet-200' },
-    'from-orange-500': { card: 'bg-gradient-to-b from-amber-50/80 to-white border-amber-100',     iconWrap: 'bg-amber-100/60 text-amber-700 border-amber-200' },
-    'from-teal-500':   { card: 'bg-gradient-to-b from-teal-50/80 to-white border-teal-100',       iconWrap: 'bg-teal-100/60 text-teal-700 border-teal-200' },
-    'from-indigo-500': { card: 'bg-gradient-to-b from-indigo-50/80 to-white border-indigo-100',   iconWrap: 'bg-indigo-100/60 text-indigo-700 border-indigo-200' },
-    'from-pink-500':   { card: 'bg-gradient-to-b from-pink-50/80 to-white border-pink-100',       iconWrap: 'bg-pink-100/60 text-pink-700 border-pink-200' },
-    'from-sky-500':    { card: 'bg-gradient-to-b from-sky-50/80 to-white border-sky-100',         iconWrap: 'bg-sky-100/60 text-sky-700 border-sky-200' },
-    'from-gray-500':   { card: 'bg-gradient-to-b from-neutral-50/80 to-white border-neutral-100', iconWrap: 'bg-neutral-100/60 text-neutral-600 border-neutral-200' },
-    'from-yellow-500': { card: 'bg-gradient-to-b from-yellow-50/80 to-white border-yellow-100',   iconWrap: 'bg-yellow-100/60 text-yellow-700 border-yellow-200' },
-    'from-violet-500': { card: 'bg-gradient-to-b from-violet-50/80 to-white border-violet-100',   iconWrap: 'bg-violet-100/60 text-violet-700 border-violet-200' },
-  };
-
   const departments = ["الكل", ...new Set(transactionTypes.map(t => t.department))];
   
   const filteredTransactions = transactionTypes.filter(transaction => {
@@ -376,13 +361,13 @@ function TransactionSelectionPage({ onCancel, onTransactionSelect }) {
   });
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[radial-gradient(40%_40%_at_100%_0%,#eef2ff_0%,transparent_60%),radial-gradient(50%_40%_at_0%_100%,#fff1f2_0%,transparent_60%)] dark:bg-[radial-gradient(40%_40%_at_100%_0%,#1a1a2e_0%,transparent_60%),radial-gradient(50%_40%_at_0%_100%,#1a1a2e_0%,transparent_60%)]">
+    <div dir="rtl" className="min-h-screen">
       <div className="mx-auto max-w-[1400px] p-3 sm:p-6 space-y-4 sm:space-y-6">
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <div className="rounded-2xl border border-sky-100 bg-gradient-to-b from-sky-50/70 to-white shadow-sm p-4 sm:p-6">
+          <div className="rounded-2xl border bg-white dark:bg-neutral-800 border-neutral-100 dark:border-neutral-700 shadow-sm p-4 sm:p-6">
             <div className="mb-4 sm:mb-6">
-              <h2 className="text-xl sm:text-2xl font-bold mb-2">اختر نوع المعاملة</h2>
-              <p className="text-sm sm:text-base text-neutral-600">اختر نوع المعاملة التي تريد تقديمها من القائمة أدناه</p>
+              <h2 className="text-xl sm:text-2xl font-bold mb-2 dark:text-neutral-100">اختر نوع المعاملة</h2>
+              <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400">اختر نوع المعاملة التي تريد تقديمها من القائمة أدناه</p>
             </div>
 
             {/* البحث والفلترة */}
@@ -394,13 +379,13 @@ function TransactionSelectionPage({ onCancel, onTransactionSelect }) {
                   placeholder="ابحث عن نوع المعاملة..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-2xl ps-10 pe-4 py-2.5 sm:py-3 bg-white dark:bg-neutral-800 border border-neutral-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm shadow-sm transition-shadow"
+                  className="w-full rounded-2xl ps-10 pe-4 py-2.5 sm:py-3 bg-white dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-600 dark:text-neutral-200 focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 outline-none text-sm shadow-sm transition-shadow"
                 />
               </div>
               <select
                 value={selectedDepartment}
                 onChange={(e) => setSelectedDepartment(e.target.value)}
-                className="rounded-2xl px-4 py-2.5 sm:py-3 bg-white dark:bg-neutral-800 border border-neutral-200 focus:ring-2 focus:ring-blue-500 outline-none w-full sm:min-w-[200px] text-sm shadow-sm transition-shadow"
+                className="rounded-2xl px-4 py-2.5 sm:py-3 bg-white dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-600 dark:text-neutral-200 focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600 outline-none w-full sm:min-w-[200px] text-sm shadow-sm transition-shadow"
               >
                 {departments.map(dept => (
                   <option key={dept} value={dept}>{dept}</option>
@@ -410,32 +395,25 @@ function TransactionSelectionPage({ onCancel, onTransactionSelect }) {
 
             {/* شبكة المعاملات */}
             <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:grid-cols-6">
-              {filteredTransactions.map((transaction, index) => {
-                const colorKey = transaction.color.split(' ')[0];
-                const style = colorMap[colorKey] ?? { card: 'bg-gradient-to-b from-neutral-50/80 to-white border-neutral-100', iconWrap: 'bg-neutral-100/60 text-neutral-600 border-neutral-200' };
-                return (
-                  <motion.button
-                    key={transaction.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => onTransactionSelect(transaction.id, transaction.title)}
-                    className={cn('group rounded-2xl border shadow-sm hover:shadow-md transition-all duration-200 text-right flex flex-col', style.card)}
-                  >
-                    <div className="pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
-                      <div className="flex items-center gap-1.5 sm:gap-2">
-                        <div className={cn('grid h-7 w-7 sm:h-8 sm:w-8 place-items-center rounded-xl border shrink-0', style.iconWrap)}>
-                          <transaction.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        </div>
-                        <span className="text-xs sm:text-sm font-medium leading-tight text-neutral-800">{transaction.title}</span>
-                      </div>
+              {filteredTransactions.map((transaction, index) => (
+                <motion.button
+                  key={transaction.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => onTransactionSelect(transaction.id, transaction.title)}
+                  className="group bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm hover:shadow-md transition-shadow text-right flex flex-col p-2 sm:p-4 gap-1 sm:gap-1.5"
+                  style={{ borderRadius: 12 }}
+                >
+                  <div className="flex items-center justify-between gap-1 w-full">
+                    <span className="text-[10px] sm:text-[14px] text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{transaction.title}</span>
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700" style={{ borderRadius: 8 }}>
+                      <transaction.icon className="w-3 h-3 sm:w-4 sm:h-4 text-neutral-700 dark:text-neutral-300" />
                     </div>
-                    <div className="pt-0 px-3 sm:px-4 pb-3 sm:pb-4">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">{transaction.department}</p>
-                    </div>
-                  </motion.button>
-                );
-              })}
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-medium">{transaction.department}</p>
+                </motion.button>
+              ))}
             </div>
 
             {filteredTransactions.length === 0 && (
@@ -444,11 +422,11 @@ function TransactionSelectionPage({ onCancel, onTransactionSelect }) {
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center py-12 sm:py-16"
               >
-                <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-2xl bg-neutral-100 flex items-center justify-center">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-2xl bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center">
                   <Search className="w-8 h-8 sm:w-10 sm:h-10 text-neutral-400" />
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-neutral-700 mb-2">لا توجد نتائج</h3>
-                <p className="text-sm text-neutral-500">جرب تغيير كلمات البحث أو الفلتر</p>
+                <h3 className="text-base sm:text-lg font-bold text-neutral-700 dark:text-neutral-200 mb-2">لا توجد نتائج</h3>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">جرب تغيير كلمات البحث أو الفلتر</p>
               </motion.div>
             )}
           </div>
@@ -526,7 +504,7 @@ function AddTransactionForm({ onCancel, onSaved }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-neutral-600">
+      <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
         <button onClick={onCancel} className="inline-flex items-center gap-1 hover:underline">
           <ArrowRight className="h-4 w-4" /> الرئيسية
         </button>
@@ -534,14 +512,14 @@ function AddTransactionForm({ onCancel, onSaved }) {
         <span className="font-medium">إضافة معاملة</span>
       </div>
 
-      <div className="rounded-2xl border border-neutral-200 bg-white dark:bg-neutral-800 p-4 sm:p-6 shadow-sm">
+      <div className="rounded-2xl border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-4 sm:p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold">إضافة معاملة</h2>
-            <p className="text-sm text-neutral-500">أدخل تفاصيل المعاملة الجديدة، الحقول الأساسية مطلوبة.</p>
+            <h2 className="text-lg font-bold dark:text-neutral-100">إضافة معاملة</h2>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">أدخل تفاصيل المعاملة الجديدة، الحقول الأساسية مطلوبة.</p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={onCancel} className="px-3 py-2 rounded-xl border border-neutral-200 hover:bg-blue-50 active:bg-blue-100 text-sm">إلغاء</button>
+            <button onClick={onCancel} className="px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 active:bg-neutral-200 text-sm">إلغاء</button>
             <button onClick={handleSubmit} disabled={saving} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-900 text-white disabled:opacity-50">
               {saving ? <Save className="h-4 w-4 animate-pulse" /> : <Check className="h-4 w-4" />}
               حفظ المعاملة
@@ -550,21 +528,21 @@ function AddTransactionForm({ onCancel, onSaved }) {
         </div>
 
         {saved && (
-          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 p-3 text-sm">تم حفظ المعاملة بنجاح.</div>
+          <div className="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-900 dark:text-emerald-300 p-3 text-sm">تم حفظ المعاملة بنجاح.</div>
         )}
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* العمود 1 */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm mb-1">عنوان المعاملة<span className="text-red-600">*</span></label>
-              <input value={form.title} onChange={(e) => setField("title", e.target.value)} className={cn("w-full rounded-xl px-3 py-2 bg-neutral-100 border", errors.title ? "border-red-500" : "border-neutral-200")} placeholder="مثال: طلب اعتماد عقد صيانة" />
-              {errors.title && <p className="text-xs text-red-600 mt-1">{errors.title}</p>}
+              <label className="block text-sm mb-1">عنوان المعاملة<span className="text-rose-600">*</span></label>
+              <input value={form.title} onChange={(e) => setField("title", e.target.value)} className={cn("w-full rounded-xl px-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border", errors.title ? "border-rose-500" : "border-neutral-200 dark:border-neutral-600")} placeholder="مثال: طلب اعتماد عقد صيانة" />
+              {errors.title && <p className="text-xs text-rose-600 mt-1">{errors.title}</p>}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm mb-1">الاتجاه<span className="text-red-600">*</span></label>
-                <select value={form.direction} onChange={(e) => setField("direction", e.target.value)} className={cn("w-full rounded-xl px-3 py-2 bg-neutral-100 border", errors.direction ? "border-red-500" : "border-neutral-200")}> 
+                <label className="block text-sm mb-1">الاتجاه<span className="text-rose-600">*</span></label>
+                <select value={form.direction} onChange={(e) => setField("direction", e.target.value)} className={cn("w-full rounded-xl px-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border", errors.direction ? "border-rose-500" : "border-neutral-200 dark:border-neutral-600")}> 
                   <option>صادر</option>
                   <option>وارد</option>
                   <option>داخلي</option>
@@ -572,7 +550,7 @@ function AddTransactionForm({ onCancel, onSaved }) {
               </div>
               <div>
                 <label className="block text-sm mb-1">نوع المعاملة</label>
-                <select value={form.type} onChange={(e) => setField("type", e.target.value)} className="w-full rounded-xl px-3 py-2 bg-neutral-100 border border-neutral-200">
+                <select value={form.type} onChange={(e) => setField("type", e.target.value)} className="w-full rounded-xl px-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600">
                   <option>خطاب</option>
                   <option>طلب</option>
                   <option>محضر</option>
@@ -583,15 +561,15 @@ function AddTransactionForm({ onCancel, onSaved }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm mb-1">رقم المرجع</label>
-                <input value={form.refNo} onChange={(e) => setField("refNo", e.target.value)} className="w-full rounded-xl px-3 py-2 bg-neutral-100 border border-neutral-200" placeholder="مثال: HR-2025-001" />
+                <input value={form.refNo} onChange={(e) => setField("refNo", e.target.value)} className="w-full rounded-xl px-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600" placeholder="مثال: HR-2025-001" />
               </div>
               <div>
-                <label className="block text-sm mb-1">التاريخ<span className="text-red-600">*</span></label>
+                <label className="block text-sm mb-1">التاريخ<span className="text-rose-600">*</span></label>
                 <div className="relative">
                   <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70" />
-                  <input type="date" value={form.date} onChange={(e) => setField("date", e.target.value)} className={cn("w-full rounded-xl ps-9 pe-3 py-2 bg-neutral-100 border", errors.date ? "border-red-500" : "border-neutral-200")} />
+                  <input type="date" value={form.date} onChange={(e) => setField("date", e.target.value)} className={cn("w-full rounded-xl ps-9 pe-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border", errors.date ? "border-rose-500" : "border-neutral-200 dark:border-neutral-600")} />
                 </div>
-                {errors.date && <p className="text-xs text-red-600 mt-1">{errors.date}</p>}
+                {errors.date && <p className="text-xs text-rose-600 mt-1">{errors.date}</p>}
               </div>
             </div>
           </div>
@@ -602,14 +580,14 @@ function AddTransactionForm({ onCancel, onSaved }) {
                 <label className="block text-sm mb-1">الجهة المرسلة</label>
                 <div className="relative">
                   <Building2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70" />
-                  <input value={form.sender} onChange={(e) => setField("sender", e.target.value)} className="w-full rounded-xl ps-9 pe-3 py-2 bg-neutral-100 border border-neutral-200" placeholder="اسم الجهة/القسم" />
+                  <input value={form.sender} onChange={(e) => setField("sender", e.target.value)} className="w-full rounded-xl ps-9 pe-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600" placeholder="اسم الجهة/القسم" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm mb-1">الجهة المستلمة</label>
                 <div className="relative">
                   <Building2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70" />
-                  <input value={form.receiver} onChange={(e) => setField("receiver", e.target.value)} className="w-full rounded-xl ps-9 pe-3 py-2 bg-neutral-100 border border-neutral-200" placeholder="اسم الجهة/القسم" />
+                  <input value={form.receiver} onChange={(e) => setField("receiver", e.target.value)} className="w-full rounded-xl ps-9 pe-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600" placeholder="اسم الجهة/القسم" />
                 </div>
               </div>
             </div>
@@ -618,7 +596,7 @@ function AddTransactionForm({ onCancel, onSaved }) {
                 <label className="block text-sm mb-1">الأولوية</label>
                 <div className="relative">
                   <AlertTriangle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70" />
-                  <select value={form.priority} onChange={(e) => setField("priority", e.target.value)} className="w-full rounded-xl ps-9 pe-3 py-2 bg-neutral-100 border border-neutral-200">
+                  <select value={form.priority} onChange={(e) => setField("priority", e.target.value)} className="w-full rounded-xl ps-9 pe-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600">
                     <option>عادي</option>
                     <option>عاجل</option>
                     <option>عاجل جدًا</option>
@@ -629,7 +607,7 @@ function AddTransactionForm({ onCancel, onSaved }) {
                 <label className="block text-sm mb-1">درجة السرية</label>
                 <div className="relative">
                   <Shield className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70" />
-                  <select value={form.confidentiality} onChange={(e) => setField("confidentiality", e.target.value)} className="w-full rounded-xl ps-9 pe-3 py-2 bg-neutral-100 border border-neutral-200">
+                  <select value={form.confidentiality} onChange={(e) => setField("confidentiality", e.target.value)} className="w-full rounded-xl ps-9 pe-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600">
                     <option>عادي</option>
                     <option>سري</option>
                     <option>سري جدًا</option>
@@ -640,11 +618,11 @@ function AddTransactionForm({ onCancel, onSaved }) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm mb-1">تاريخ الاستحقاق</label>
-                <input type="date" value={form.dueDate} onChange={(e) => setField("dueDate", e.target.value)} className="w-full rounded-xl px-3 py-2 bg-neutral-100 border border-neutral-200" />
+                <input type="date" value={form.dueDate} onChange={(e) => setField("dueDate", e.target.value)} className="w-full rounded-xl px-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600" />
               </div>
               <div>
                 <label className="block text-sm mb-1">القسم/الإدارة</label>
-                <input value={form.department} onChange={(e) => setField("department", e.target.value)} className="w-full rounded-xl px-3 py-2 bg-neutral-100 border border-neutral-200" placeholder="مثال: الموارد البشرية" />
+                <input value={form.department} onChange={(e) => setField("department", e.target.value)} className="w-full rounded-xl px-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600" placeholder="مثال: الموارد البشرية" />
               </div>
             </div>
           </div>
@@ -652,42 +630,42 @@ function AddTransactionForm({ onCancel, onSaved }) {
           <div className="space-y-4">
             <div>
               <label className="block text-sm mb-1">المكلف بالمعاملة</label>
-              <input value={form.assignee} onChange={(e) => setField("assignee", e.target.value)} className="w-full rounded-xl px-3 py-2 bg-neutral-100 border border-neutral-200" placeholder="اسم الموظف" />
+              <input value={form.assignee} onChange={(e) => setField("assignee", e.target.value)} className="w-full rounded-xl px-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600" placeholder="اسم الموظف" />
             </div>
             <div>
               <label className="block text-sm mb-1">وسوم</label>
               <div className="flex items-center gap-2 flex-wrap mb-2">
                 {tags.map((t) => (
-                  <span key={t} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs bg-neutral-200">
+                  <span key={t} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300">
                     <Tag className="h-3 w-3" /> {t}
                     <button onClick={() => setTags((prev) => prev.filter((x) => x !== t))} className="ms-1"><X className="h-3 w-3" /></button>
                   </span>
                 ))}
               </div>
-              <input onKeyDown={addTagFromInput} placeholder="اكتب الوسم ثم Enter" className="w-full rounded-xl px-3 py-2 bg-neutral-100 border border-neutral-200" />
+              <input onKeyDown={addTagFromInput} placeholder="اكتب الوسم ثم Enter" className="w-full rounded-xl px-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600" />
             </div>
             <div>
               <label className="block text-sm mb-1">الوصف</label>
-              <textarea value={form.description} onChange={(e) => setField("description", e.target.value)} rows={5} className="w-full rounded-xl px-3 py-2 bg-neutral-100 border border-neutral-200" placeholder="تفاصيل إضافية حول المعاملة" />
+              <textarea value={form.description} onChange={(e) => setField("description", e.target.value)} rows={5} className="w-full rounded-xl px-3 py-2 bg-neutral-100 dark:bg-neutral-900/50 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600" placeholder="تفاصيل إضافية حول المعاملة" />
             </div>
           </div>
           {/* مرفقات */}
           <div className="lg:col-span-3">
             <label className="block text-sm mb-1">المرفقات</label>
-            <div className="rounded-xl border border-dashed border-neutral-300 p-4">
+            <div className="rounded-xl border border-dashed border-neutral-300 dark:border-neutral-600 p-4">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="text-sm text-neutral-600">اسحب وأفلت الملفات هنا أو</div>
+                <div className="text-sm text-neutral-600 dark:text-neutral-400">اسحب وأفلت الملفات هنا أو</div>
                 <div className="flex items-center gap-2">
                   <input ref={fileInputRef} onChange={(e) => onFilesSelected(e.target.files)} type="file" multiple hidden />
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-neutral-200 hover:bg-blue-50 active:bg-blue-100 text-sm"><Upload className="h-4 w-4" /> اختر ملفات</button>
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 active:bg-neutral-200 text-sm"><Upload className="h-4 w-4" /> اختر ملفات</button>
                 </div>
               </div>
               {!!attachments.length && (
                 <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {attachments.map((a) => (
-                    <div key={a.id} className="flex items-center justify-between gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-sm bg-white dark:bg-neutral-800">
+                    <div key={a.id} className="flex items-center justify-between gap-2 rounded-lg border border-neutral-200 dark:border-neutral-600 px-3 py-2 text-sm bg-white dark:bg-neutral-800 dark:text-neutral-300">
                       <div className="truncate">{a.name}</div>
-                      <button onClick={() => removeAttachment(a.id)} className="p-1 rounded-md hover:bg-blue-50 active:bg-blue-100"><X className="h-4 w-4" /></button>
+                      <button onClick={() => removeAttachment(a.id)} className="p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 active:bg-neutral-200"><X className="h-4 w-4" /></button>
                     </div>
                   ))}
                 </div>
@@ -797,7 +775,7 @@ function ReminderCarousel({ setView, setActiveKey, setTransactionsSubTab }: {
       <div className="flex items-center justify-between mb-3 px-1">
         <h3 className="text-sm sm:text-base font-bold text-neutral-800 dark:text-neutral-100 tracking-wide">
           تنبيهات سريعة
-          <span className="mr-1.5 text-[10px] sm:text-xs font-semibold text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full">
+          <span className="me-1.5 text-[10px] sm:text-xs font-semibold text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full">
             {cards.length}
           </span>
         </h3>
@@ -952,7 +930,7 @@ function AIPageContextSync({
 export default function ResponsiveDashboard() {
   const [currentPage, setCurrentPage] = useState("main-dashboard");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [accountMenuType, setAccountMenuType] = useState<'sidebar' | 'header' | null>(null);
   const [contestModalOpen, setContestModalOpen] = useState(false);
   const [contestModalTab, setContestModalTab] = useState<'details' | 'myResult'>('details');
   const [activeContest, setActiveContest] = useState<1 | 2 | 3>(1);
@@ -1161,10 +1139,10 @@ export default function ResponsiveDashboard() {
 
   const rootClass = useMemo(() => cn(
     "min-h-screen w-full font-sans antialiased transition-colors duration-300",
-    dark ? "dark bg-neutral-950 text-neutral-100" : "text-neutral-900"
+    dark ? "dark bg-neutral-950 text-neutral-100 app-dark-glow" : "text-neutral-900"
   ), [dark]);
 
-  const backgroundStyle = dark ? { backgroundColor: '#0a0a0a' } : { backgroundColor: '#EEF1F8' };
+  const backgroundStyle = dark ? { backgroundColor: '#070915' } : { backgroundColor: '#EEF1F8' };
 
   // عناوين الصفحات
   const titlesMap = (() => {
@@ -2037,9 +2015,9 @@ export default function ResponsiveDashboard() {
 
     const gridTicks = [60, 70, 80, 90, 100];
 
-    const bg = dark ? '#27272a' : '#f3f4f6';
-    const labelColor = dark ? '#71717a' : '#a1a1aa';
-    const tickColor = dark ? '#52525b' : '#d4d4d8';
+    const bg = dark ? '#141833' : '#f3f4f6';
+    const labelColor = dark ? '#8088aa' : '#a1a1aa';
+    const tickColor = dark ? '#2a3255' : '#d4d4d8';
 
     return (
       <div className="flex flex-col gap-3">
@@ -2107,6 +2085,87 @@ export default function ResponsiveDashboard() {
     );
   }
 
+  function AccountMenuDropdown({ type, className }: { type: 'sidebar' | 'header', className?: string }) {
+    if (accountMenuType !== type) return null;
+    return (
+      <>
+        <div className="fixed inset-0 z-[150]" onClick={() => setAccountMenuType(null)} />
+        <div className={cn(
+          "absolute w-64 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-2xl shadow-xl z-[160] overflow-hidden",
+          className || (type === 'sidebar' ? "md:bottom-0 md:right-full md:mr-2 top-full left-0 mt-2 sm:left-auto sm:right-0" : "top-full left-0 mt-2")
+        )}>
+          <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700">
+            <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200">محمد العبدالله</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">مدير المبيعات</p>
+          </div>
+          <div className="py-1">
+            <button onClick={() => { setView("settings"); setAccountMenuType(null); }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
+              <UserCircle className="h-4 w-4 text-neutral-400 dark:text-neutral-400" />
+              الملف الشخصي
+            </button>
+            <button onClick={() => { setView("settings"); setAccountMenuType(null); }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
+              <Settings className="h-4 w-4 text-neutral-400 dark:text-neutral-400" />
+              الإعدادات
+            </button>
+            <button onClick={() => { setDark(!dark); setAccountMenuType(null); }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
+              {dark ? <Sun className="h-4 w-4 text-neutral-400 dark:text-neutral-400" /> : <Moon className="h-4 w-4 text-neutral-400 dark:text-neutral-400" />}
+              {dark ? "الوضع الفاتح" : "الوضع الداكن"}
+            </button>
+            {/* حجم الخط */}
+            <div className="px-4 py-3 border-t border-neutral-100 dark:border-neutral-700">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Type className="h-4 w-4 text-neutral-400 dark:text-neutral-400 shrink-0" />
+                  <span className="text-sm text-neutral-700 dark:text-neutral-300">حجم الخط</span>
+                </div>
+                <span className="text-xs font-bold tabular-nums" style={{ color: '#B21063' }}>{fontScale}%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-neutral-400 dark:text-neutral-400 font-bold shrink-0 select-none">أ</span>
+                <div className="relative flex-1">
+                  <input
+                    type="range"
+                    min={75}
+                    max={150}
+                    step={1}
+                    value={fontScale}
+                    onChange={(e) => setFontScale(Number(e.target.value))}
+                    className="font-range w-full h-1.5 rounded-full appearance-none cursor-pointer outline-none"
+                    style={{
+                      background: `linear-gradient(to left, #e5e7eb ${100 - ((fontScale - 75) / 75) * 100}%, #B21063 ${100 - ((fontScale - 75) / 75) * 100}%)`,
+                    }}
+                  />
+                </div>
+                <span className="text-[15px] text-neutral-400 dark:text-neutral-400 font-bold shrink-0 select-none">أ</span>
+              </div>
+              <div className="flex justify-between mt-1.5">
+                <button onClick={() => setFontScale(75)} className="text-[10px] text-neutral-400 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200">أصغر</button>
+                <button onClick={() => setFontScale(100)} className="text-[10px] text-neutral-400 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 font-semibold">افتراضي</button>
+                <button onClick={() => setFontScale(150)} className="text-[10px] text-neutral-400 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200">أكبر</button>
+              </div>
+            </div>
+            <button onClick={() => setAccountMenuType(null)}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
+              <Languages className="h-4 w-4 text-neutral-400 dark:text-neutral-400" />
+              <span>اللغة</span>
+              <span className="ms-auto text-xs text-neutral-400 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 rounded-full">العربية</span>
+            </button>
+          </div>
+          <div className="border-t border-neutral-100 dark:border-neutral-700 py-1">
+            <button onClick={() => { setCurrentPage("login"); setAccountMenuType(null); }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-medium">
+              <LogOut className="h-4 w-4" />
+              تسجيل الخروج
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   function renderDashboard() {
     return (
       <div className="space-y-8">
@@ -2119,32 +2178,43 @@ export default function ResponsiveDashboard() {
           <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4 sm:p-5 flex flex-col gap-4 sm:gap-5">
             {/* Header */}
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-3 sm:gap-4">
-                {/* Employee Avatar */}
-                <div className="relative shrink-0">
+              <div className="flex items-center gap-3">
+                {/* User Avatar */}
+                <button
+                  onClick={() => setAccountMenuType(accountMenuType === 'header' ? null : 'header')}
+                  className="w-10 h-10 rounded-xl overflow-hidden border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50 shrink-0"
+                >
                   <img
                     src="https://api.dicebear.com/7.x/notionists/svg?seed=AhmedAbdulkader&backgroundColor=10b981"
-                    alt="أحمد عبدالقادر أحمد"
-                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/30"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      const fallback = target.nextElementSibling as HTMLElement;
-                      if (fallback) fallback.style.display = 'flex';
-                    }}
+                    alt="User"
+                    className="w-full h-full object-cover"
                   />
-                  <div
-                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl items-center justify-center hidden bg-gradient-to-br from-emerald-400 to-emerald-600 text-white font-bold text-sm sm:text-base"
-                  >
-                    أ.ع
-                  </div>
-                </div>
+                </button>
                 <div className="flex flex-col gap-0.5">
                   <h2 className="text-base sm:text-lg font-bold text-neutral-800 dark:text-white leading-tight">أحمد عبدالقادر أحمد</h2>
-                  <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-medium">مدير تجربة المستخدم · يناير - ديسمبر 2025</p>
+                  <p className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-medium">مدير تجربة المستخدم · 45655</p>
                 </div>
               </div>
-              <div className="text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm font-bold bg-emerald-50 dark:bg-emerald-900/20 px-2.5 py-1 rounded-lg">ممتاز</div>
+              <div className="flex items-center gap-2">
+                {/* Notification Bell */}
+                <button
+                  onClick={() => { setActiveKey('notifications'); setView('notifications'); }}
+                  className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors shrink-0"
+                >
+                  <Bell className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
+                  <span className="absolute -top-1 -left-1 w-5 h-5 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white dark:border-neutral-900">3</span>
+                </button>
+                {/* Account Icon */}
+                <div className="relative">
+                  <button
+                    onClick={() => setAccountMenuType(accountMenuType === 'header' ? null : 'header')}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors shrink-0"
+                  >
+                    <UserCircle className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
+                  </button>
+                  <AccountMenuDropdown type="header" className="top-full left-0 mt-2" />
+                </div>
+              </div>
             </div>
 
             {/* Bottom: Trends Chart */}
@@ -3183,11 +3253,11 @@ export default function ResponsiveDashboard() {
                 transition={{ delay: 0.03 * idx }}
                 className="group h-full w-full text-right cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
               >
-                <div className="relative h-full min-h-[140px] sm:min-h-[200px] flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl bg-white dark:bg-neutral-800 shadow-[0_2px_16px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.10)] transition-all duration-200 border border-neutral-100 dark:border-neutral-700">
+                <div className="relative h-full min-h-[140px] sm:min-h-[200px] flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl bg-white dark:bg-neutral-800 shadow-[0_2px_16px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.10)] dark:hover:shadow-[0_8px_32px_rgba(0,0,0,0.35)] transition-all duration-200 border border-neutral-100 dark:border-neutral-700">
                   <div className={cn("absolute inset-x-0 -top-16 h-40 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", link.accent)} />
                   <div className="relative p-3 sm:p-5 flex flex-col gap-2 sm:gap-3 flex-1">
                     <div className="flex items-start justify-between gap-1 sm:gap-2">
-                      <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-neutral-900 text-white rounded-full text-[10px] sm:text-xs font-semibold shrink-0 max-w-[80%] sm:max-w-[70%]">
+                      <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-neutral-900 dark:bg-neutral-700 text-white rounded-full text-[10px] sm:text-xs font-semibold shrink-0 max-w-[80%] sm:max-w-[70%]">
                         <link.icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
                         <span className="truncate">{link.title}</span>
                       </div>
@@ -3220,91 +3290,127 @@ export default function ResponsiveDashboard() {
 
   function renderSettingsPage() {
     return (
-      <div className="px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 shadow-sm p-6">
-          <h2 className="text-2xl font-bold mb-6 text-neutral-900 dark:text-neutral-100">الإعدادات</h2>
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="max-w-xl mx-auto pb-10"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8 px-4 py-4 bg-white/80 dark:bg-neutral-800/80 sticky top-0 z-10 backdrop-blur-md border-b border-neutral-100 dark:border-neutral-700/50">
+          <button
+            onClick={() => setView("dashboard")}
+            className="w-10 h-10 flex items-center justify-center rounded-xl text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+          <h2 className="text-[17px] font-bold text-neutral-800 dark:text-neutral-100">إعدادات الملف الشخصي</h2>
+          <div className="w-10" /> {/* Spacer to center title */}
+        </div>
 
-          <div className="space-y-6">
-            {/* معلومات الحساب */}
-            <div className="border-b border-neutral-200 pb-6">
-              <h3 className="text-lg font-bold mb-4 text-neutral-800 dark:text-neutral-200">معلومات الحساب</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-600 dark:text-neutral-300">الاسم:</span>
-                  <span className="font-semibold">{currentUser?.name || 'غير محدد'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-600 dark:text-neutral-300">البريد الإلكتروني:</span>
-                  <span className="font-semibold">{currentUser?.email || 'غير محدد'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-600 dark:text-neutral-300">الرقم الوظيفي:</span>
-                  <span className="font-semibold">{currentUser?.employeeId || 'غير محدد'}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-600 dark:text-neutral-300">القسم:</span>
-                  <span className="font-semibold">{currentUser?.department || 'غير محدد'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* إعدادات الإشعارات */}
-            <div className="border-b border-neutral-200 pb-6">
-              <h3 className="text-lg font-bold mb-4 text-neutral-800 dark:text-neutral-200">الإشعارات</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-600 dark:text-neutral-300">إشعارات البريد الإلكتروني</span>
-                  <button className="w-12 h-6 bg-[#B21063] rounded-full relative">
-                    <span className="absolute left-1 top-1 w-4 h-4 bg-white dark:bg-neutral-800 rounded-full"></span>
-                  </button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-neutral-600 dark:text-neutral-300">إشعارات الهاتف</span>
-                  <button className="w-12 h-6 bg-neutral-300 rounded-full relative">
-                    <span className="absolute right-1 top-1 w-4 h-4 bg-white dark:bg-neutral-800 rounded-full"></span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* إعدادات أخرى */}
-            <div>
-              <h3 className="text-lg font-bold mb-4 text-neutral-800 dark:text-neutral-200">عام</h3>
-              <div className="space-y-3">
-                <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700">
-                  <span className="text-neutral-700 dark:text-neutral-200">تغيير كلمة المرور</span>
-                  <ChevronLeft className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
-                </button>
-                <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700">
-                  <span className="text-neutral-700 dark:text-neutral-200">اللغة</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">العربية</span>
-                    <ChevronLeft className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
+        <div className="space-y-6 px-4 pt-2">
+          {/* Section 1: Personal Info */}
+          <div className="space-y-3">
+            <h3 className="text-[15px] font-bold text-neutral-500 dark:text-neutral-400 px-1 text-right">المعلومات الشخصية</h3>
+            <div className="bg-white dark:bg-neutral-800 rounded-[24px] border border-neutral-200 dark:border-neutral-700 overflow-hidden shadow-sm">
+              <button className="w-full flex items-center justify-between p-5 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors border-b border-neutral-100 dark:border-neutral-700/50 text-right">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                    <FileText className="w-5 h-5" />
                   </div>
-                </button>
-                <button className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-700">
-                  <span className="text-neutral-700 dark:text-neutral-200">عن التطبيق</span>
-                  <ChevronLeft className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
-                </button>
-              </div>
-            </div>
-
-            {/* تسجيل الخروج */}
-            <div className="pt-4">
-              <button
-                onClick={() => {
-                  setCurrentPage("login");
-                  setCurrentView("login");
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 hover:bg-red-100"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="font-semibold">تسجيل الخروج</span>
+                  <span className="text-[15px] font-bold text-neutral-700 dark:text-neutral-200">المعلومات الشخصية</span>
+                </div>
+                <ChevronLeft className="w-5 h-5 text-neutral-300" />
+              </button>
+              <button className="w-full flex items-center justify-between p-5 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors border-b border-neutral-100 dark:border-neutral-700/50 text-right">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                    <User className="w-5 h-5" />
+                  </div>
+                  <span className="text-[15px] font-bold text-neutral-700 dark:text-neutral-200">معلومات الاتصال</span>
+                </div>
+                <ChevronLeft className="w-5 h-5 text-neutral-300" />
+              </button>
+              <button className="w-full flex items-center justify-between p-5 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors text-right">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                    <Briefcase className="w-5 h-5" />
+                  </div>
+                  <span className="text-[15px] font-bold text-neutral-700 dark:text-neutral-200">التعليم والدخل</span>
+                </div>
+                <ChevronLeft className="w-5 h-5 text-neutral-300" />
               </button>
             </div>
           </div>
+
+          {/* Section 2: Security */}
+          <div className="space-y-3">
+            <h3 className="text-[15px] font-bold text-neutral-500 dark:text-neutral-400 px-1 text-right">الحماية</h3>
+            <div className="bg-white dark:bg-neutral-800 rounded-[24px] border border-neutral-200 dark:border-neutral-700 overflow-hidden shadow-sm">
+              <div className="flex items-center justify-between p-5 border-b border-neutral-100 dark:border-neutral-700/50 text-right">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                    <ScanFace className="w-5 h-5" />
+                  </div>
+                  <span className="text-[15px] font-bold text-neutral-700 dark:text-neutral-200">بصمة الوجه</span>
+                </div>
+                <div className="w-11 h-6 bg-emerald-500 rounded-full relative cursor-pointer p-1">
+                  <div className="w-4 h-4 bg-white rounded-full mr-auto shadow-sm" />
+                </div>
+              </div>
+              <button className="w-full flex items-center justify-between p-5 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors text-right">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <span className="text-[15px] font-bold text-neutral-700 dark:text-neutral-200">تغيير كلمة المرور</span>
+                </div>
+                <ChevronLeft className="w-5 h-5 text-neutral-300" />
+              </button>
+            </div>
+          </div>
+
+          {/* Section 3: App Settings */}
+          <div className="space-y-3">
+            <h3 className="text-[15px] font-bold text-neutral-500 dark:text-neutral-400 px-1 text-right">إعدادات التطبيق</h3>
+            <div className="bg-white dark:bg-neutral-800 rounded-[24px] border border-neutral-200 dark:border-neutral-700 overflow-hidden shadow-sm">
+              <button className="w-full flex items-center justify-between p-5 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors border-b border-neutral-100 dark:border-neutral-700/50 text-right">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                    <Bell className="w-5 h-5" />
+                  </div>
+                  <span className="text-[15px] font-bold text-neutral-700 dark:text-neutral-200">الإشعارات</span>
+                </div>
+                <ChevronLeft className="w-5 h-5 text-neutral-300" />
+              </button>
+              <button className="w-full flex items-center justify-between p-5 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors text-right">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <span className="text-[15px] font-bold text-neutral-700 dark:text-neutral-200">المظهر</span>
+                </div>
+                <ChevronLeft className="w-5 h-5 text-neutral-300" />
+              </button>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center pt-8 space-y-4 pb-4">
+            <p className="text-[13px] text-neutral-400 dark:text-neutral-500 font-medium">
+              بنك فيجن v1.36.0 606014
+            </p>
+            <button
+              onClick={() => {
+                setCurrentPage("login");
+                setAccountMenuType(null);
+              }}
+              className="text-[15px] font-bold text-blue-700 dark:text-blue-400 hover:underline"
+            >
+              تسجيل الخروج
+            </button>
+          </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
@@ -3316,30 +3422,24 @@ export default function ResponsiveDashboard() {
       ['calendar', 'التقويم السنوي',        Calendar],
     ];
     return (
-      <div dir="rtl">
-        <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 rounded-xl">
+      <div dir="rtl" className="min-h-screen dark:bg-neutral-900 flex flex-col">
+        {/* ── Fixed Header (tabs) — نفس تخطيط صفحة الأداء ── */}
+        <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700 rounded-xl">
           <div className="max-w-[1400px] mx-auto px-0 sm:px-2 rounded-xl overflow-hidden">
-            <div className="px-2 sm:px-4 py-2 border-b border-neutral-100">
-              <div className="flex items-center gap-7 bg-neutral-50 dark:bg-neutral-800 rounded-full p-1 w-fit mx-auto">
-              {ATTEND_TABS.map(([key, label]) => (
-                <button key={key} onClick={() => setAttendanceSubTab(key)}
-                  className={cn(
-                    'flex items-center justify-center px-4 sm:px-6 py-1.5 rounded-full text-[13px] sm:text-[14px] font-bold transition-all duration-200 min-w-0',
-                    attendanceSubTab === key
-                      ? 'bg-neutral-900 text-white shadow-sm'
-                      : 'bg-neutral-50 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600 hover:text-neutral-900 dark:hover:text-white'
-                  )}>
-                  <span className="truncate">{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+            <PageTabs
+              tabs={ATTEND_TABS}
+              active={attendanceSubTab}
+              onChange={(key) => setAttendanceSubTab(key)}
+            />
           </div>
         </div>
-        {attendanceSubTab === 'report'   && <AttendanceDashboard />}
-        {attendanceSubTab === 'permit'   && <ExitPermitForm />}
-        {attendanceSubTab === 'hazer'    && <HazerSystem />}
-        {attendanceSubTab === 'calendar' && <SaudiCalendar />}
+        {/* ── Content ── */}
+        <div className="flex-1">
+          {attendanceSubTab === 'report'   && <AttendanceDashboard />}
+          {attendanceSubTab === 'permit'   && <ExitPermitForm />}
+          {attendanceSubTab === 'hazer'    && <HazerSystem />}
+          {attendanceSubTab === 'calendar' && <SaudiCalendar />}
+        </div>
       </div>
     );
   }
@@ -3352,28 +3452,19 @@ export default function ResponsiveDashboard() {
       ['archive', 'أرشيف الصادر', Archive],
     ];
     return (
-      <div dir="rtl" className="min-h-screen">
-        {/* Tab Bar */}
-        <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700">
-          <div className="max-w-[1400px] mx-auto px-0 sm:px-2 overflow-hidden">
-            <div className="px-2 sm:px-4 py-2">
-              <div className="flex items-center gap-7 bg-neutral-50 dark:bg-neutral-800 rounded-full p-1 w-fit mx-auto">
-              {TRANS_TABS.map(([key, label]) => (
-                <button key={key} onClick={() => setTransactionsSubTab(key)}
-                  className={cn(
-                    'flex items-center justify-center px-4 sm:px-6 py-1.5 rounded-full text-[13px] sm:text-[14px] font-bold transition-all duration-200 min-w-0',
-                    transactionsSubTab === key
-                      ? 'bg-neutral-900 text-white shadow-sm'
-                      : 'bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 hover:text-neutral-900 dark:hover:text-white'
-                  )}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
+      <div dir="rtl" className="min-h-screen dark:bg-neutral-900 flex flex-col">
+        {/* ── Fixed Header (tabs) — نفس تخطيط صفحة الأداء ── */}
+        <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700 rounded-xl">
+          <div className="max-w-[1400px] mx-auto px-0 sm:px-2 rounded-xl overflow-hidden">
+            <PageTabs
+              tabs={TRANS_TABS}
+              active={transactionsSubTab}
+              onChange={(key) => setTransactionsSubTab(key)}
+            />
           </div>
         </div>
         {/* Content */}
+        <div className="flex-1">
         {transactionsSubTab === 'new' && (
           <TransactionSelectionPage
             onCancel={() => setTransactionsSubTab('inbox')}
@@ -3391,6 +3482,7 @@ export default function ResponsiveDashboard() {
             onViewDetails={(id) => { setSelectedTransactionId(id); setView('transaction_details'); }}
           />
         )}
+        </div>
       </div>
     );
   }
@@ -3531,7 +3623,7 @@ export default function ResponsiveDashboard() {
 
         {/* Body */}
         <div className={cn(
-          "pb-24 md:pb-6 flex md:gap-[100px] md:py-4 md:pe-[100px] md:ps-4",
+          "pb-24 md:pb-6 flex md:gap-8 md:py-4 md:px-6 lg:px-12",
           view === "dashboard" ? "px-3 sm:px-4 pt-4 gap-3" : "px-0 pt-0 gap-0"
         )}>
           {/* Sidebar — Navigation Rail (ديسكتوب فقط) */}
@@ -3571,122 +3663,11 @@ export default function ResponsiveDashboard() {
                   </button>
                 ))}
               </div>
-
-              {/* حسابي */}
-              <div className="shrink-0 w-full pt-2 border-t border-neutral-100 dark:border-neutral-700 relative z-[75]">
-                <button
-                  onClick={() => setAccountMenuOpen(v => !v)}
-                  className="w-full flex flex-col items-center gap-0.5 px-1 py-2 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
-                >
-                  <div className="w-6 h-6 rounded-full bg-[#B21063]/10 flex items-center justify-center shrink-0">
-                    <UserCircle className="h-4 w-4 text-[#B21063]" />
-                  </div>
-                  <span className="text-[12px] font-semibold text-neutral-800 dark:text-neutral-200">حسابي</span>
-                </button>
-                {accountMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-[55]" onClick={() => setAccountMenuOpen(false)} />
-                    <div className="absolute bottom-full right-0 mb-2 w-64 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-2xl shadow-xl z-[70] overflow-hidden">
-                      <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700">
-                        <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200">محمد العبدالله</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">مدير المبيعات</p>
-                      </div>
-                      <div className="py-1">
-                        <button onClick={() => { setView("settings"); setAccountMenuOpen(false); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
-                          <UserCircle className="h-4 w-4 text-neutral-400 dark:text-neutral-400" />
-                          الملف الشخصي
-                        </button>
-                        <button onClick={() => { setView("settings"); setAccountMenuOpen(false); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
-                          <Settings className="h-4 w-4 text-neutral-400 dark:text-neutral-400" />
-                          الإعدادات
-                        </button>
-                        <button onClick={() => { setDark(!dark); setAccountMenuOpen(false); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
-                          {dark ? <Sun className="h-4 w-4 text-neutral-400 dark:text-neutral-400" /> : <Moon className="h-4 w-4 text-neutral-400 dark:text-neutral-400" />}
-                          {dark ? "الوضع الفاتح" : "الوضع الداكن"}
-                        </button>
-                        {/* حجم الخط */}
-                        <div className="px-4 py-3 border-t border-neutral-100 dark:border-neutral-700">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <Type className="h-4 w-4 text-neutral-400 dark:text-neutral-400 shrink-0" />
-                              <span className="text-sm text-neutral-700 dark:text-neutral-300">حجم الخط</span>
-                            </div>
-                            <span className="text-xs font-bold tabular-nums" style={{ color: '#B21063' }}>{fontScale}%</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[11px] text-neutral-400 dark:text-neutral-400 font-bold shrink-0 select-none">أ</span>
-                            <div className="relative flex-1">
-                              <input
-                                type="range"
-                                min={75}
-                                max={150}
-                                step={1}
-                                value={fontScale}
-                                onChange={(e) => setFontScale(Number(e.target.value))}
-                                className="font-range w-full h-1.5 rounded-full appearance-none cursor-pointer outline-none"
-                                style={{
-                                  background: `linear-gradient(to left, #e5e7eb ${100 - ((fontScale - 75) / 75) * 100}%, #B21063 ${100 - ((fontScale - 75) / 75) * 100}%)`,
-                                }}
-                              />
-                            </div>
-                            <span className="text-[15px] text-neutral-400 dark:text-neutral-400 font-bold shrink-0 select-none">أ</span>
-                          </div>
-                          <div className="flex justify-between mt-1.5">
-                            <button onClick={() => setFontScale(75)} className="text-[10px] text-neutral-400 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200">أصغر</button>
-                            <button onClick={() => setFontScale(100)} className="text-[10px] text-neutral-400 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 font-semibold">افتراضي</button>
-                            <button onClick={() => setFontScale(150)} className="text-[10px] text-neutral-400 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200">أكبر</button>
-                          </div>
-                        </div>
-                        <button onClick={() => setAccountMenuOpen(false)}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
-                          <Languages className="h-4 w-4 text-neutral-400 dark:text-neutral-400" />
-                          <span>اللغة</span>
-                          <span className="mr-auto text-xs text-neutral-400 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 rounded-full">العربية</span>
-                        </button>
-                      </div>
-                      <div className="border-t border-neutral-100 dark:border-neutral-700 py-1">
-                        <button onClick={() => { setCurrentPage("login"); setAccountMenuOpen(false); }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-medium">
-                          <LogOut className="h-4 w-4" />
-                          تسجيل الخروج
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
             </nav>
           </aside>
 
           {/* Content */}
           <main className="flex-1 min-w-0">
-            {/* Top Bar (visible on dashboard only) */}
-            {view === "dashboard" && (
-              <div className="flex items-center justify-between mb-4 px-1">
-                <h1 className="text-lg sm:text-xl font-bold text-neutral-800 dark:text-neutral-100">{currentTitle}</h1>
-                <div className="flex items-center gap-3">
-                  {/* Notification Bell */}
-                  <button className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 shadow-sm hover:shadow-md transition-shadow">
-                    <Bell className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
-                    <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white dark:border-neutral-900">3</span>
-                  </button>
-                  {/* User Avatar */}
-                  <button
-                    onClick={() => setAccountMenuOpen(v => !v)}
-                    className="w-10 h-10 rounded-xl overflow-hidden border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50"
-                  >
-                    <img
-                      src="https://api.dicebear.com/7.x/notionists/svg?seed=AhmedAbdulkader&backgroundColor=10b981"
-                      alt="User"
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                </div>
-              </div>
-            )}
             {renderContent()}
           </main>
         </div>
@@ -3780,7 +3761,7 @@ export default function ResponsiveDashboard() {
                     <input
                       type="text"
                       placeholder="البحث..."
-                      className="w-full pr-10 pl-4 py-2.5 bg-neutral-100 dark:bg-neutral-700 rounded-xl text-sm text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
+                      className="w-full pe-10 ps-4 py-2.5 bg-neutral-100 dark:bg-neutral-700 rounded-xl text-sm text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-neutral-300 dark:focus:ring-neutral-600"
                     />
                   </div>
                 </div>

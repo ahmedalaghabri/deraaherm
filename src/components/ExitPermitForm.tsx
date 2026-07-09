@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, ChevronUp, ChevronDown, AlertCircle, CheckCircle2, FileText, Send, User, Building2, Briefcase, CheckSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import PageTabs from './PageTabs';
+import StatCard from './ds/StatCard';
 
 interface ExitPermit {
   id: string;
@@ -26,45 +26,6 @@ const demoEmployee = {
   name: "أحمد عبدالقادر أحمد محي الدين",
   department: "الإدارة وإدارة تقنية المعلومات",
 };
-
-function StatCard({ title, value, icon: Icon, tone = "sky" as "sky" | "emerald" | "amber" | "rose" }) {
-  const toneClasses = {
-    sky: {
-      card: "bg-gradient-to-b from-sky-50/80 to-white border-sky-100",
-      iconWrap: "bg-sky-100/60 text-sky-700 border-sky-200",
-    },
-    emerald: {
-      card: "bg-gradient-to-b from-emerald-50/80 to-white border-emerald-100",
-      iconWrap: "bg-emerald-100/60 text-emerald-700 border-emerald-200",
-    },
-    amber: {
-      card: "bg-gradient-to-b from-amber-50/80 to-white border-amber-100",
-      iconWrap: "bg-amber-100/60 text-amber-700 border-amber-200",
-    },
-    rose: {
-      card: "bg-gradient-to-b from-rose-50/80 to-white border-rose-100",
-      iconWrap: "bg-rose-100/60 text-rose-700 border-rose-200",
-    },
-  };
-
-  const t = toneClasses[tone];
-
-  return (
-    <Card className={cn("rounded-2xl border shadow-sm transition-all duration-200 hover:shadow-md", t.card)}>
-      <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div className={cn("grid h-7 w-7 sm:h-8 sm:w-8 place-items-center rounded-xl border", t.iconWrap)}>
-            <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </div>
-          <CardTitle className="text-xs sm:text-sm font-medium leading-tight">{title}</CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0 px-3 sm:px-6 pb-3 sm:pb-6">
-        <div className="text-lg sm:text-2xl font-bold">{value}</div>
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function ExitPermitForm() {
   const [selectedDate, setSelectedDate] = useState('');
@@ -265,15 +226,15 @@ export default function ExitPermitForm() {
   const getDecisionBadge = (decision: string) => {
     switch (decision) {
       case 'موافق':
-        return 'rounded-full bg-emerald-100 text-emerald-800 hover:bg-emerald-100 text-xs';
+        return 'rounded-full bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/30 text-xs';
       case 'مرفوض':
-        return 'rounded-full bg-rose-100 text-rose-800 hover:bg-rose-100 text-xs';
+        return 'rounded-full bg-rose-100 text-rose-800 hover:bg-rose-100 dark:bg-rose-900/30 dark:text-rose-300 dark:hover:bg-rose-900/30 text-xs';
       case 'قيد المراجعة':
-        return 'rounded-full bg-amber-100 text-amber-800 hover:bg-amber-100 text-xs';
+        return 'rounded-full bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/30 text-xs';
       case 'موافق مع التحفظ':
-        return 'rounded-full bg-blue-100 text-blue-800 hover:bg-blue-100 text-xs';
+        return 'rounded-full bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/30 text-xs';
       default:
-        return 'rounded-full bg-gray-100 text-gray-800 hover:bg-gray-100 text-xs';
+        return 'rounded-full bg-gray-100 text-gray-800 hover:bg-gray-100 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700 text-xs';
     }
   };
 
@@ -285,23 +246,23 @@ export default function ExitPermitForm() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <Card className="rounded-2xl border bg-gradient-to-b from-sky-50/70 to-white shadow-sm">
+          <Card className="rounded-2xl border bg-gradient-to-b from-sky-50/70 to-white dark:from-neutral-800 dark:to-neutral-800 dark:border-neutral-700 shadow-sm">
             <CardHeader className="pb-3 px-4 sm:px-6">
-              <CardTitle className="text-lg sm:text-xl">طلب إذن خروج</CardTitle>
+              <CardTitle className="text-lg sm:text-xl dark:text-neutral-100">طلب إذن خروج</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-3 px-4 sm:px-6">
               <div className="flex items-center gap-2 text-xs sm:text-sm">
                 <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                 <span className="text-muted-foreground">الاسم:</span>
-                <span className="font-medium truncate">{demoEmployee.name}</span>
+                <span className="font-medium truncate dark:text-neutral-100">{demoEmployee.name}</span>
               </div>
               <div className="flex items-center gap-2 text-xs sm:text-sm">
                 <Building2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                 <span className="text-muted-foreground">القسم:</span>
-                <span className="font-medium truncate">{demoEmployee.department}</span>
+                <span className="font-medium truncate dark:text-neutral-100">{demoEmployee.department}</span>
               </div>
               <div className="flex items-center gap-2 text-xs sm:text-sm">
-                <Badge className="rounded-full bg-white/60 backdrop-blur border border-slate-200 text-slate-700 text-xs">
+                <Badge className="rounded-full bg-white/60 backdrop-blur border border-slate-200 text-slate-700 dark:bg-neutral-700/60 dark:border-neutral-600 dark:text-neutral-300 text-xs">
                   الرقم الوظيفي: {demoEmployee.employeeId}
                 </Badge>
               </div>
@@ -315,10 +276,10 @@ export default function ExitPermitForm() {
           transition={{ duration: 0.45 }}
           className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
         >
-          <StatCard title="إجمالي الطلبات" value="12" icon={FileText} tone="sky" />
-          <StatCard title="الطلبات المعتمدة" value="10" icon={CheckCircle2} tone="emerald" />
-          <StatCard title="قيد المراجعة" value="2" icon={Clock} tone="amber" />
-          <StatCard title="المرفوضة" value="0" icon={AlertCircle} tone="rose" />
+          <StatCard title="إجمالي الطلبات" value="12" icon={FileText} />
+          <StatCard title="الطلبات المعتمدة" value="10" icon={CheckCircle2} />
+          <StatCard title="قيد المراجعة" value="2" icon={Clock} />
+          <StatCard title="المرفوضة" value="0" icon={AlertCircle} />
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -328,9 +289,9 @@ export default function ExitPermitForm() {
             transition={{ delay: 0.1 }}
             className="lg:col-span-2"
           >
-            <Card className="rounded-2xl border bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
+            <Card className="rounded-2xl border dark:border-neutral-700 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-neutral-800/70 dark:supports-[backdrop-filter]:bg-neutral-800/60 shadow-sm">
               <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                <CardTitle className="text-base sm:text-lg flex items-center gap-2 dark:text-neutral-100">
                   <Send className="w-4 h-4 sm:w-5 sm:h-5" />
                   نموذج طلب إذن خروج
                 </CardTitle>
@@ -339,29 +300,29 @@ export default function ExitPermitForm() {
                 <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                   <div className="space-y-3 sm:space-y-4">
                     <div className="relative">
-                      <Label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600" />
+                      <Label className="text-sm font-semibold text-gray-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600 dark:text-sky-400" />
                         تاريخ الاستئذان
                       </Label>
                       <Input
                         type="date"
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
-                        className="text-right h-10 sm:h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl transition-all text-sm"
+                        className="text-right h-10 sm:h-12 border-2 border-gray-200 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 focus:border-sky-500 rounded-xl transition-all text-sm"
                         required
                       />
                     </div>
 
                     <div className="relative">
-                      <Label className="text-sm font-semibold text-gray-700 mb-2">
+                      <Label className="text-sm font-semibold text-gray-700 dark:text-neutral-300 mb-2">
                         نوع الإذن
                       </Label>
                       <button
                         type="button"
                         onClick={() => setShowExitTypes(!showExitTypes)}
-                        className="w-full h-10 sm:h-12 px-3 sm:px-4 bg-white border-2 border-gray-200 hover:border-sky-400 rounded-xl text-right flex items-center justify-between transition-all group text-sm"
+                        className="w-full h-10 sm:h-12 px-3 sm:px-4 bg-white dark:bg-neutral-800 border-2 border-gray-200 dark:border-neutral-600 hover:border-sky-400 rounded-xl text-right flex items-center justify-between transition-all group text-sm"
                       >
-                        <span className={selectedExitType ? 'text-gray-900' : 'text-gray-400'}>
+                        <span className={selectedExitType ? 'text-gray-900 dark:text-neutral-100' : 'text-gray-400 dark:text-neutral-500'}>
                           {selectedExitType || 'اختيار نوع الإذن'}
                         </span>
                         <ChevronDown
@@ -377,7 +338,7 @@ export default function ExitPermitForm() {
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
-                            className="absolute z-10 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl overflow-hidden"
+                            className="absolute z-10 w-full mt-2 bg-white dark:bg-neutral-800 border-2 border-gray-200 dark:border-neutral-600 rounded-xl shadow-2xl overflow-hidden"
                           >
                             {exitTypes.map((type, index) => (
                               <button
@@ -387,7 +348,7 @@ export default function ExitPermitForm() {
                                   setSelectedExitType(type);
                                   setShowExitTypes(false);
                                 }}
-                                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-right hover:bg-sky-50 transition-colors border-b border-gray-100 last:border-0 text-xs sm:text-sm"
+                                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-right hover:bg-sky-50 dark:hover:bg-neutral-700 dark:text-neutral-200 transition-colors border-b border-gray-100 dark:border-neutral-700 last:border-0 text-xs sm:text-sm"
                               >
                                 {type}
                               </button>
@@ -399,19 +360,19 @@ export default function ExitPermitForm() {
 
                     <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <Label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600" />
+                        <Label className="text-sm font-semibold text-gray-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600 dark:text-sky-400" />
                           من الساعة
                         </Label>
                         <div className="flex gap-2">
                           <div className="flex-1">
-                            <Label className="text-xs text-gray-500 mb-1 block">ساعة</Label>
+                            <Label className="text-xs text-gray-500 dark:text-neutral-400 mb-1 block">ساعة</Label>
                             <div className="relative">
                               <Input
                                 type="number"
                                 value={fromHour}
                                 onChange={(e) => setFromHour(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)))}
-                                className="text-center h-10 sm:h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl text-sm"
+                                className="text-center h-10 sm:h-12 border-2 border-gray-200 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 focus:border-sky-500 rounded-xl text-sm"
                                 min="0"
                                 max="23"
                               />
@@ -419,14 +380,14 @@ export default function ExitPermitForm() {
                                 <button
                                   type="button"
                                   onClick={() => incrementValue(fromHour, setFromHour, 23)}
-                                  className="p-0.5 hover:bg-gray-100 rounded"
+                                  className="p-0.5 hover:bg-gray-100 dark:hover:bg-neutral-700 dark:text-neutral-400 rounded"
                                 >
                                   <ChevronUp className="w-3 h-3" />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => decrementValue(fromHour, setFromHour, 23)}
-                                  className="p-0.5 hover:bg-gray-100 rounded"
+                                  className="p-0.5 hover:bg-gray-100 dark:hover:bg-neutral-700 dark:text-neutral-400 rounded"
                                 >
                                   <ChevronDown className="w-3 h-3" />
                                 </button>
@@ -434,13 +395,13 @@ export default function ExitPermitForm() {
                             </div>
                           </div>
                           <div className="flex-1">
-                            <Label className="text-xs text-gray-500 mb-1 block">دقيقة</Label>
+                            <Label className="text-xs text-gray-500 dark:text-neutral-400 mb-1 block">دقيقة</Label>
                             <div className="relative">
                               <Input
                                 type="number"
                                 value={fromMinute}
                                 onChange={(e) => setFromMinute(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
-                                className="text-center h-10 sm:h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl text-sm"
+                                className="text-center h-10 sm:h-12 border-2 border-gray-200 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 focus:border-sky-500 rounded-xl text-sm"
                                 min="0"
                                 max="59"
                               />
@@ -448,14 +409,14 @@ export default function ExitPermitForm() {
                                 <button
                                   type="button"
                                   onClick={() => incrementValue(fromMinute, setFromMinute, 59)}
-                                  className="p-0.5 hover:bg-gray-100 rounded"
+                                  className="p-0.5 hover:bg-gray-100 dark:hover:bg-neutral-700 dark:text-neutral-400 rounded"
                                 >
                                   <ChevronUp className="w-3 h-3" />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => decrementValue(fromMinute, setFromMinute, 59)}
-                                  className="p-0.5 hover:bg-gray-100 rounded"
+                                  className="p-0.5 hover:bg-gray-100 dark:hover:bg-neutral-700 dark:text-neutral-400 rounded"
                                 >
                                   <ChevronDown className="w-3 h-3" />
                                 </button>
@@ -466,19 +427,19 @@ export default function ExitPermitForm() {
                       </div>
 
                       <div>
-                        <Label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600" />
+                        <Label className="text-sm font-semibold text-gray-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600 dark:text-sky-400" />
                           إلى الساعة
                         </Label>
                         <div className="flex gap-2">
                           <div className="flex-1">
-                            <Label className="text-xs text-gray-500 mb-1 block">ساعة</Label>
+                            <Label className="text-xs text-gray-500 dark:text-neutral-400 mb-1 block">ساعة</Label>
                             <div className="relative">
                               <Input
                                 type="number"
                                 value={toHour}
                                 onChange={(e) => setToHour(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)))}
-                                className="text-center h-10 sm:h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl text-sm"
+                                className="text-center h-10 sm:h-12 border-2 border-gray-200 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 focus:border-sky-500 rounded-xl text-sm"
                                 min="0"
                                 max="23"
                               />
@@ -486,14 +447,14 @@ export default function ExitPermitForm() {
                                 <button
                                   type="button"
                                   onClick={() => incrementValue(toHour, setToHour, 23)}
-                                  className="p-0.5 hover:bg-gray-100 rounded"
+                                  className="p-0.5 hover:bg-gray-100 dark:hover:bg-neutral-700 dark:text-neutral-400 rounded"
                                 >
                                   <ChevronUp className="w-3 h-3" />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => decrementValue(toHour, setToHour, 23)}
-                                  className="p-0.5 hover:bg-gray-100 rounded"
+                                  className="p-0.5 hover:bg-gray-100 dark:hover:bg-neutral-700 dark:text-neutral-400 rounded"
                                 >
                                   <ChevronDown className="w-3 h-3" />
                                 </button>
@@ -501,13 +462,13 @@ export default function ExitPermitForm() {
                             </div>
                           </div>
                           <div className="flex-1">
-                            <Label className="text-xs text-gray-500 mb-1 block">دقيقة</Label>
+                            <Label className="text-xs text-gray-500 dark:text-neutral-400 mb-1 block">دقيقة</Label>
                             <div className="relative">
                               <Input
                                 type="number"
                                 value={toMinute}
                                 onChange={(e) => setToMinute(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
-                                className="text-center h-10 sm:h-12 border-2 border-gray-200 focus:border-sky-500 rounded-xl text-sm"
+                                className="text-center h-10 sm:h-12 border-2 border-gray-200 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 focus:border-sky-500 rounded-xl text-sm"
                                 min="0"
                                 max="59"
                               />
@@ -515,14 +476,14 @@ export default function ExitPermitForm() {
                                 <button
                                   type="button"
                                   onClick={() => incrementValue(toMinute, setToMinute, 59)}
-                                  className="p-0.5 hover:bg-gray-100 rounded"
+                                  className="p-0.5 hover:bg-gray-100 dark:hover:bg-neutral-700 dark:text-neutral-400 rounded"
                                 >
                                   <ChevronUp className="w-3 h-3" />
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => decrementValue(toMinute, setToMinute, 59)}
-                                  className="p-0.5 hover:bg-gray-100 rounded"
+                                  className="p-0.5 hover:bg-gray-100 dark:hover:bg-neutral-700 dark:text-neutral-400 rounded"
                                 >
                                   <ChevronDown className="w-3 h-3" />
                                 </button>
@@ -534,14 +495,14 @@ export default function ExitPermitForm() {
                     </div>
 
                     <div>
-                      <Label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600" />
+                      <Label className="text-sm font-semibold text-gray-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+                        <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-600 dark:text-sky-400" />
                         الأسباب والملاحظات
                       </Label>
                       <textarea
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
-                        className="w-full h-24 sm:h-32 px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 focus:border-sky-500 rounded-xl resize-none focus:outline-none transition-all text-sm"
+                        className="w-full h-24 sm:h-32 px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 dark:placeholder:text-neutral-500 focus:border-sky-500 rounded-xl resize-none focus:outline-none transition-all text-sm"
                         placeholder="اكتب السبب والملاحظات هنا..."
                         required
                       />
@@ -566,36 +527,36 @@ export default function ExitPermitForm() {
             transition={{ delay: 0.2 }}
             className="space-y-4 sm:space-y-6"
           >
-            <Card className="rounded-2xl border bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
+            <Card className="rounded-2xl border dark:border-neutral-700 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-neutral-800/70 dark:supports-[backdrop-filter]:bg-neutral-800/60 shadow-sm">
               <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2 dark:text-neutral-100">
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
                   طلبات الساعات الإدارية
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 sm:px-6">
                 <div className="text-center py-6 sm:py-8">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 dark:bg-neutral-700 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                     <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                   </div>
-                  <p className="text-gray-500 font-medium text-xs sm:text-sm">لا يوجد طلبات سابقة</p>
+                  <p className="text-gray-500 dark:text-neutral-400 font-medium text-xs sm:text-sm">لا يوجد طلبات سابقة</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="rounded-2xl border bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
+            <Card className="rounded-2xl border dark:border-neutral-700 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-neutral-800/70 dark:supports-[backdrop-filter]:bg-neutral-800/60 shadow-sm">
               <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2 dark:text-neutral-100">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 dark:text-amber-400" />
                   طلبات سابقة
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 sm:px-6">
                 <div className="text-center py-6 sm:py-8">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 dark:bg-neutral-700 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                     <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                   </div>
-                  <p className="text-gray-500 font-medium text-xs sm:text-sm">لا يوجد طلبات سابقة</p>
+                  <p className="text-gray-500 dark:text-neutral-400 font-medium text-xs sm:text-sm">لا يوجد طلبات سابقة</p>
                 </div>
               </CardContent>
             </Card>
@@ -607,9 +568,9 @@ export default function ExitPermitForm() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="rounded-2xl border bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
+          <Card className="rounded-2xl border dark:border-neutral-700 bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-neutral-800/70 dark:supports-[backdrop-filter]:bg-neutral-800/60 shadow-sm">
             <CardHeader className="px-4 sm:px-6 pb-0">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2 mb-4">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2 mb-4 dark:text-neutral-100">
                 <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
                 سجل الأذونات والمأموريات
               </CardTitle>
@@ -636,7 +597,7 @@ export default function ExitPermitForm() {
                     className="overflow-x-auto"
                   >
                     <table className="w-full min-w-[900px] text-xs sm:text-sm">
-                      <thead className="bg-gradient-to-b from-slate-50/70 to-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+                      <thead className="bg-gradient-to-b from-slate-50/70 to-white/80 dark:from-neutral-800 dark:to-neutral-800 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-neutral-800/80 dark:text-neutral-300">
                         <tr className="text-right">
                           <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">رقم مرجعي</th>
                           <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">التاريخ</th>
@@ -655,7 +616,7 @@ export default function ExitPermitForm() {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.05 }}
-                            className="border-t hover:bg-sky-50/30 transition-colors"
+                            className="border-t dark:border-neutral-700/60 dark:text-neutral-200 hover:bg-sky-50/30 dark:hover:bg-neutral-700/30 transition-colors"
                           >
                             <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.refNumber}</td>
                             <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.date}</td>
@@ -684,7 +645,7 @@ export default function ExitPermitForm() {
                     className="overflow-x-auto"
                   >
                     <table className="w-full min-w-[900px] text-xs sm:text-sm">
-                      <thead className="bg-gradient-to-b from-slate-50/70 to-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+                      <thead className="bg-gradient-to-b from-slate-50/70 to-white/80 dark:from-neutral-800 dark:to-neutral-800 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-neutral-800/80 dark:text-neutral-300">
                         <tr className="text-right">
                           <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">رقم مرجعي</th>
                           <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">التاريخ</th>
@@ -703,7 +664,7 @@ export default function ExitPermitForm() {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.05 }}
-                            className="border-t hover:bg-sky-50/30 transition-colors"
+                            className="border-t dark:border-neutral-700/60 dark:text-neutral-200 hover:bg-sky-50/30 dark:hover:bg-neutral-700/30 transition-colors"
                           >
                             <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.refNumber}</td>
                             <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.date}</td>

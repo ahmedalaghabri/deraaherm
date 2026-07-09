@@ -4,9 +4,9 @@ import { Search, FileText, Calendar, User, Tag, Eye, Inbox, Clock, CheckCircle2,
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { cn } from '../lib/utils';
+import StatCard from './ds/StatCard';
 import TransactionReplyModal from './TransactionReplyModal';
 import { supabase } from '../lib/supabase';
 
@@ -82,53 +82,6 @@ const sampleTransactions: Transaction[] = [
     priority: 'medium'
   }
 ];
-
-function toneClasses(tone: 'sky' | 'rose' | 'violet' | 'emerald' | 'amber') {
-  const map = {
-    sky: {
-      card: 'bg-white border-sky-100',
-      iconWrap: 'bg-sky-100/60 text-sky-700 border-sky-200',
-    },
-    rose: {
-      card: 'bg-white border-rose-100',
-      iconWrap: 'bg-rose-100/60 text-rose-700 border-rose-200',
-    },
-    violet: {
-      card: 'bg-white border-violet-100',
-      iconWrap: 'bg-violet-100/60 text-violet-700 border-violet-200',
-    },
-    emerald: {
-      card: 'bg-white border-emerald-100',
-      iconWrap: 'bg-emerald-100/60 text-emerald-700 border-emerald-200',
-    },
-    amber: {
-      card: 'bg-white border-amber-100',
-      iconWrap: 'bg-amber-100/60 text-amber-700 border-amber-200',
-    },
-  } as const;
-  return map[tone];
-}
-
-function StatCard({ title, value, icon: Icon, tone = 'sky' }: { title: string; value: string; icon: React.ElementType; tone?: 'sky' | 'rose' | 'violet' | 'emerald' | 'amber' }) {
-  const t = toneClasses(tone);
-  return (
-    <Card className={cn('rounded-2xl border shadow-sm transition-all duration-200 hover:shadow-md', t.card)}>
-      <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className={cn('grid h-7 w-7 sm:h-8 sm:w-8 place-items-center rounded-xl border', t.iconWrap)}>
-              <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </div>
-            <CardTitle className="text-xs sm:text-sm font-medium leading-tight">{title}</CardTitle>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0 px-3 sm:px-6 pb-3 sm:pb-6">
-        <div className="text-lg sm:text-2xl font-bold">{value}</div>
-      </CardContent>
-    </Card>
-  );
-}
 
 const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: propTransactions, onTransactionUpdate }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -265,25 +218,25 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
     switch (status) {
       case 'completed':
         return (
-          <Badge className="rounded-full" variant="secondary">
+          <Badge className="rounded-full bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/30">
             <CheckCircle2 className="ml-1 h-3 w-3 sm:h-4 sm:w-4" /> مكتملة
           </Badge>
         );
       case 'in-progress':
         return (
-          <Badge className="rounded-full bg-green-100 text-green-900 hover:bg-green-100">
+          <Badge className="rounded-full bg-sky-100 text-sky-800 hover:bg-sky-100 dark:bg-sky-900/30 dark:text-sky-300 dark:hover:bg-sky-900/30">
             <Clock className="ml-1 h-3 w-3 sm:h-4 sm:w-4" /> قيد المعالجة
           </Badge>
         );
       case 'pending':
         return (
-          <Badge className="rounded-full bg-amber-100 text-amber-900 hover:bg-amber-100">
+          <Badge className="rounded-full bg-amber-100 text-amber-900 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/30">
             <AlertTriangle className="ml-1 h-3 w-3 sm:h-4 sm:w-4" /> معلقة
           </Badge>
         );
       case 'rejected':
         return (
-          <Badge className="rounded-full bg-rose-100 text-rose-900 hover:bg-rose-100">
+          <Badge className="rounded-full bg-rose-100 text-rose-900 hover:bg-rose-100 dark:bg-rose-900/30 dark:text-rose-300 dark:hover:bg-rose-900/30">
             <XCircle className="ml-1 h-3 w-3 sm:h-4 sm:w-4" /> مرفوضة
           </Badge>
         );
@@ -295,11 +248,11 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case 'high':
-        return <Badge className="bg-red-100 text-red-700 border-red-300 border text-xs">عاجل</Badge>;
+        return <Badge className="bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-900/50 border text-xs">عاجل</Badge>;
       case 'medium':
-        return <Badge className="bg-orange-100 text-orange-700 border-orange-300 border text-xs">متوسط</Badge>;
+        return <Badge className="bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-900/50 border text-xs">متوسط</Badge>;
       case 'low':
-        return <Badge className="bg-green-100 text-green-700 border-green-300 border text-xs">عادي</Badge>;
+        return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-900/50 border text-xs">عادي</Badge>;
       default:
         return null;
     }
@@ -339,25 +292,12 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
           transition={{ duration: 0.4 }}
           className="grid grid-cols-3 gap-3 sm:gap-4 lg:grid-cols-6"
         >
-          <Card className="rounded-2xl border bg-white border-green-100 shadow-sm transition-all duration-200 hover:shadow-md">
-            <CardHeader className="pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <div className="grid h-7 w-7 sm:h-8 sm:w-8 place-items-center rounded-xl bg-green-100/60 text-green-700 border border-green-200 shrink-0">
-                  <Inbox className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                </div>
-                <CardTitle className="text-xs sm:text-sm font-medium leading-tight">الواردة</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0 px-3 sm:px-4 pb-3 sm:pb-4">
-              <div className="text-lg sm:text-2xl font-bold text-green-700">{filteredTransactions.length}</div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">معاملة واردة</p>
-            </CardContent>
-          </Card>
-          <StatCard title="إجمالي المعاملات" value={`${stats.total}`} icon={FileText} tone="sky" />
-          <StatCard title="قيد الانتظار" value={`${stats.pending}`} icon={Clock} tone="amber" />
-          <StatCard title="مكتملة" value={`${stats.completed}`} icon={CheckCircle2} tone="emerald" />
-          <StatCard title="مرفوضة" value={`${stats.rejected}`} icon={XCircle} tone="rose" />
-          <StatCard title="عاجلة" value={`${stats.urgent}`} icon={AlertTriangle} tone="rose" />
+          <StatCard title="الواردة" value={`${filteredTransactions.length}`} sub="معاملة واردة" icon={Inbox} />
+          <StatCard title="إجمالي المعاملات" value={`${stats.total}`} icon={FileText} />
+          <StatCard title="قيد الانتظار" value={`${stats.pending}`} icon={Clock} />
+          <StatCard title="مكتملة" value={`${stats.completed}`} icon={CheckCircle2} />
+          <StatCard title="مرفوضة" value={`${stats.rejected}`} icon={XCircle} />
+          <StatCard title="عاجلة" value={`${stats.urgent}`} icon={AlertTriangle} />
         </motion.div>
 
         <motion.div
@@ -373,11 +313,11 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
                 placeholder="ابحث عن معاملة..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 w-full sm:w-64 rounded-2xl text-sm"
+                className="pl-8 w-full sm:w-64 rounded-2xl text-sm dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
               />
             </div>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full sm:w-44 rounded-2xl text-sm">
+              <SelectTrigger className="w-full sm:w-44 rounded-2xl text-sm dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200">
                 <SelectValue placeholder="حالة المعاملة" />
               </SelectTrigger>
               <SelectContent>
@@ -390,11 +330,11 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
             </Select>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="rounded-2xl text-xs sm:text-sm">
+            <Button variant="outline" size="sm" className="rounded-2xl text-xs sm:text-sm dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700">
               <Download className="ml-1 h-3.5 w-3.5 sm:h-4 sm:w-4" />
               تصدير
             </Button>
-            <Button variant="outline" size="sm" className="rounded-2xl text-xs sm:text-sm">
+            <Button variant="outline" size="sm" className="rounded-2xl text-xs sm:text-sm dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700">
               <Printer className="ml-1 h-3.5 w-3.5 sm:h-4 sm:w-4" />
               طباعة
             </Button>
@@ -402,21 +342,21 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
-          <Card className="rounded-2xl border shadow-sm bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+          <Card className="rounded-2xl border dark:border-neutral-700 shadow-sm bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-neutral-800/80 dark:supports-[backdrop-filter]:bg-neutral-800/60">
             <CardContent className="p-0">
               {/* Desktop Table View */}
               <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gradient-to-b from-slate-50 to-white">
-                      <th className="text-right px-6 py-4 text-xs font-semibold text-gray-700">رقم المعاملة</th>
-                      <th className="text-right px-6 py-4 text-xs font-semibold text-gray-700">العنوان</th>
-                      <th className="text-right px-6 py-4 text-xs font-semibold text-gray-700">النوع</th>
-                      <th className="text-right px-6 py-4 text-xs font-semibold text-gray-700">من</th>
-                      <th className="text-right px-6 py-4 text-xs font-semibold text-gray-700">التاريخ</th>
-                      <th className="text-right px-6 py-4 text-xs font-semibold text-gray-700">الأولوية</th>
-                      <th className="text-right px-6 py-4 text-xs font-semibold text-gray-700">الحالة</th>
-                      <th className="text-right px-6 py-4 text-xs font-semibold text-gray-700">الإجراء</th>
+                    <tr className="bg-neutral-50 dark:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700">
+                      <th className="text-right px-6 py-4 text-xs font-bold text-neutral-600 dark:text-neutral-400">رقم المعاملة</th>
+                      <th className="text-right px-6 py-4 text-xs font-bold text-neutral-600 dark:text-neutral-400">العنوان</th>
+                      <th className="text-right px-6 py-4 text-xs font-bold text-neutral-600 dark:text-neutral-400">النوع</th>
+                      <th className="text-right px-6 py-4 text-xs font-bold text-neutral-600 dark:text-neutral-400">من</th>
+                      <th className="text-right px-6 py-4 text-xs font-bold text-neutral-600 dark:text-neutral-400">التاريخ</th>
+                      <th className="text-right px-6 py-4 text-xs font-bold text-neutral-600 dark:text-neutral-400">الأولوية</th>
+                      <th className="text-right px-6 py-4 text-xs font-bold text-neutral-600 dark:text-neutral-400">الحالة</th>
+                      <th className="text-right px-6 py-4 text-xs font-bold text-neutral-600 dark:text-neutral-400">الإجراء</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -426,34 +366,34 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.05 }}
-                        className="border-b border-gray-100 hover:bg-green-50/30 transition-colors"
+                        className="border-b border-neutral-100 dark:border-neutral-700/60 hover:bg-neutral-50 dark:hover:bg-neutral-700/30 transition-colors"
                       >
                         <td className="px-6 py-4">
-                          <span className="font-mono text-xs font-semibold text-gray-900">{transaction.id}</span>
+                          <span className="font-mono text-xs font-semibold text-neutral-800 dark:text-neutral-100">{transaction.id}</span>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <div className="bg-green-100/60 p-1.5 rounded-lg border border-green-200">
-                              <FileText className="w-3.5 h-3.5 text-green-700" />
+                            <div className="bg-neutral-100 dark:bg-neutral-700 p-1.5 rounded-lg">
+                              <FileText className="w-3.5 h-3.5 text-neutral-700 dark:text-neutral-300" />
                             </div>
-                            <span className="font-medium text-sm text-gray-900">{transaction.title}</span>
+                            <span className="font-medium text-sm text-neutral-800 dark:text-neutral-100">{transaction.title}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <Badge variant="outline" className="bg-indigo-50/60 text-indigo-700 border-indigo-200 text-xs">
+                          <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:border-neutral-600 text-xs">
                             <Tag className="w-3 h-3 ml-1" />
                             {transaction.type}
                           </Badge>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-1.5 text-gray-700 text-sm">
-                            <User className="w-3.5 h-3.5 text-gray-400" />
+                          <div className="flex items-center gap-1.5 text-neutral-700 dark:text-neutral-300 text-sm">
+                            <User className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
                             <span>{transaction.from}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-1.5 text-gray-700 text-sm">
-                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                          <div className="flex items-center gap-1.5 text-neutral-700 dark:text-neutral-300 text-sm">
+                            <Calendar className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
                             <span>{transaction.date}</span>
                           </div>
                         </td>
@@ -465,7 +405,7 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
                               variant="outline"
                               size="sm"
                               onClick={() => onViewDetails(transaction.id)}
-                              className="rounded-xl hover:bg-green-50 hover:text-green-700 hover:border-green-300 text-xs h-8"
+                              className="rounded-xl hover:bg-neutral-100 hover:text-neutral-900 hover:border-neutral-300 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-white text-xs h-8"
                             >
                               <Eye className="w-3.5 h-3.5 ml-1" />
                               عرض
@@ -474,7 +414,7 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
                               variant="outline"
                               size="sm"
                               onClick={() => handleReply(transaction)}
-                              className="rounded-xl hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-xs h-8"
+                              className="rounded-xl hover:bg-neutral-100 hover:text-neutral-900 hover:border-neutral-300 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-white text-xs h-8"
                             >
                               <MessageSquare className="w-3.5 h-3.5 ml-1" />
                               رد
@@ -488,38 +428,38 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
               </div>
 
               {/* Mobile Card View */}
-              <div className="lg:hidden divide-y divide-gray-200">
+              <div className="lg:hidden divide-y divide-neutral-100 dark:divide-neutral-700">
                 {filteredTransactions.map((transaction, index) => (
                   <motion.div
                     key={transaction.id}
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="p-4 hover:bg-green-50/30 transition-colors"
+                    className="p-4 hover:bg-neutral-50 dark:hover:bg-neutral-700/30 transition-colors"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <div className="bg-green-100/60 p-2 rounded-lg border border-green-200">
-                          <FileText className="w-4 h-4 text-green-700" />
+                        <div className="bg-neutral-100 dark:bg-neutral-700 p-2 rounded-lg">
+                          <FileText className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
                         </div>
-                        <span className="font-mono text-xs font-semibold text-gray-900">{transaction.id}</span>
+                        <span className="font-mono text-xs font-semibold text-neutral-800 dark:text-neutral-100">{transaction.id}</span>
                       </div>
                       <div className="flex gap-2">{getPriorityBadge(transaction.priority)}</div>
                     </div>
 
-                    <h3 className="font-bold text-gray-900 mb-2 text-sm leading-tight">{transaction.title}</h3>
+                    <h3 className="font-bold text-neutral-800 dark:text-neutral-100 mb-2 text-sm leading-tight">{transaction.title}</h3>
 
                     <div className="space-y-2 mb-3">
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
-                        <Tag className="w-3 h-3 text-gray-400" />
+                      <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+                        <Tag className="w-3 h-3 text-neutral-400 dark:text-neutral-500" />
                         <span>{transaction.type}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
-                        <User className="w-3 h-3 text-gray-400" />
+                      <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+                        <User className="w-3 h-3 text-neutral-400 dark:text-neutral-500" />
                         <span>{transaction.from}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-600">
-                        <Calendar className="w-3 h-3 text-gray-400" />
+                      <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+                        <Calendar className="w-3 h-3 text-neutral-400 dark:text-neutral-500" />
                         <span>{transaction.date}</span>
                       </div>
                     </div>
@@ -531,7 +471,7 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
                           variant="outline"
                           size="sm"
                           onClick={() => onViewDetails(transaction.id)}
-                          className="rounded-xl hover:bg-green-50 hover:text-green-700 hover:border-green-300 text-xs h-8"
+                          className="rounded-xl hover:bg-neutral-100 hover:text-neutral-900 hover:border-neutral-300 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-white text-xs h-8"
                         >
                           <Eye className="w-3 h-3 ml-1" />
                           عرض
@@ -540,7 +480,7 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
                           variant="outline"
                           size="sm"
                           onClick={() => handleReply(transaction)}
-                          className="rounded-xl hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-xs h-8"
+                          className="rounded-xl hover:bg-neutral-100 hover:text-neutral-900 hover:border-neutral-300 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-white text-xs h-8"
                         >
                           <MessageSquare className="w-3 h-3 ml-1" />
                           رد
@@ -553,8 +493,8 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
 
               {filteredTransactions.length === 0 && (
                 <div className="text-center py-16">
-                  <FileText className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 text-sm sm:text-lg">لا توجد معاملات مطابقة</p>
+                  <FileText className="w-12 h-12 sm:w-16 sm:h-16 text-neutral-300 dark:text-neutral-600 mx-auto mb-4" />
+                  <p className="text-neutral-500 dark:text-neutral-400 text-sm sm:text-lg">لا توجد معاملات مطابقة</p>
                 </div>
               )}
             </CardContent>

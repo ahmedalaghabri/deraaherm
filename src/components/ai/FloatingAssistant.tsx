@@ -24,7 +24,7 @@ export function FloatingAssistant() {
   if (isOpen) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[55]" onMouseEnter={showFull}>
+    <div className="fixed bottom-[88px] sm:bottom-4 left-1/2 -translate-x-1/2 z-[55]" onMouseEnter={showFull}>
       <AnimatePresence mode="wait">
         {isHidden ? (
           // Mini floating dot (auto-hidden state)

@@ -25,6 +25,9 @@ import {
   UserCircle,
   Store,
   Search,
+  CalendarDays,
+  CalendarRange,
+  Sun,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import PageTabs from "./PageTabs";
@@ -932,12 +935,7 @@ function DrillTable({
             {setMobileTableMode && (
               <>
                 <div className="w-px h-4 bg-neutral-300 mx-0.5" />
-                {[
-                  ["default", "افتراضي", Table],
-                  ["pinned", "مثبت", Pin],
-                  ["cards", "بطاقات", LayoutGrid],
-                  ["single", "مفرد", Rows]
-                ].map(([mode, label, Icon]) => (
+                {([ ["default", "افتراضي", Table], ["pinned", "مثبت", Pin], ["cards", "بطاقات", LayoutGrid], ["single", "مفرد", Rows] ] as [string, string, React.ElementType][]).map(([mode, label, Icon]) => (
                   <button key={mode} onClick={() => setMobileTableMode(mode as "default" | "pinned" | "cards" | "single")}
                     className={cn("px-1.5 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1",
                       mobileTableMode === mode ? "bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 shadow-sm" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:text-neutral-300")}
@@ -1496,12 +1494,13 @@ function DateRangePicker({ dateFrom, dateTo, onFromChange, onToChange, iconOnly,
           onClick={openDropdown}
           title={`${displayFrom} — ${displayTo}`}
           className={cn(
-            "px-3 sm:px-4 py-2 text-[13px] font-semibold transition-all whitespace-nowrap flex-1 text-center",
+            "flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-semibold transition-all whitespace-nowrap rounded-lg",
             active
-              ? "bg-neutral-900 dark:bg-neutral-700 text-white"
-              : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700"
+              ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 shadow-sm"
+              : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
           )}
         >
+          <CalendarRange className="w-3.5 h-3.5" />
           محدد
         </button>
       ) : (
@@ -2073,11 +2072,12 @@ export default function SalesPerformancePage({ onBack }: Props) {
                   </div>
                   <div className="hidden sm:block flex-1 min-w-[1px]" />
                   <div className="hidden sm:flex items-center gap-2 shrink-0">
-                    <div className="flex items-center bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-600 overflow-hidden">
-                      {([["day","يومي"],["month","شهري"]] as [Period, string][]).map(([p, l]) => (
+                    <div className="flex items-center bg-neutral-100 dark:bg-neutral-700/60 rounded-xl p-1 gap-0.5">
+                      {([["day","يومي",Sun],["month","شهري",CalendarDays]] as [Period, string, React.ElementType][]).map(([p, l, Icon]) => (
                         <button key={p} onClick={() => { setPeriod(p as Period); setCustomRangeActive(false); }}
-                          className={cn("px-3 sm:px-4 py-2 text-[13px] font-semibold transition-all whitespace-nowrap flex-1 text-center",
-                            period === p && !customRangeActive ? "bg-neutral-900 dark:bg-neutral-700 text-white" : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
+                          className={cn("flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-semibold transition-all whitespace-nowrap rounded-lg",
+                            period === p && !customRangeActive ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 shadow-sm" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200")}>
+                          <Icon className="w-3.5 h-3.5" />
                           {l}
                         </button>
                       ))}
@@ -2127,11 +2127,12 @@ export default function SalesPerformancePage({ onBack }: Props) {
                     </div>
                     <div className="hidden sm:block flex-1 min-w-[1px]" />
                     <div className="hidden sm:flex items-center gap-2 shrink-0">
-                      <div className="flex items-center bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-600 overflow-hidden">
-                        {([["day","يومي"],["month","شهري"]] as [Period, string][]).map(([p, l]) => (
+                      <div className="flex items-center bg-neutral-100 dark:bg-neutral-700/60 rounded-xl p-1 gap-0.5">
+                        {([["day","يومي",Sun],["month","شهري",CalendarDays]] as [Period, string, React.ElementType][]).map(([p, l, Icon]) => (
                           <button key={p} onClick={() => { setPeriod(p as Period); setCustomRangeActive(false); }}
-                            className={cn("px-3 sm:px-4 py-2 text-[13px] font-semibold transition-all whitespace-nowrap flex-1 text-center",
-                              period === p && !customRangeActive ? "bg-neutral-900 dark:bg-neutral-700 text-white" : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
+                            className={cn("flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-semibold transition-all whitespace-nowrap rounded-lg",
+                              period === p && !customRangeActive ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 shadow-sm" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200")}>
+                            <Icon className="w-3.5 h-3.5" />
                             {l}
                           </button>
                         ))}
@@ -2182,11 +2183,12 @@ export default function SalesPerformancePage({ onBack }: Props) {
           {/* ── Calendar / Period Navigator ── */}
           <div className="border-b border-neutral-100 dark:border-neutral-700 px-1 py-2 -mx-1 mb-3 mt-1">
             <div className="flex items-center gap-2 mb-2 sm:hidden">
-              <div className="flex items-center bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-600 overflow-hidden">
-                {([["day","يومي"],["month","شهري"]] as [Period, string][]).map(([p, l]) => (
+              <div className="flex items-center bg-neutral-100 dark:bg-neutral-700/60 rounded-xl p-1 gap-0.5">
+                {([["day","يومي",Sun],["month","شهري",CalendarDays]] as [Period, string, React.ElementType][]).map(([p, l, Icon]) => (
                   <button key={p} onClick={() => { setPeriod(p as Period); setCustomRangeActive(false); }}
-                    className={cn("px-3 sm:px-4 py-2 text-[11px] font-semibold transition-all whitespace-nowrap flex-1 text-center",
-                      period === p && !customRangeActive ? "bg-neutral-900 dark:bg-neutral-700 text-white" : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
+                    className={cn("flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold transition-all whitespace-nowrap rounded-lg",
+                      period === p && !customRangeActive ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 shadow-sm" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200")}>
+                    <Icon className="w-3.5 h-3.5" />
                     {l}
                   </button>
                 ))}
@@ -2217,16 +2219,16 @@ export default function SalesPerformancePage({ onBack }: Props) {
                         className={cn(
                           "flex flex-col items-center gap-1 rounded-xl px-2 py-2 transition-all shrink-0 active:scale-95",
                           "sm:min-w-[76px] min-w-[calc((100vw-2rem-1rem)/7)]",
+                          isSelected ? "bg-[#111111] dark:bg-[#242c52]" : "bg-white dark:bg-[#111529]",
                           isFutureMonth && !isSelected && "opacity-40"
                         )}
                         style={{
-                          backgroundColor: isSelected ? "#111111" : "#ffffff",
                           border: isSelected ? "0px solid rgba(0,0,0,0.25)" : "0px solid #e5e5e5",
                           boxShadow: isSelected ? "0 0px 0px rgba(0,0,0,0.18)" : "0 0px 0px rgba(0,0,0,0.08)",
                         }}>
-                        <span className="text-[12px] sm:text-[12px] font-bold whitespace-nowrap" style={{ color: isSelected ? "#ffffff" : "#030303" }}>{mName}</span>
+                        <span className={cn("text-[12px] sm:text-[12px] font-bold whitespace-nowrap", isSelected ? "text-white" : "text-[#030303] dark:text-[#e6e9f7]")}>{mName}</span>
                         <span className="text-xs sm:text-sm font-extrabold whitespace-nowrap" style={{ color: isSelected ? "#ffffff" : color }}>{pct}%</span>
-                        <div className="w-full h-1 sm:h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: isSelected ? "rgba(255,255,255,0.25)" : "#ddd" }}>
+                        <div className={cn("w-full h-1 sm:h-1.5 rounded-full overflow-hidden", isSelected ? "bg-white/25" : "bg-[#dddddd] dark:bg-white/10")}>
                           <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: isSelected ? "#ffffff" : color }} />
                         </div>
                       </button>
@@ -2241,16 +2243,16 @@ export default function SalesPerformancePage({ onBack }: Props) {
                         className={cn(
                           "flex flex-col items-center gap-1 rounded-xl px-2 py-2 transition-all shrink-0 active:scale-95",
                           "sm:min-w-[76px] min-w-[calc((100vw-2rem-1rem)/7)]",
+                          isYearSelected ? "bg-[#111111] dark:bg-[#242c52]" : "bg-white dark:bg-[#111529]",
                           isFutureYear && !isYearSelected && "opacity-40"
                         )}
                         style={{
-                          backgroundColor: isYearSelected ? "#111111" : "#ffffff",
                           border: isYearSelected ? "1.5px solid rgba(0,0,0,0.25)" : "1.5px solid transparent",
                           boxShadow: isYearSelected ? "0 2px 8px rgba(0,0,0,0.18)" : "none",
                         }}>
                         <span className="text-[12px] sm:text-[12px] font-bold whitespace-nowrap" style={{ color: isYearSelected ? "#ffffff" : "#B21063" }}>السنوي</span>
                         <span className="text-xs sm:text-sm font-extrabold whitespace-nowrap" style={{ color: isYearSelected ? "#ffffff" : pctColor(yearPct) }}>{yearPct}%</span>
-                        <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: isYearSelected ? "rgba(255,255,255,0.25)" : "#ddd" }}>
+                        <div className={cn("w-full h-1.5 rounded-full overflow-hidden", isYearSelected ? "bg-white/25" : "bg-[#dddddd] dark:bg-white/10")}>
                           <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(yearPct, 100)}%`, backgroundColor: isYearSelected ? "#ffffff" : "#B21063" }} />
                         </div>
                       </button>
@@ -2265,7 +2267,6 @@ export default function SalesPerformancePage({ onBack }: Props) {
                     const day = i + 1;
                     const pct = dayPcts[day];
                     const isSelected = selectedDay === day;
-                    const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
                     const isFuture = year > today.getFullYear() || (year === today.getFullYear() && month > today.getMonth()) || (year === today.getFullYear() && month === today.getMonth() && day > today.getDate());
                     const dayName = DAYS_SHORT_AR[new Date(year, month, day).getDay()];
                     const color = pctColor(pct);
@@ -2274,18 +2275,17 @@ export default function SalesPerformancePage({ onBack }: Props) {
                         className={cn(
                           "flex flex-col items-center gap-0.5 rounded-xl py-2 transition-all shrink-0 active:scale-95",
                           "sm:min-w-[42px] min-w-[calc((100vw-2rem-1rem)/7)]",
-                          isSelected ? "bg-neutral-900 text-white shadow-sm" : isToday ? "bg-blue-50 border border-blue-200" : "bg-neutral-50 dark:bg-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-700",
+                          isSelected ? "bg-[#111111] dark:bg-[#242c52] text-white shadow-sm" : "bg-white dark:bg-[#111529]",
                           isFuture && !isSelected && "opacity-40"
                         )}
                         style={{
-                          backgroundColor: isSelected ? "#111111" : "#ffffff",
                           border: isSelected ? "1.5px solid rgba(0,0,0,0.25)" : "1.5px solid transparent",
                           boxShadow: isSelected ? "0 2px 8px rgba(0,0,0,0.18)" : "none",
                         }}>
-                        <span className="text-[9px] font-semibold leading-none" style={{ color: isSelected ? "rgba(255, 255, 255, 0.65)" : "#737373" }}>{dayName}</span>
-                        <span className="text-[13px] font-extrabold leading-tight" style={{ color: isSelected ? "#ffffff" : "#1a1a1a" }}>{day}</span>
+                        <span className={cn("text-[9px] font-semibold leading-none", isSelected ? "text-white/65" : "text-[#737373] dark:text-[#8088aa]")}>{dayName}</span>
+                        <span className={cn("text-[13px] font-extrabold leading-tight", isSelected ? "text-white" : "text-[#1a1a1a] dark:text-[#e6e9f7]")}>{day}</span>
                         <span className="text-[12px] font-bold leading-none" style={{ color: isSelected ? "#ffffff" : color }}>{pct}%</span>
-                        <div className="w-4/5 h-1.5 rounded-full overflow-hidden mt-0.5" style={{ backgroundColor: isSelected ? "rgba(255,255,255,0.25)" : "#ddd" }}>
+                        <div className={cn("w-4/5 h-1.5 rounded-full overflow-hidden mt-0.5", isSelected ? "bg-white/25" : "bg-[#dddddd] dark:bg-white/10")}>
                           <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: isSelected ? "#ffffff" : color }} />
                         </div>
                       </button>

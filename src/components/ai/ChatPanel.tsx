@@ -39,7 +39,7 @@ export function ChatPanel() {
 
   return (
     <div
-      className={`fixed inset-x-3 bottom-[72px] sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[400px] z-[60] bg-white dark:bg-neutral-900 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.15)] border border-neutral-100 dark:border-neutral-700 flex flex-col overflow-hidden transition-all duration-300 ease-out ${
+      className={`fixed inset-x-3 bottom-[88px] sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[400px] z-[60] bg-white dark:bg-neutral-900 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.15)] border border-neutral-100 dark:border-neutral-700 flex flex-col overflow-hidden transition-all duration-300 ease-out ${
         mounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-6 scale-95"
       }`}
       style={{ maxHeight: "min(640px, calc(100vh - 100px))", height: "auto" }}

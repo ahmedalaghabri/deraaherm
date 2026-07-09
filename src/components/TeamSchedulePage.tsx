@@ -548,9 +548,16 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                         return (
                           <div key={emp.id} className="flex flex-col gap-0.5">
                             <div className="flex items-center gap-1 min-w-0">
-                              <svg className={cn("w-1.5 h-1.5 sm:w-2 sm:h-2 shrink-0", sCfg.color)} viewBox="0 0 24 24" fill="currentColor">
-                                <circle cx="12" cy="12" r="12" />
-                              </svg>
+                              <div className={cn("flex shrink-0", rec.shiftType === "double" ? "gap-0.5" : "")}>
+                                <svg className={cn("w-1.5 h-1.5 sm:w-2 sm:h-2 shrink-0", sCfg.color)} viewBox="0 0 24 24" fill="currentColor">
+                                  <circle cx="12" cy="12" r="12" />
+                                </svg>
+                                {rec.shiftType === "double" && (
+                                  <svg className={cn("w-1.5 h-1.5 sm:w-2 sm:h-2 shrink-0", sCfg.color)} viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="12" r="12" />
+                                  </svg>
+                                )}
+                              </div>
                               <span className={cn("text-xs font-bold truncate px-0.5 py-0 sm:px-1 sm:py-0.5 rounded text-neutral-700 dark:text-neutral-200", sCfg.bg)}>{(() => { const parts = emp.name.split(" "); return parts.length > 2 ? `${parts[0]} ${parts[parts.length - 1]}` : emp.name; })()}</span>
                             </div>
                             <span className={cn("text-[11px] shrink-0 mr-3", isWorking ? "text-neutral-400 dark:text-neutral-500" : sCfg.color)}>{timeLabel}</span>

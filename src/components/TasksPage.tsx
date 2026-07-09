@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, Fragment } from "react";
-import { Plus, Search, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, MoreHorizontal, List, LayoutGrid, Calendar as CalendarIcon, ArrowUpDown, Megaphone, Briefcase, Flag, UserCircle, Paperclip, Bell, Calendar, Users, Building2, FolderOpen, Inbox, Clock, CheckSquare, Circle, Send, Star, Hash, Play, FilePlus, Pencil, Trash2, Printer, FileDown, MapPin, Store, ExternalLink, Video } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, MoreHorizontal, List, LayoutGrid, Calendar as CalendarIcon, ArrowUpDown, Megaphone, Flag, UserCircle, Paperclip, Bell, Calendar, Users, Building2, FolderOpen, Inbox, Clock, CheckSquare, Send, Star, Play, FilePlus, Pencil, Trash2, Printer, FileDown, MapPin, Store, ExternalLink, Video } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../lib/utils";
 import { useAI } from "./ai/AIContext";
@@ -28,6 +28,7 @@ interface Task {
   assignMode?: AssignMode;
   assignTarget?: string;
   assignMembers?: string[];
+  memberProgress?: Record<string, number>;
   taskSource?: string;
   createdAt?: string;
   startDate?: string;
@@ -61,9 +62,6 @@ const COMMITTEES = [
 ];
 const STORAGE_KEY = "perfume-tasks-v1";
 
-const AVATAR_COLORS = ["bg-violet-500","bg-cyan-500","bg-rose-500","bg-amber-500","bg-emerald-500","bg-blue-500"];
-function avatarColor(name?: string | null) { if (!name) return AVATAR_COLORS[0]; return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]; }
-function initials(name?: string | null) { if (!name) return "?"; const p = name.trim().split(" "); return p.length >= 2 ? p[0][0] + p[1][0] : name.slice(0,2); }
 function avatarUrl(name?: string | null) { if (!name) return "https://randomuser.me/api/portraits/men/0.jpg"; const hash = name.split("").reduce((a, b) => a + b.charCodeAt(0), 0); return `https://randomuser.me/api/portraits/men/${hash % 99}.jpg`; }
 function getMentionContext(text: string, cursorPos: number): { query: string; startIndex: number } | null {
   const beforeCursor = text.slice(0, cursorPos);
@@ -161,7 +159,6 @@ const COLS = [
   { key: "projectName", label: "المشروع" },
   { key: "source",      label: "المصدر" },
   { key: "status",      label: "الحالة" },
-  { key: "id",          label: "رقم المهمة" },
   { key: "action",      label: "إجراء" },
 ] as const;
 
@@ -458,18 +455,20 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
   const [form, setForm] = useState<Partial<Task>>({ status: "todo", priority: "medium", progress: 0 });
-  const [menuOpen, setMenuOpen] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<"tasks" | "campaigns" | "teams" | "visits" | "team_schedule">("tasks");
   const [detailMobileTab, setDetailMobileTab] = useState<"details" | "activity">("details");
   const [detailDropdown, setDetailDropdown] = useState<"status" | "assignee" | "priority" | "dueDate" | "source" | "project" | "tags" | null>(null);
   const [formDropdown, setFormDropdown] = useState<"status" | "assignee" | "dueDate" | "priority" | "tags" | "source" | "project" | null>(null);
+  const [formDateTab, setFormDateTab] = useState<'start' | 'due'>('due');
   const formDropdownRef = useRef<HTMLDivElement>(null);
   const [assignStep, setAssignStep] = useState<"mode" | "list" | "members">("mode");
   const assignDropdownRef = useRef<HTMLDivElement>(null);
+  const [assignSearch, setAssignSearch] = useState("");
+  const [projectSearch, setProjectSearch] = useState("");
+  const [projectsList, setProjectsList] = useState<string[]>(PROJECTS);
   const [tableDropdown, setTableDropdown] = useState<{
     id: string;
-    field: "assignee" | "project" | "source" | "progress" | "dueDate" | "priority" | "status";
+    field: "assignee" | "project" | "source" | "progress" | "dueDate" | "priority" | "status" | "action";
     top: number;
     right: number;
   } | null>(null);
@@ -495,14 +494,12 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
   const [detailShowSubtaskForm, setDetailShowSubtaskForm] = useState(false);
   const [detailSubtaskForm, setDetailSubtaskForm] = useState<Partial<Task>>({});
   const [detailSubtaskDropdown, setDetailSubtaskDropdown] = useState<"status" | "priority" | "assignee" | "dueDate" | null>(null);
-  const [detailSubtaskTouched, setDetailSubtaskTouched] = useState<Set<string>>(new Set());
   const [detailEditingSubtaskId, setDetailEditingSubtaskId] = useState<string | null>(null);
   const [detailEditingSubtaskForm, setDetailEditingSubtaskForm] = useState<Partial<Task>>({});
   const [detailEditingSubtaskDropdown, setDetailEditingSubtaskDropdown] = useState<"status" | "priority" | "assignee" | "dueDate" | null>(null);
   const [formShowSubtaskForm, setFormShowSubtaskForm] = useState(false);
   const [formSubtaskForm, setFormSubtaskForm] = useState<Partial<Task>>({});
   const [formSubtaskDropdown, setFormSubtaskDropdown] = useState<"status" | "priority" | "assignee" | "dueDate" | null>(null);
-  const [formSubtaskTouched, setFormSubtaskTouched] = useState<Set<string>>(new Set());
   const [formEditingSubtaskId, setFormEditingSubtaskId] = useState<string | null>(null);
   const [formEditingSubtaskForm, setFormEditingSubtaskForm] = useState<Partial<Task>>({});
   const [formEditingSubtaskDropdown, setFormEditingSubtaskDropdown] = useState<"status" | "priority" | "assignee" | "dueDate" | null>(null);
@@ -646,7 +643,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }, [tasks]);
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(null);
       if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
       if (tableDropdownRef.current && !tableDropdownRef.current.contains(e.target as Node)) setTableDropdown(null);
       if (assignDropdownRef.current && assignDropdownRef.current.contains(e.target as Node)) {
@@ -697,10 +693,10 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
   }, [filtered]);
 
   const toggle = (s: TaskStatus) => setExpanded(p => ({ ...p, [s]: !p[s] }));
-  const openCreate = () => { setEditing(null); setForm({ status: "todo", priority: "medium", dueDate: today, assignee: ASSIGNEES[0], progress: 0, projectName: PROJECTS[0], assignMode: "me", assignTarget: undefined, assignMembers: undefined, taskSource: SOURCES[0], createdAt: today }); setModalOpen(true); setAssignStep("mode"); setFormMobileTab("details"); setFormComment(""); setFormTouched(new Set()); setFormCommentAttachments([]); setFormMention(null); setFormShowSubtaskForm(false); setFormSubtaskForm({ status: "todo", priority: "medium", dueDate: today, assignee: ASSIGNEES[0], progress: 0, projectName: PROJECTS[0] }); setFormSubtaskDropdown(null); setFormSubtaskTouched(new Set()); setFormEditingSubtaskId(null); setFormEditingSubtaskForm({}); setFormEditingSubtaskDropdown(null); };
-  const openEdit = (t: Task) => { setEditing(t); setForm({ ...t }); setModalOpen(true); setMenuOpen(null); setAssignStep("mode"); setFormMobileTab("details"); setFormComment(""); setFormTouched(new Set(["status","assignee","dueDate","priority","tags","source","project"])); setFormCommentAttachments([]); setFormMention(null); setFormShowSubtaskForm(false); setFormSubtaskForm({ status: "todo", priority: "medium", dueDate: today, assignee: ASSIGNEES[0], progress: 0, projectName: PROJECTS[0] }); setFormSubtaskDropdown(null); setFormSubtaskTouched(new Set()); setFormEditingSubtaskId(null); setFormEditingSubtaskForm({}); setFormEditingSubtaskDropdown(null); };
-  const openDetail = (t: Task) => { setDetailTask(t); setDetailOpen(true); setMenuOpen(null); setTableDropdown(null); setDetailCommentAttachments([]); setDetailMention(null); };
-  const closeDetail = () => { setDetailOpen(false); setDetailTask(null); setDetailComment(""); setDetailCommentAttachments([]); setDetailEditingComment(null); setDetailMention(null); setDetailShowSubtaskForm(false); setDetailSubtaskForm({ status: "todo", priority: "medium", dueDate: today, assignee: ASSIGNEES[0], progress: 0, projectName: PROJECTS[0] }); setDetailSubtaskDropdown(null); setDetailSubtaskTouched(new Set()); setDetailEditingSubtaskId(null); setDetailEditingSubtaskForm({}); setDetailEditingSubtaskDropdown(null); };
+  const openCreate = () => { setEditing(null); setForm({ status: "todo", priority: "medium", startDate: today, dueDate: today, assignee: ASSIGNEES[0], progress: 0, projectName: PROJECTS[0], assignMode: "me", assignTarget: undefined, assignMembers: undefined, taskSource: SOURCES[0], createdAt: today }); setModalOpen(true); setAssignStep("mode"); setFormMobileTab("details"); setFormComment(""); setFormTouched(new Set()); setFormCommentAttachments([]); setFormMention(null); setFormShowSubtaskForm(false); setFormSubtaskForm({ status: "todo", priority: "medium", dueDate: today, assignee: ASSIGNEES[0], progress: 0, projectName: PROJECTS[0] }); setFormSubtaskDropdown(null); setFormEditingSubtaskId(null); setFormEditingSubtaskForm({}); setFormEditingSubtaskDropdown(null); };
+  const openEdit = (t: Task) => { setEditing(t); setForm({ ...t }); setModalOpen(true); setAssignStep("mode"); setFormMobileTab("details"); setFormComment(""); setFormTouched(new Set(["status","assignee","dueDate","priority","tags","source","project"])); setFormCommentAttachments([]); setFormMention(null); setFormShowSubtaskForm(false); setFormSubtaskForm({ status: "todo", priority: "medium", dueDate: today, assignee: ASSIGNEES[0], progress: 0, projectName: PROJECTS[0] }); setFormSubtaskDropdown(null); setFormEditingSubtaskId(null); setFormEditingSubtaskForm({}); setFormEditingSubtaskDropdown(null); };
+  const openDetail = (t: Task) => { setDetailTask(t); setDetailOpen(true); setTableDropdown(null); setDetailCommentAttachments([]); setDetailMention(null); };
+  const closeDetail = () => { setDetailOpen(false); setDetailTask(null); setDetailComment(""); setDetailCommentAttachments([]); setDetailEditingComment(null); setDetailMention(null); setDetailShowSubtaskForm(false); setDetailSubtaskForm({ status: "todo", priority: "medium", dueDate: today, assignee: ASSIGNEES[0], progress: 0, projectName: PROJECTS[0] }); setDetailSubtaskDropdown(null); setDetailEditingSubtaskId(null); setDetailEditingSubtaskForm({}); setDetailEditingSubtaskDropdown(null); };
   const save = () => {
     if (!form.title?.trim()) return;
     if (editing) setTasks(p => p.map(t => t.id === editing.id ? { ...t, ...form } as Task : t));
@@ -716,7 +712,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
     setFormEditingComment(null);
     setFormMention(null);
   };
-  const remove = (id: string) => { if (confirm("هل أنت متأكد من حذف هذه المهمة؟")) { setTasks(p => p.filter(t => t.id !== id)); setMenuOpen(null); } };
+  const remove = (id: string) => { if (confirm("هل أنت متأكد من حذف هذه المهمة؟")) { setTasks(p => p.filter(t => t.id !== id)); } };
   const updateTask = (id: string, changes: Partial<Task>) => {
     setTasks(prev => prev.map(t => (t.id === id ? { ...t, ...changes } : t)));
   };
@@ -969,7 +965,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                 filterProject === "all" ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white shadow-sm" : "bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100")}>
                               جميع المشاريع
                             </button>
-                            {PROJECTS.map(p => (
+                            {projectsList.map(p => (
                               <button key={p} onClick={() => setFilterProject(p)}
                                 className={cn("w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[12px] font-semibold transition-all border text-right",
                                   filterProject === p ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 border-neutral-900 dark:border-white shadow-sm" : "bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100")}>
@@ -1231,10 +1227,11 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     <button
                                       type="button"
                                       onClick={() => openDetail(task)}
-                                      className="w-full text-right text-sm text-gray-700 dark:text-gray-200 hover:text-teal-600 transition-colors line-clamp-2"
+                                      className="w-full text-right hover:text-teal-600 transition-colors"
                                       title={task.title}
                                     >
-                                      {task.title}
+                                      <span className="block text-sm text-gray-700 dark:text-gray-200 line-clamp-2">{task.title}</span>
+                                      <span className="block text-[10px] text-gray-400 dark:text-gray-500 font-mono mt-0.5">{task.id}</span>
                                     </button>
                                   </div>
                                 </td>
@@ -1269,11 +1266,20 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                   {(!task.assignMode || task.assignMode === "me") && (
                                     <button
                                       type="button"
-                                      onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "assignee" ? null : { id: task.id, field: "assignee", top: r.bottom, right: window.innerWidth - r.right }); }}
-                                      className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors"
+                                      onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setAssignSearch(""); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "assignee" ? null : { id: task.id, field: "assignee", top: r.bottom, right: window.innerWidth - r.right }); }}
+                                      className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors"
                                     >
-                                      <img src={avatarUrl(task.assignee)} alt={task.assignee} className="w-7 h-7 rounded-full object-cover shrink-0" />
-                                      <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{task.assignee}</span>
+                                      <div className="flex -space-x-2 rtl:space-x-reverse">
+                                        {(task.assignMembers && task.assignMembers.length > 0 ? task.assignMembers : [task.assignee]).slice(0, 3).map((m, i) => (
+                                          <img key={i} src={avatarUrl(m)} alt={m} title={m} className="w-6 h-6 rounded-full border-2 border-white dark:border-neutral-800 object-cover shrink-0" />
+                                        ))}
+                                        {(task.assignMembers && task.assignMembers.length > 3) && (
+                                          <div className="w-6 h-6 rounded-full border-2 border-white dark:border-neutral-800 bg-gray-100 dark:bg-neutral-700 flex items-center justify-center text-[8px] font-bold">+{(task.assignMembers.length - 3)}</div>
+                                        )}
+                                      </div>
+                                      <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 max-w-[100px] truncate">
+                                        {task.assignMembers && task.assignMembers.length > 0 ? (task.assignMembers.length > 1 ? `${task.assignMembers.length} موظفين` : task.assignMembers[0]) : task.assignee}
+                                      </span>
                                       <ChevronDown className="w-3 h-3 text-gray-400" />
                                     </button>
                                   )}
@@ -1287,7 +1293,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "progress" ? null : { id: task.id, field: "progress", top: r.bottom, right: window.innerWidth - r.right }); }}
                                     className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-xs"
                                   >
-                                    <div className="w-16 h-1.5 rounded-full bg-gray-100 dark:bg-neutral-700 overflow-hidden">
+                                    <div className="w-11 h-1.5 rounded-full bg-gray-100 dark:bg-neutral-700 overflow-hidden">
                                       <div className="h-full rounded-full bg-teal-500" style={{ width: `${task.progress}%` }} />
                                     </div>
                                     <span className="text-[11px] font-medium text-gray-600 dark:text-gray-300">{task.progress}%</span>
@@ -1312,7 +1318,12 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     )}
                                   >
                                     <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
-                                    <span className="truncate max-w-[120px]">{fmtDate(task.dueDate)}</span>
+                                    <div className="flex flex-col text-right">
+                                      {task.startDate && task.startDate !== task.dueDate && (
+                                        <span className="text-[9px] opacity-50 leading-tight">{fmtDate(task.startDate)}</span>
+                                      )}
+                                      <span className="truncate max-w-[120px]">{fmtDate(task.dueDate)}</span>
+                                    </div>
                                     <ChevronDown className="w-3 h-3 opacity-60" />
                                   </button>
                                 </td>
@@ -1363,22 +1374,20 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     <ChevronDown className="w-3 h-3 opacity-60" />
                                   </button>
                                 </td>
-                                <td className="px-3 py-3.5 text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap font-mono text-right">{task.id}</td>
                                 <td className="px-3 py-3.5 text-center relative pl-5">
-                                  <div ref={menuOpen === task.id ? menuRef : null} className="inline-block">
-                                    <button onClick={() => setMenuOpen(menuOpen === task.id ? null : task.id)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-400 hover:text-gray-600 transition-colors">
-                                      <MoreHorizontal className="w-4 h-4" />
-                                    </button>
-                                    <AnimatePresence>
-                                      {menuOpen === task.id && (
-                                        <motion.div initial={{ opacity: 0, scale: 0.95, y: -4 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.1 }}
-                                          className="absolute right-0 top-8 z-50 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-lg shadow-lg py-1 min-w-[120px] text-right">
-                                          <button onClick={() => openEdit(task)} className="w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700 text-right">تعديل</button>
-                                          <button onClick={() => remove(task.id)} className="w-full px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-right">حذف</button>
-                                        </motion.div>
-                                      )}
-                                    </AnimatePresence>
-                                  </div>
+                                  <button
+                                    onClick={(e) => {
+                                      const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                                      setTableDropdown(prev =>
+                                        prev && prev.id === task.id && prev.field === "action"
+                                          ? null
+                                          : { id: task.id, field: "action", top: r.bottom, right: window.innerWidth - r.right }
+                                      );
+                                    }}
+                                    className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-400 hover:text-gray-600 transition-colors"
+                                  >
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </button>
                                 </td>
                               </tr>
                               {/* Subtask rows */}
@@ -1420,7 +1429,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                       {STATUS_CONFIG[st.status]?.label || st.status}
                                     </span>
                                   </td>
-                                  <td className="px-3 py-2 text-[10px] text-gray-300 dark:text-gray-600 whitespace-nowrap font-mono text-right">{st.id.slice(0, 6)}…</td>
                                   <td className="px-3 py-2 text-center relative pl-5">
                                     <div className="flex items-center gap-1.5">
                                       <button onClick={() => openDetail(st)} className="text-gray-300 hover:text-teal-500 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
@@ -1477,7 +1485,14 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                           {/* Assignee row */}
                           <div className="flex items-center gap-1.5 mb-2">
                             {(!task.assignMode || task.assignMode === "me") ? (
-                              <img src={avatarUrl(task.assignee)} alt={task.assignee} className="w-6 h-6 rounded-full object-cover shrink-0" />
+                              <div className="flex -space-x-1.5 rtl:space-x-reverse">
+                                {(task.assignMembers && task.assignMembers.length > 0 ? task.assignMembers : [task.assignee]).slice(0, 3).map((m, i) => (
+                                  <img key={i} src={avatarUrl(m)} alt={m} title={m} className="w-5 h-5 rounded-full border border-white dark:border-neutral-800 object-cover shrink-0" />
+                                ))}
+                                {(task.assignMembers && task.assignMembers.length > 3) && (
+                                  <div className="w-5 h-5 rounded-full border border-white dark:border-neutral-800 bg-gray-100 dark:bg-neutral-700 flex items-center justify-center text-[7px] font-bold">+{(task.assignMembers.length - 3)}</div>
+                                )}
+                              </div>
                             ) : task.assignMode === "team" ? (
                               <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0"><Users className="w-3 h-3 text-blue-500" /></div>
                             ) : task.assignMode === "department" ? (
@@ -1485,15 +1500,20 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                             ) : (
                               <div className="w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center shrink-0"><FolderOpen className="w-3 h-3 text-violet-500" /></div>
                             )}
-                            <span className="text-[11px] text-gray-500 truncate">
-                              {task.assignMode && task.assignMode !== "me" ? (task.assignTarget || "-") : task.assignee}
+                            <span className="text-[10px] text-gray-500 truncate">
+                              {task.assignMode && task.assignMode !== "me" ? (task.assignTarget || "-") : (task.assignMembers && task.assignMembers.length > 0 ? (task.assignMembers.length > 1 ? `${task.assignMembers.length} موظفين` : task.assignMembers[0]) : task.assignee)}
                             </span>
                           </div>
 
                           {/* Date row */}
                           <div className={cn("flex items-center gap-1.5 mb-2", task.dueDate < today && task.status !== "completed" ? "text-red-500" : "text-gray-400")}>
                             <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
-                            <span className="text-[11px] font-medium">{fmtDate(task.dueDate)}</span>
+                            <div className="flex flex-col text-right">
+                              {task.startDate && task.startDate !== task.dueDate && (
+                                <span className="text-[8px] opacity-60 leading-none mb-0.5">{fmtDate(task.startDate)}</span>
+                              )}
+                              <span className="text-[11px] font-medium leading-none">{fmtDate(task.dueDate)}</span>
+                            </div>
                           </div>
 
                           {/* Priority row */}
@@ -1735,10 +1755,9 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         {detailDropdown === "status" && (
                           <>
                             <div className="fixed inset-0 z-10" onClick={() => setDetailDropdown(null)} />
-                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[160px]">
+                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px]">
                               {(["todo","in-progress","in-review","completed","overdue"] as TaskStatus[]).map(s => (
-                                <button key={s} onClick={() => { setDetailTask(t => t ? { ...t, status: s, progress: s === "completed" ? 100 : t.progress } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, status: s, progress: s === "completed" ? 100 : x.progress } : x)); setDetailDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", detailTask.status === s ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                  <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[s].accent)} />
+                                <button key={s} onClick={() => { setDetailTask(t => t ? { ...t, status: s, progress: s === "completed" ? 100 : t.progress } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, status: s, progress: s === "completed" ? 100 : x.progress } : x)); setDetailDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right rounded-lg transition-colors", detailTask.status === s ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
                                   {STATUS_CONFIG[s].label}
                                 </button>
                               ))}
@@ -1749,20 +1768,55 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
                       {/* Assignee Pill */}
                       <div className="relative">
-                        <button onClick={() => setDetailDropdown(d => d === "assignee" ? null : "assignee")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", detailDropdown === "assignee" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                          <span className="truncate max-w-[120px]">{detailTask.assignee}</span>
+                        <button onClick={() => { setDetailDropdown(d => d === "assignee" ? null : "assignee"); setAssignSearch(""); }} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", detailDropdown === "assignee" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                          <div className="flex -space-x-1.5 rtl:space-x-reverse">
+                            {(detailTask.assignMembers && detailTask.assignMembers.length > 0 ? detailTask.assignMembers : [detailTask.assignee]).slice(0, 3).map((m, i) => (
+                              <img key={i} src={avatarUrl(m)} alt={m} title={m} className="w-5 h-5 rounded-full border border-white dark:border-neutral-800 object-cover shrink-0" />
+                            ))}
+                            {(detailTask.assignMembers && detailTask.assignMembers.length > 3) && (
+                              <div className="w-5 h-5 rounded-full border border-white dark:border-neutral-800 bg-gray-100 dark:bg-neutral-700 flex items-center justify-center text-[7px] font-bold">+{(detailTask.assignMembers.length - 3)}</div>
+                            )}
+                          </div>
+                          <span className="truncate max-w-[100px]">
+                            {detailTask.assignMembers && detailTask.assignMembers.length > 0 ? (detailTask.assignMembers.length > 1 ? `${detailTask.assignMembers.length} موظفين` : detailTask.assignMembers[0]) : detailTask.assignee}
+                          </span>
                           <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", detailDropdown === "assignee" ? "rotate-180" : "")} />
                         </button>
                         {detailDropdown === "assignee" && (
                           <>
                             <div className="fixed inset-0 z-10" onClick={() => setDetailDropdown(null)} />
-                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[180px] max-h-[240px] overflow-y-auto">
-                              {ASSIGNEES.map(name => (
-                                <button key={name} onClick={() => { setDetailTask(t => t ? { ...t, assignee: name } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, assignee: name } : x)); setDetailDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", detailTask.assignee === name ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                  <img src={avatarUrl(name)} alt={name} className="w-5 h-5 rounded-full object-cover shrink-0" />
-                                  {name}
-                                </button>
-                              ))}
+                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[200px] max-h-[300px] flex flex-col overflow-hidden">
+                              <div className="p-1.5 border-b border-gray-100 dark:border-neutral-700">
+                                <div className="relative">
+                                  <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                                  <input
+                                    autoFocus
+                                    value={assignSearch}
+                                    onChange={(e) => setAssignSearch(e.target.value)}
+                                    placeholder="بحث..."
+                                    className="w-full bg-gray-50 dark:bg-neutral-900 border-none rounded-lg py-1.5 ps-3 pe-8 text-xs focus:ring-1 focus:ring-teal-500 outline-none"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex-1 overflow-y-auto py-1">
+                                {ASSIGNEES
+                                  .filter(name => name.toLowerCase().includes(assignSearch.toLowerCase()))
+                                  .map(name => (
+                                  <button key={name} onClick={() => { 
+                                    const current = detailTask.assignMembers || [detailTask.assignee];
+                                    const next = current.includes(name) ? (current.length > 1 ? current.filter(x => x !== name) : current) : [...current, name];
+                                    const changes = { assignee: next[0], assignMembers: next, assignMode: "me" as const, assignTarget: undefined };
+                                    setDetailTask(t => t ? { ...t, ...changes } : t);
+                                    setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, ...changes } : x));
+                                  }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center justify-between rounded-lg transition-colors", (detailTask.assignMembers || [detailTask.assignee]).includes(name) ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
+                                    <span>{name}</span>
+                                    {(detailTask.assignMembers || [detailTask.assignee]).includes(name) && <CheckSquare className="w-3.5 h-3.5" />}
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="p-1.5 border-t border-gray-100 dark:border-neutral-700">
+                                <button onClick={() => setDetailDropdown(null)} className="w-full py-1.5 text-xs font-semibold text-white bg-teal-500 hover:bg-teal-600 rounded-lg transition-colors">تم</button>
+                              </div>
                             </div>
                           </>
                         )}
@@ -1777,11 +1831,11 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         {detailDropdown === "priority" && (
                           <>
                             <div className="fixed inset-0 z-10" onClick={() => setDetailDropdown(null)} />
-                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[160px]">
+                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px]">
                               {(["low","medium","high","urgent"] as TaskPriority[]).map(p => (
-                                <button key={p} onClick={() => { setDetailTask(t => t ? { ...t, priority: p } : t); setTasks(p_ => p_.map(x => x.id === detailTask.id ? { ...x, priority: p } : x)); setDetailDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", detailTask.priority === p ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                  <Flag className={cn("w-4 h-4", PRIORITY_CONFIG[p].flag)} />
-                                  {PRIORITY_CONFIG[p].label}
+                                <button key={p} onClick={() => { setDetailTask(t => t ? { ...t, priority: p } : t); setTasks(p_ => p_.map(x => x.id === detailTask.id ? { ...x, priority: p } : x)); setDetailDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center justify-between rounded-lg transition-colors", detailTask.priority === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
+                            <span>{PRIORITY_CONFIG[p].label}</span>
+                            <Flag className={cn("w-4 h-4", PRIORITY_CONFIG[p].flag)} />
                                 </button>
                               ))}
                             </div>
@@ -1797,9 +1851,10 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       </div>
 
                       {/* Start Date Pill */}
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700">
+                      <div className="relative flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700/60 transition-colors">
                         <Clock className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200 truncate max-w-[120px]">موعد البدء</span>
+                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200 truncate max-w-[120px]">{detailTask.startDate || "تاريخ البدء"}</span>
+                        <input type="date" value={detailTask.startDate} onChange={e => { const v = e.target.value; setDetailTask(t => t ? { ...t, startDate: v } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, startDate: v } : x)); }} className="absolute inset-0 opacity-0 cursor-pointer" dir="ltr" />
                       </div>
 
                       {/* Source Pill */}
@@ -1811,9 +1866,9 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         {detailDropdown === "source" && (
                           <>
                             <div className="fixed inset-0 z-10" onClick={() => setDetailDropdown(null)} />
-                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[160px]">
+                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px]">
                               {SOURCES.map(s => (
-                                <button key={s} onClick={() => { setDetailTask(t => t ? { ...t, taskSource: s } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, taskSource: s } : x)); setDetailDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", detailTask.taskSource === s ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
+                                <button key={s} onClick={() => { setDetailTask(t => t ? { ...t, taskSource: s } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, taskSource: s } : x)); setDetailDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right rounded-lg transition-colors", detailTask.taskSource === s ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
                                   {s}
                                 </button>
                               ))}
@@ -1845,9 +1900,9 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         {detailDropdown === "project" && (
                           <>
                             <div className="fixed inset-0 z-10" onClick={() => setDetailDropdown(null)} />
-                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[200px]">
-                              {PROJECTS.map(p => (
-                                <button key={p} onClick={() => { setDetailTask(t => t ? { ...t, projectName: p } : t); setTasks(ts => ts.map(x => x.id === detailTask.id ? { ...x, projectName: p } : x)); setDetailDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", detailTask.projectName === p ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
+                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[200px]">
+                              {projectsList.map(p => (
+                                <button key={p} onClick={() => { setDetailTask(t => t ? { ...t, projectName: p } : t); setTasks(ts => ts.map(x => x.id === detailTask.id ? { ...x, projectName: p } : x)); setDetailDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right rounded-lg transition-colors", detailTask.projectName === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
                                   {p}
                                 </button>
                               ))}
@@ -1907,15 +1962,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                   {/* Status picker */}
                                   <div className="relative">
                                     <button onClick={() => setDetailEditingSubtaskDropdown(d => d === "status" ? null : "status")} className={cn("flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-medium transition-colors", detailEditingSubtaskDropdown === "status" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                                      <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[detailEditingSubtaskForm.status || "todo"].accent)} />
                                       <span>{STATUS_CONFIG[detailEditingSubtaskForm.status || "todo"].label}</span>
                                       <ChevronDown className={cn("w-3 h-3 transition-transform", detailEditingSubtaskDropdown === "status" ? "rotate-180" : "")} />
                                     </button>
                                     {detailEditingSubtaskDropdown === "status" && (
-                                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[140px]">
+                                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[140px]">
                                         {(["todo","in-progress","in-review","completed","overdue"] as TaskStatus[]).map(s => (
-                                          <button key={s} onClick={() => { setDetailEditingSubtaskForm(f => ({ ...f, status: s })); setDetailEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", (detailEditingSubtaskForm.status || "todo") === s ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                            <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[s].accent)} />
+                                          <button key={s} onClick={() => { setDetailEditingSubtaskForm(f => ({ ...f, status: s })); setDetailEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right rounded-lg transition-colors", (detailEditingSubtaskForm.status || "todo") === s ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
                                             {STATUS_CONFIG[s].label}
                                           </button>
                                         ))}
@@ -1925,16 +1978,15 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                   {/* Priority picker */}
                                   <div className="relative">
                                     <button onClick={() => setDetailEditingSubtaskDropdown(d => d === "priority" ? null : "priority")} className={cn("flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-medium transition-colors", detailEditingSubtaskDropdown === "priority" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                                      <Flag className={cn("w-3 h-3", PRIORITY_CONFIG[detailEditingSubtaskForm.priority || "medium"].flag)} />
                                       <span>{PRIORITY_CONFIG[detailEditingSubtaskForm.priority || "medium"].label}</span>
                                       <ChevronDown className={cn("w-3 h-3 transition-transform", detailEditingSubtaskDropdown === "priority" ? "rotate-180" : "")} />
                                     </button>
                                     {detailEditingSubtaskDropdown === "priority" && (
-                                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[140px]">
+                                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[140px]">
                                         {(["low","medium","high","urgent"] as TaskPriority[]).map(p => (
-                                          <button key={p} onClick={() => { setDetailEditingSubtaskForm(f => ({ ...f, priority: p })); setDetailEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", (detailEditingSubtaskForm.priority || "medium") === p ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                            <Flag className={cn("w-3 h-3", PRIORITY_CONFIG[p].flag)} />
-                                            {PRIORITY_CONFIG[p].label}
+                                          <button key={p} onClick={() => { setDetailEditingSubtaskForm(f => ({ ...f, priority: p })); setDetailEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right flex items-center justify-between rounded-lg transition-colors", (detailEditingSubtaskForm.priority || "medium") === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
+                                    <span>{PRIORITY_CONFIG[p].label}</span>
+                                    <Flag className={cn("w-4 h-4", PRIORITY_CONFIG[p].flag)} />
                                           </button>
                                         ))}
                                       </div>
@@ -1943,15 +1995,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                   {/* Assignee picker */}
                                   <div className="relative">
                                     <button onClick={() => setDetailEditingSubtaskDropdown(d => d === "assignee" ? null : "assignee")} className={cn("flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-medium transition-colors", detailEditingSubtaskDropdown === "assignee" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                                      <img src={avatarUrl(detailEditingSubtaskForm.assignee)} alt={detailEditingSubtaskForm.assignee} className="w-4 h-4 rounded-full object-cover" />
                                       <span className="max-w-[80px] truncate">{detailEditingSubtaskForm.assignee}</span>
                                       <ChevronDown className={cn("w-3 h-3 transition-transform", detailEditingSubtaskDropdown === "assignee" ? "rotate-180" : "")} />
                                     </button>
                                     {detailEditingSubtaskDropdown === "assignee" && (
-                                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[160px] max-h-[200px] overflow-y-auto">
+                                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-h-[200px] overflow-y-auto">
                                         {ASSIGNEES.map(name => (
-                                          <button key={name} onClick={() => { setDetailEditingSubtaskForm(f => ({ ...f, assignee: name })); setDetailEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", detailEditingSubtaskForm.assignee === name ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                            <img src={avatarUrl(name)} alt={name} className="w-4 h-4 rounded-full object-cover" />
+                                          <button key={name} onClick={() => { setDetailEditingSubtaskForm(f => ({ ...f, assignee: name })); setDetailEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right rounded-lg transition-colors", detailEditingSubtaskForm.assignee === name ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
                                             {name}
                                           </button>
                                         ))}
@@ -1961,7 +2011,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                   {/* Due Date picker */}
                                   <div className="relative">
                                     <button onClick={() => setDetailEditingSubtaskDropdown(d => d === "dueDate" ? null : "dueDate")} className={cn("flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-medium transition-colors", detailEditingSubtaskDropdown === "dueDate" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                                      <CalendarIcon className="w-3 h-3 text-neutral-400" />
                                       <span>{detailEditingSubtaskForm.dueDate || today}</span>
                                       <ChevronDown className={cn("w-3 h-3 transition-transform", detailEditingSubtaskDropdown === "dueDate" ? "rotate-180" : "")} />
                                     </button>
@@ -2009,15 +2058,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                           {/* Status picker */}
                           <div className="relative">
                             <button onClick={() => setDetailSubtaskDropdown(d => d === "status" ? null : "status")} className={cn("flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-medium transition-colors", detailSubtaskDropdown === "status" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                              <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[detailSubtaskForm.status || "todo"].accent)} />
                               <span>{STATUS_CONFIG[detailSubtaskForm.status || "todo"].label}</span>
                               <ChevronDown className={cn("w-3 h-3 transition-transform", detailSubtaskDropdown === "status" ? "rotate-180" : "")} />
                             </button>
                             {detailSubtaskDropdown === "status" && (
-                              <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[140px]">
+                              <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[140px]">
                                 {(["todo","in-progress","in-review","completed","overdue"] as TaskStatus[]).map(s => (
-                                  <button key={s} onClick={() => { setDetailSubtaskForm(f => ({ ...f, status: s })); setDetailSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", (detailSubtaskForm.status || "todo") === s ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                    <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[s].accent)} />
+                                  <button key={s} onClick={() => { setDetailSubtaskForm(f => ({ ...f, status: s })); setDetailSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right rounded-lg transition-colors", (detailSubtaskForm.status || "todo") === s ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
                                     {STATUS_CONFIG[s].label}
                                   </button>
                                 ))}
@@ -2027,16 +2074,15 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                           {/* Priority picker */}
                           <div className="relative">
                             <button onClick={() => setDetailSubtaskDropdown(d => d === "priority" ? null : "priority")} className={cn("flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-medium transition-colors", detailSubtaskDropdown === "priority" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                              <Flag className={cn("w-3 h-3", PRIORITY_CONFIG[detailSubtaskForm.priority || "medium"].flag)} />
                               <span>{PRIORITY_CONFIG[detailSubtaskForm.priority || "medium"].label}</span>
                               <ChevronDown className={cn("w-3 h-3 transition-transform", detailSubtaskDropdown === "priority" ? "rotate-180" : "")} />
                             </button>
                             {detailSubtaskDropdown === "priority" && (
-                              <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[140px]">
+                              <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[140px]">
                                 {(["low","medium","high","urgent"] as TaskPriority[]).map(p => (
-                                  <button key={p} onClick={() => { setDetailSubtaskForm(f => ({ ...f, priority: p })); setDetailSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", (detailSubtaskForm.priority || "medium") === p ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                    <Flag className={cn("w-3 h-3", PRIORITY_CONFIG[p].flag)} />
-                                    {PRIORITY_CONFIG[p].label}
+                                  <button key={p} onClick={() => { setDetailSubtaskForm(f => ({ ...f, priority: p })); setDetailSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right flex items-center justify-between rounded-lg transition-colors", (detailSubtaskForm.priority || "medium") === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
+                                    <span>{PRIORITY_CONFIG[p].label}</span>
+                                    <Flag className={cn("w-4 h-4", PRIORITY_CONFIG[p].flag)} />
                                   </button>
                                 ))}
                               </div>
@@ -2045,15 +2091,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                           {/* Assignee picker */}
                           <div className="relative">
                             <button onClick={() => setDetailSubtaskDropdown(d => d === "assignee" ? null : "assignee")} className={cn("flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-medium transition-colors", detailSubtaskDropdown === "assignee" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                              <img src={avatarUrl(detailSubtaskForm.assignee)} alt={detailSubtaskForm.assignee} className="w-4 h-4 rounded-full object-cover" />
                               <span className="max-w-[80px] truncate">{detailSubtaskForm.assignee}</span>
                               <ChevronDown className={cn("w-3 h-3 transition-transform", detailSubtaskDropdown === "assignee" ? "rotate-180" : "")} />
                             </button>
                             {detailSubtaskDropdown === "assignee" && (
-                              <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[160px] max-h-[200px] overflow-y-auto">
+                              <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-h-[200px] overflow-y-auto">
                                 {ASSIGNEES.map(name => (
-                                  <button key={name} onClick={() => { setDetailSubtaskForm(f => ({ ...f, assignee: name })); setDetailSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", detailSubtaskForm.assignee === name ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                    <img src={avatarUrl(name)} alt={name} className="w-4 h-4 rounded-full object-cover" />
+                                  <button key={name} onClick={() => { setDetailSubtaskForm(f => ({ ...f, assignee: name })); setDetailSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right rounded-lg transition-colors", detailSubtaskForm.assignee === name ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
                                     {name}
                                   </button>
                                 ))}
@@ -2063,7 +2107,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                           {/* Due Date picker */}
                           <div className="relative">
                             <button onClick={() => setDetailSubtaskDropdown(d => d === "dueDate" ? null : "dueDate")} className={cn("flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-medium transition-colors", detailSubtaskDropdown === "dueDate" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                              <CalendarIcon className="w-3 h-3 text-neutral-400" />
                               <span>{detailSubtaskForm.dueDate || today}</span>
                               <ChevronDown className={cn("w-3 h-3 transition-transform", detailSubtaskDropdown === "dueDate" ? "rotate-180" : "")} />
                             </button>
@@ -2094,7 +2137,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                 </div>
 
                 {/* Activity sidebar - right 55% */}
-                <div className={cn("sm:w-[55%] min-w-0 border-t sm:border-t-0 sm:border-r border-neutral-100 dark:border-neutral-800 bg-neutral-50/80 dark:bg-neutral-900/80 overflow-y-auto flex flex-col", detailMobileTab === "details" ? "hidden sm:flex" : "")}>
+                <div className={cn("sm:w-[55%] min-w-0 border-t sm:border-t-0 sm:border-r border-neutral-100 dark:border-neutral-800 bg-[#EEF1F8] dark:bg-neutral-950 overflow-y-auto flex flex-col", detailMobileTab === "details" ? "hidden sm:flex" : "")}>
                   {/* Activity header */}
                   <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 shrink-0">
                     <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-wider">النشاط والتعليقات</h3>
@@ -2105,16 +2148,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   </div>
 
                   {/* Activity items */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {/* Created task entry */}
-                    <div className="flex gap-3">
-                      <div className="w-8 h-8 rounded-full bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center shrink-0 shadow-sm border border-teal-100 dark:border-teal-800/40">
-                        <FilePlus className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-200">أنشأت هذه المهمة</p>
-                        <span className="text-xs text-neutral-400 mt-0.5 block">{detailTask.createdAt || today}</span>
-                      </div>
+                    <div className="flex justify-center">
+                      <span className="px-3 py-1.5 rounded-lg bg-white dark:bg-neutral-800 shadow-sm text-[11px] font-medium text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
+                        <FilePlus className="w-3 h-3" />
+                        أنشأت هذه المهمة · {detailTask.createdAt || today}
+                      </span>
                     </div>
 
                     {(detailTask.comments || []).length === 0 && (
@@ -2126,34 +2166,52 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                     {(detailTask.comments || []).map(c => {
                       const canEdit = c.author === "أنت" && c.createdAt && (Date.now() - c.createdAt < 30 * 60 * 1000);
                       const isEditing = detailEditingComment?.id === c.id;
+                      const isMine = c.author === "أنت";
                       return (
-                        <div key={c.id} className="flex gap-3">
-                          <img src={avatarUrl(c.author)} alt={c.author} className="w-8 h-8 rounded-full object-cover shrink-0 shadow-sm" />
-                          <div className="flex-1 min-w-0 bg-white dark:bg-neutral-800 rounded-xl p-3 shadow-sm border border-neutral-100 dark:border-neutral-700/60">
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm text-neutral-700 dark:text-neutral-200 leading-relaxed text-right">
-                                <span className="font-semibold text-neutral-900 dark:text-white">{c.author}</span>
-                              </p>
-                              {canEdit && !isEditing && (
-                                <div className="flex items-center gap-1">
-                                  <button onClick={() => setDetailEditingComment({ id: c.id, text: c.text })} className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 hover:text-teal-500 transition-colors"><Pencil className="w-3 h-3" /></button>
-                                  <button onClick={() => { const next = (detailTask.comments || []).filter(x => x.id !== c.id); setDetailTask(t => t ? { ...t, comments: next } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, comments: next } : x)); }} className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-400 hover:text-red-500 transition-colors"><Trash2 className="w-3 h-3" /></button>
-                                </div>
-                              )}
-                            </div>
+                        <div key={c.id} className="space-y-1.5 group">
+                          {/* Header row: avatar + name + time */}
+                          <div className={cn("flex items-center gap-2", isMine ? "justify-end" : "")}>
+                            {isMine ? (
+                              <>
+                                {canEdit && !isEditing && (
+                                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => setDetailEditingComment({ id: c.id, text: c.text })} className="p-1 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-700 text-neutral-400 hover:text-blue-600 transition-colors"><Pencil className="w-3 h-3" /></button>
+                                    <button onClick={() => { const next = (detailTask.comments || []).filter(x => x.id !== c.id); setDetailTask(t => t ? { ...t, comments: next } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, comments: next } : x)); }} className="p-1 rounded hover:bg-neutral-200/60 dark:hover:bg-neutral-700 text-neutral-400 hover:text-red-500 transition-colors"><Trash2 className="w-3 h-3" /></button>
+                                  </div>
+                                )}
+                                <span className="text-[11px] text-neutral-400">{c.date}</span>
+                                <span className="text-sm font-bold text-neutral-800 dark:text-neutral-100">أنت</span>
+                                <img src={avatarUrl(c.author)} alt={c.author} className="w-8 h-8 rounded-full object-cover shrink-0 shadow-sm" />
+                              </>
+                            ) : (
+                              <>
+                                <img src={avatarUrl(c.author)} alt={c.author} className="w-8 h-8 rounded-full object-cover shrink-0 shadow-sm" />
+                                <span className="text-sm font-bold text-neutral-800 dark:text-neutral-100">{c.author}</span>
+                                <span className="text-[11px] text-neutral-400">{c.date}</span>
+                              </>
+                            )}
+                          </div>
+                          {/* Bubble */}
+                          <div className={cn("flex", isMine ? "justify-end me-10" : "ms-10")}>
+                            <div className={cn(
+                              "max-w-[85%] min-w-0 rounded-xl px-3.5 py-2.5 shadow-sm",
+                              isMine
+                                ? "bg-blue-600 text-white rounded-se-sm"
+                                : "bg-white dark:bg-neutral-800 rounded-ss-sm"
+                            )}>
                             {isEditing ? (
-                              <div className="mt-1">
-                                <textarea value={detailEditingComment.text} onChange={e => setDetailEditingComment({ ...detailEditingComment, text: e.target.value })} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); const next = (detailTask.comments || []).map(x => x.id === c.id ? { ...x, text: detailEditingComment.text.trim() } : x); setDetailTask(t => t ? { ...t, comments: next } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, comments: next } : x)); setDetailEditingComment(null); } }} className="w-full text-xs text-neutral-700 dark:text-neutral-200 bg-neutral-50 dark:bg-neutral-700/50 rounded-lg border border-neutral-200 dark:border-neutral-600 p-2 focus:outline-none focus:ring-1 focus:ring-teal-400/30 resize-none text-right" rows={2} />
+                              <div>
+                                <textarea value={detailEditingComment.text} onChange={e => setDetailEditingComment({ ...detailEditingComment, text: e.target.value })} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); const next = (detailTask.comments || []).map(x => x.id === c.id ? { ...x, text: detailEditingComment.text.trim() } : x); setDetailTask(t => t ? { ...t, comments: next } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, comments: next } : x)); setDetailEditingComment(null); } }} className={cn("w-full min-w-[200px] text-xs rounded-lg p-2 focus:outline-none resize-none text-right", isMine ? "bg-white/15 text-white border border-white/25 placeholder:text-white/40" : "bg-neutral-50 dark:bg-neutral-700/50 text-neutral-700 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600 focus:ring-1 focus:ring-blue-300")} rows={2} />
                                 <div className="flex items-center justify-end gap-1 mt-1">
-                                  <button onClick={() => setDetailEditingComment(null)} className="px-2 py-1 text-[10px] text-neutral-500 hover:text-neutral-700 transition-colors">إلغاء</button>
-                                  <button onClick={() => { const next = (detailTask.comments || []).map(x => x.id === c.id ? { ...x, text: detailEditingComment.text.trim() } : x); setDetailTask(t => t ? { ...t, comments: next } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, comments: next } : x)); setDetailEditingComment(null); }} className="px-2 py-1 text-[10px] font-semibold text-teal-600 hover:text-teal-700 transition-colors">حفظ</button>
+                                  <button onClick={() => setDetailEditingComment(null)} className={cn("px-2 py-1 text-[10px] transition-colors", isMine ? "text-white/70 hover:text-white" : "text-neutral-500 hover:text-neutral-700")}>إلغاء</button>
+                                  <button onClick={() => { const next = (detailTask.comments || []).map(x => x.id === c.id ? { ...x, text: detailEditingComment.text.trim() } : x); setDetailTask(t => t ? { ...t, comments: next } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, comments: next } : x)); setDetailEditingComment(null); }} className={cn("px-2 py-1 text-[10px] font-semibold transition-colors", isMine ? "text-white hover:text-white/80" : "text-blue-600 hover:text-blue-700")}>حفظ</button>
                                 </div>
                               </div>
                             ) : (
                               <>
-                                {c.text && <p className="text-xs text-neutral-600 dark:text-neutral-300 mt-1 leading-relaxed text-right"><LinkifyText text={c.text} /></p>}
+                                {c.text && <p className={cn("text-[13px] leading-relaxed text-right", isMine ? "text-white" : "text-neutral-700 dark:text-neutral-200")}><LinkifyText text={c.text} /></p>}
                                 {(c.attachments || []).length > 0 && (
-                                  <div className="flex flex-wrap gap-1.5 mt-2">
+                                  <div className={cn("flex flex-wrap gap-1.5", c.text ? "mt-2" : "")}>
                                     {(c.attachments || []).map(att => (
                                       att.type?.startsWith("image/") ? (
                                         <a key={att.id} href={att.url} download={att.name} className="block rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700 hover:opacity-90 transition-opacity">
@@ -2174,10 +2232,10 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                           </a>
                                         </div>
                                       ) : (
-                                        <a key={att.id} href={att.url} download={att.name} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-[11px] hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
-                                          <Paperclip className="w-3 h-3 text-neutral-400" />
-                                          <span className="text-neutral-700 dark:text-neutral-200 truncate max-w-[100px]">{att.name}</span>
-                                          <span className="text-neutral-400">{att.size}</span>
+                                        <a key={att.id} href={att.url} download={att.name} className={cn("flex items-center gap-1 px-2 py-1 rounded-lg border text-[11px] transition-colors", isMine ? "bg-white/15 border-white/25 hover:bg-white/25" : "bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-700")}>
+                                          <Paperclip className={cn("w-3 h-3", isMine ? "text-white/70" : "text-neutral-400")} />
+                                          <span className={cn("truncate max-w-[100px]", isMine ? "text-white" : "text-neutral-700 dark:text-neutral-200")}>{att.name}</span>
+                                          <span className={isMine ? "text-white/60" : "text-neutral-400"}>{att.size}</span>
                                         </a>
                                       )
                                     ))}
@@ -2185,7 +2243,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                 )}
                               </>
                             )}
-                            <span className="text-[11px] text-neutral-400 mt-2 block">{c.date}</span>
+                            </div>
                           </div>
                         </div>
                       );
@@ -2193,7 +2251,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   </div>
 
                   {/* Comment input */}
-                  <div className="p-3 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shrink-0">
+                  <div className="p-3 shrink-0">
                     {detailCommentAttachments.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {detailCommentAttachments.map(att => (
@@ -2206,8 +2264,10 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       </div>
                     )}
                     <div className="relative">
-                      <textarea
-                        value={detailComment}
+                      <div className="flex items-end gap-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full shadow-sm ps-2 pe-1.5 py-1">
+                        <textarea
+                          rows={1}
+                          value={detailComment}
                         onChange={e => { setDetailComment(e.target.value); const ctx = getMentionContext(e.target.value, e.target.selectionStart); setDetailMention(ctx); }}
                         onKeyDown={e => {
                           if (e.key === "Escape") { setDetailMention(null); return; }
@@ -2223,8 +2283,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                           }
                         }}
                         placeholder="اكتب تعليقاً..."
-                        className="w-full min-h-[48px] p-2.5 pr-10 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/60 text-sm text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400/50 resize-none text-right transition-all"
+                        className="flex-1 min-w-0 max-h-32 px-2 py-2.5 bg-transparent text-sm text-neutral-700 dark:text-neutral-200 placeholder:text-neutral-400 focus:outline-none resize-none text-right"
                       />
+                        <button onClick={() => detailFileInputRef.current?.click()} className="p-2 rounded-full text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors shrink-0"><Paperclip className="w-4 h-4" /></button>
+                        <input ref={detailFileInputRef} type="file" multiple className="hidden" onChange={async (e) => { const files = e.target.files; if (!files) return; const newAtts = await Promise.all(Array.from(files).map(async (file) => { const data = await readFile(file); return { id: String(Date.now()) + Math.random().toString(36).slice(2, 8), ...data }; })); setDetailCommentAttachments(p => [...p, ...newAtts]); e.target.value = ""; }} />
+                        <button onClick={() => setVideoRecorderTarget('detail')} className="p-2 rounded-full text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors shrink-0"><Video className="w-4 h-4" /></button>
+                        <button onClick={() => { if (!detailComment.trim() && detailCommentAttachments.length === 0) return; const newComment = { id: String(Date.now()), author: "أنت", text: detailComment.trim(), date: "الآن", createdAt: Date.now(), attachments: detailCommentAttachments }; const next = [...(detailTask.comments || []), newComment]; setDetailTask(t => t ? { ...t, comments: next } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, comments: next } : x)); setDetailComment(""); setDetailCommentAttachments([]); setDetailMention(null); }} disabled={!detailComment.trim() && detailCommentAttachments.length === 0} className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all shrink-0 mb-0.5"><Send className="w-4 h-4" /></button>
+                      </div>
                       {detailMention && (
                         <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1 max-h-[180px] overflow-y-auto">
                           {MENTION_OPTIONS.filter(o => o.label.toLowerCase().includes(detailMention.query.toLowerCase())).length === 0 ? (
@@ -2239,12 +2304,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                           )}
                         </div>
                       )}
-                      <div className="absolute left-2 bottom-2 flex items-center gap-1">
-                        <button onClick={() => detailFileInputRef.current?.click()} className="p-2 rounded-lg text-neutral-400 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"><Paperclip className="w-4 h-4" /></button>
-                        <input ref={detailFileInputRef} type="file" multiple className="hidden" onChange={async (e) => { const files = e.target.files; if (!files) return; const newAtts = await Promise.all(Array.from(files).map(async (file) => { const data = await readFile(file); return { id: String(Date.now()) + Math.random().toString(36).slice(2, 8), ...data }; })); setDetailCommentAttachments(p => [...p, ...newAtts]); e.target.value = ""; }} />
-                        <button onClick={() => setVideoRecorderTarget('detail')} className="p-2 rounded-lg text-neutral-400 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"><Video className="w-4 h-4" /></button>
-                        <button onClick={() => { if (!detailComment.trim() && detailCommentAttachments.length === 0) return; const newComment = { id: String(Date.now()), author: "أنت", text: detailComment.trim(), date: "الآن", createdAt: Date.now(), attachments: detailCommentAttachments }; const next = [...(detailTask.comments || []), newComment]; setDetailTask(t => t ? { ...t, comments: next } : t); setTasks(p => p.map(x => x.id === detailTask.id ? { ...x, comments: next } : x)); setDetailComment(""); setDetailCommentAttachments([]); setDetailMention(null); }} className="p-2 rounded-lg bg-teal-50 dark:bg-teal-900/20 text-teal-500 hover:bg-teal-100 dark:hover:bg-teal-900/40 transition-colors"><Send className="w-4 h-4" /></button>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -2312,15 +2371,18 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   {/* Status Pill */}
                   <div className="relative">
                     <button onClick={() => setFormDropdown(d => d === "status" ? null : "status")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", formDropdown === "status" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                      <span className="truncate max-w-[120px]">{formTouched.has("status") ? STATUS_CONFIG[form.status || "todo"].label : "الحالة"}</span>
+                      <span className="flex items-center gap-2 truncate max-w-[140px]">
+                        {formTouched.has("status") && <span className={cn("w-2 h-2 rounded-full shrink-0", STATUS_CONFIG[form.status || "todo"].headerDot)} />}
+                        <span className="truncate">{formTouched.has("status") ? STATUS_CONFIG[form.status || "todo"].label : "الحالة"}</span>
+                      </span>
                       <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "status" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "status" && (
-                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[160px]">
-                        <p className="text-xs font-semibold text-neutral-400 px-4 py-2">الحالة</p>
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px]">
+                        <p className="text-xs font-semibold text-neutral-400 px-3 py-1.5">الحالة</p>
                         {(["todo","in-progress","in-review","completed","overdue"] as TaskStatus[]).map(s => (
-                          <button key={s} onClick={() => { setForm(f => ({ ...f, status: s })); setFormTouched(t => new Set([...t, "status"])); setFormDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", (form.status || "todo") === s ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                            <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[s].accent)} />
+                          <button key={s} onClick={() => { setForm(f => ({ ...f, status: s })); setFormTouched(t => new Set([...t, "status"])); setFormDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center gap-2 rounded-lg transition-colors", (form.status || "todo") === s ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
+                            <span className={cn("w-2 h-2 rounded-full shrink-0", STATUS_CONFIG[s].headerDot)} />
                             {STATUS_CONFIG[s].label}
                           </button>
                         ))}
@@ -2330,28 +2392,50 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
                   {/* Assignee Pill */}
                   <div className="relative" ref={assignDropdownRef}>
-                    <button onClick={() => { setFormDropdown(d => d === "assignee" ? null : "assignee"); setAssignStep("mode"); }} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", formDropdown === "assignee" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                      <UserCircle className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                      <span className="truncate max-w-[120px]">{formTouched.has("assignee") ? (form.assignMode === "team" ? (form.assignTarget || "فريق") : form.assignMode === "department" ? (form.assignTarget || "قسم") : form.assignMode === "committee" ? (form.assignTarget || "لجنة") : (form.assignee || "الاسناد إلى")) : "الإسناد"}</span>
+                    <button onClick={() => { setFormDropdown(d => d === "assignee" ? null : "assignee"); setAssignStep("mode"); setAssignSearch(""); }} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", formDropdown === "assignee" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                      <span className="truncate max-w-[120px]">
+                        {formTouched.has("assignee") ? (
+                          form.assignMode === "team" ? (form.assignTarget || "فريق") :
+                          form.assignMode === "department" ? (form.assignTarget || "قسم") :
+                          form.assignMode === "committee" ? (form.assignTarget || "لجنة") :
+                          (form.assignMembers && form.assignMembers.length > 0 ? (form.assignMembers.length > 1 ? `${form.assignMembers.length} موظفين` : form.assignMembers[0]) : (form.assignee || "الاسناد إلى"))
+                        ) : "الإسناد"}
+                      </span>
                       <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "assignee" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "assignee" && (
-                      <div className="absolute right-0 top-full mt-1.5 z-50 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-xl shadow-lg min-w-[260px] max-h-[360px] overflow-y-auto">
+                      <div className="absolute right-0 top-full mt-1.5 z-50 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-xl shadow-lg min-w-[260px] max-h-[360px] flex flex-col overflow-hidden">
+                        {/* Search header for lists */}
+                        {(assignStep === "list" || assignStep === "members") && (
+                          <div className="p-2 border-b border-gray-100 dark:border-neutral-700">
+                            <div className="relative">
+                              <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                              <input
+                                autoFocus
+                                value={assignSearch}
+                                onChange={(e) => setAssignSearch(e.target.value)}
+                                placeholder="بحث..."
+                                className="w-full bg-gray-50 dark:bg-neutral-900 border-none rounded-lg py-1.5 ps-3 pe-8 text-xs focus:ring-1 focus:ring-teal-500 outline-none"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex-1 overflow-y-auto">
                         {/* Step 1: Choose mode */}
                         {assignStep === "mode" && (
                           <div className="p-2">
                             <p className="text-xs font-semibold text-neutral-400 px-3 py-2">الاسناد إلى</p>
-                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "me", assignee: ASSIGNEES[0], assignTarget: undefined, assignMembers: undefined })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("members"); }} className={cn("w-full px-3 py-2.5 text-sm text-right flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "me" ? "text-teal-600 font-semibold bg-teal-50/50" : "text-gray-700 dark:text-gray-200")}>
-                              <UserCircle className="w-4 h-4" /> إسناد المهمة لي
+                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "me", assignee: undefined, assignTarget: undefined, assignMembers: [] })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("members"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "me" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
+                              إسناد المهمة لموظف
                             </button>
-                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "team", assignee: "فريق", assignTarget: undefined, assignMembers: [] })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); }} className={cn("w-full px-3 py-2.5 text-sm text-right flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "team" ? "text-teal-600 font-semibold bg-teal-50/50" : "text-gray-700 dark:text-gray-200")}>
-                              <Users className="w-4 h-4" /> إسناد المهمة لفريق
+                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "team", assignee: "فريق", assignTarget: undefined, assignMembers: [] })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "team" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
+                              إسناد المهمة لفريق
                             </button>
-                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "department", assignee: "قسم", assignTarget: undefined, assignMembers: [] })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); }} className={cn("w-full px-3 py-2.5 text-sm text-right flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "department" ? "text-teal-600 font-semibold bg-teal-50/50" : "text-gray-700 dark:text-gray-200")}>
-                              <Building2 className="w-4 h-4" /> إسناد المهمة لقسم
+                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "department", assignee: "قسم", assignTarget: undefined, assignMembers: [] })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "department" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
+                              إسناد المهمة لقسم
                             </button>
-                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "committee", assignee: "لجنة", assignTarget: undefined, assignMembers: [] })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); }} className={cn("w-full px-3 py-2.5 text-sm text-right flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "committee" ? "text-teal-600 font-semibold bg-teal-50/50" : "text-gray-700 dark:text-gray-200")}>
-                              <FolderOpen className="w-4 h-4" /> إسناد المهمة للجنة
+                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "committee", assignee: "لجنة", assignTarget: undefined, assignMembers: [] })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "committee" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
+                              إسناد المهمة للجنة
                             </button>
                           </div>
                         )}
@@ -2360,9 +2444,10 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                           <div className="p-2">
                             <button onClick={() => setAssignStep("mode")} className="text-xs text-gray-400 hover:text-gray-600 px-3 py-1 mb-1 flex items-center gap-1">← رجوع</button>
                             <p className="text-xs font-semibold text-gray-400 px-3 py-2">{form.assignMode === "team" ? "اختر الفريق" : form.assignMode === "department" ? "اختر القسم" : "اختر اللجنة"}</p>
-                            {(form.assignMode === "team" ? TEAMS : form.assignMode === "department" ? DEPARTMENTS : COMMITTEES).map(item => (
-                              <button key={item.name} onClick={() => { setForm(f => ({ ...f, assignTarget: item.name, assignMembers: [] })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("members"); }} className={cn("w-full px-3 py-2.5 text-sm text-right flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignTarget === item.name ? "text-teal-600 font-semibold bg-teal-50/50" : "text-gray-700 dark:text-gray-200")}>
-                                {form.assignMode === "team" ? <Users className="w-4 h-4" /> : form.assignMode === "department" ? <Building2 className="w-4 h-4" /> : <FolderOpen className="w-4 h-4" />}
+                            {(form.assignMode === "team" ? TEAMS : form.assignMode === "department" ? DEPARTMENTS : COMMITTEES)
+                              .filter(item => item.name.toLowerCase().includes(assignSearch.toLowerCase()))
+                              .map(item => (
+                              <button key={item.name} onClick={() => { setForm(f => ({ ...f, assignTarget: item.name, assignMembers: [] })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("members"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignTarget === item.name ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
                                 {item.name}
                               </button>
                             ))}
@@ -2371,7 +2456,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         {/* Step 3: Choose members */}
                         {assignStep === "members" && (
                           <div className="p-2">
-                            <button onClick={() => { if (form.assignMode === "me") setAssignStep("mode"); else setAssignStep("list"); }} className="text-xs text-gray-400 hover:text-gray-600 px-3 py-1 mb-1 flex items-center gap-1">← رجوع</button>
+                            <button onClick={() => { if (form.assignMode === "me") setAssignStep("mode"); else setAssignStep("list"); setAssignSearch(""); }} className="text-xs text-gray-400 hover:text-gray-600 px-3 py-1 mb-1 flex items-center gap-1">← رجوع</button>
                             {form.assignMode !== "me" && form.assignTarget && (
                               <>
                                 <p className="text-xs font-semibold text-gray-400 px-3 py-1">{form.assignTarget}</p>
@@ -2381,12 +2466,22 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                   const item = list.find(i => i.name === form.assignTarget);
                                   if (!item || form.assignMode === "team" || !("head" in item)) return null;
                                   const head = (item as any).head;
+                                  if (assignSearch && !head.toLowerCase().includes(assignSearch.toLowerCase())) return null;
                                   return (
                                     <div className="px-3 py-1">
                                       <p className="text-[10px] font-semibold text-gray-400 mb-1">القائد</p>
-                                      <button onClick={() => { setForm(f => ({ ...f, assignMembers: [head] })); }} className={cn("w-full px-3 py-2 text-sm text-right flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", (form.assignMembers || []).includes(head) ? "text-teal-600 font-semibold bg-teal-50/50" : "text-gray-700 dark:text-gray-200")}>
-                                        <img src={avatarUrl(head)} alt={head} className="w-6 h-6 rounded-full object-cover shrink-0" />
-                                        {head}
+                                      <button 
+                                        onClick={() => { 
+                                          setForm(f => {
+                                            const current = f.assignMembers || [];
+                                            const next = current.includes(head) ? current.filter(x => x !== head) : [...current, head];
+                                            return { ...f, assignMembers: next };
+                                          }); 
+                                        }} 
+                                        className={cn("w-full px-3 py-2 text-sm text-right flex items-center justify-between hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", (form.assignMembers || []).includes(head) ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}
+                                      >
+                                        <span>{head}</span>
+                                        {(form.assignMembers || []).includes(head) && <CheckSquare className="w-3.5 h-3.5" />}
                                       </button>
                                     </div>
                                   );
@@ -2396,19 +2491,26 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                   const list = form.assignMode === "team" ? TEAMS : form.assignMode === "department" ? DEPARTMENTS : COMMITTEES;
                                   const item = list.find(i => i.name === form.assignTarget);
                                   const members = item ? item.members : ASSIGNEES;
-                                  return members.map(m => (
-                                    <button key={m} onClick={() => {
-                                      const cur = form.assignMembers || [];
-                                      const next = cur.includes(m) ? cur.filter(x => x !== m) : [...cur, m];
-                                      setForm(f => ({ ...f, assignMembers: next }));
-                                    }} className={cn("w-full px-3 py-2 text-sm text-right flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", (form.assignMembers || []).includes(m) ? "text-teal-600 font-semibold bg-teal-50/50" : "text-gray-700 dark:text-gray-200")}>
-                                      <img src={avatarUrl(m)} alt={m} className="w-6 h-6 rounded-full object-cover shrink-0" />
-                                      {m}
-                                      {(form.assignMembers || []).includes(m) && <span className="mr-auto text-teal-500 text-xs">✓</span>}
+                                  return members
+                                    .filter(m => m.toLowerCase().includes(assignSearch.toLowerCase()))
+                                    .map(m => (
+                                    <button 
+                                      key={m} 
+                                      onClick={() => { 
+                                        setForm(f => {
+                                          const current = f.assignMembers || [];
+                                          const next = current.includes(m) ? current.filter(x => x !== m) : [...current, m];
+                                          return { ...f, assignMembers: next };
+                                        }); 
+                                      }} 
+                                      className={cn("w-full px-3 py-2 text-sm text-right flex items-center justify-between hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", (form.assignMembers || []).includes(m) ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}
+                                    >
+                                      <span>{m}</span>
+                                      {(form.assignMembers || []).includes(m) && <CheckSquare className="w-3.5 h-3.5" />}
                                     </button>
                                   ));
                                 })()}
-                                <div className="px-3 pt-2 pb-1">
+                                <div className="px-3 pt-2 pb-1 sticky bottom-0 bg-white dark:bg-neutral-800 border-t border-gray-100 dark:border-neutral-700 mt-2">
                                   <button onClick={() => { setFormDropdown(null); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("mode"); }} className="w-full py-2 text-xs font-semibold text-white bg-teal-500 hover:bg-teal-600 rounded-lg transition-colors">تم</button>
                                 </div>
                               </>
@@ -2416,45 +2518,120 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                             {form.assignMode === "me" && (
                               <>
                                 <p className="text-xs font-semibold text-gray-400 px-3 py-2">اختر الشخص</p>
-                                {ASSIGNEES.map(a => (
-                                  <button key={a} onClick={() => { setForm(f => ({ ...f, assignee: a, assignTarget: undefined, assignMembers: undefined })); setFormTouched(t => new Set([...t, "assignee"])); setFormDropdown(null); setAssignStep("mode"); }} className={cn("w-full px-3 py-2 text-sm text-right flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignee === a ? "text-teal-600 font-semibold bg-teal-50/50" : "text-gray-700 dark:text-gray-200")}>
-                                    <img src={avatarUrl(a)} alt={a} className="w-6 h-6 rounded-full object-cover shrink-0" />
-                                    {a}
-                                    {form.assignee === a && <span className="mr-auto text-teal-500 text-xs">✓</span>}
+                                {ASSIGNEES
+                                  .filter(a => a.toLowerCase().includes(assignSearch.toLowerCase()))
+                                  .map(a => (
+                                  <button 
+                                    key={a} 
+                                    onClick={() => { 
+                                      setForm(f => {
+                                        const current = f.assignMembers || [];
+                                        const next = current.includes(a) ? current.filter(x => x !== a) : [...current, a];
+                                        return { ...f, assignMembers: next, assignee: next.length > 0 ? next[0] : undefined };
+                                      }); 
+                                    }} 
+                                    className={cn("w-full px-3 py-2 text-sm text-right flex items-center justify-between hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", (form.assignMembers || []).includes(a) ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}
+                                  >
+                                    <span>{a}</span>
+                                    {(form.assignMembers || []).includes(a) && <CheckSquare className="w-3.5 h-3.5" />}
                                   </button>
                                 ))}
+                                <div className="px-3 pt-2 pb-1 sticky bottom-0 bg-white dark:bg-neutral-800 border-t border-gray-100 dark:border-neutral-700 mt-2">
+                                  <button onClick={() => { setFormDropdown(null); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("mode"); }} className="w-full py-2 text-xs font-semibold text-white bg-teal-500 hover:bg-teal-600 rounded-lg transition-colors">تم</button>
+                                </div>
                               </>
                             )}
                           </div>
                         )}
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Due Date Pill */}
+                  {/* Date selection (Start & Due) */}
                   <div className="relative">
                     <button onClick={() => setFormDropdown(d => d === "dueDate" ? null : "dueDate")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", formDropdown === "dueDate" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <CalendarIcon className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                      <span className="truncate max-w-[120px]">{formTouched.has("dueDate") && form.dueDate ? fmtDate(form.dueDate) : "موعد التسليم"}</span>
+                      <span className="truncate max-w-[220px] text-xs">
+                        {formTouched.has("dueDate") ? (
+                          <span className="flex items-center gap-1.5">
+                            <span className="text-neutral-400 dark:text-neutral-500">الموعد:</span>
+                            {form.startDate ? (
+                              <span className="text-neutral-500 dark:text-neutral-400">{fmtDate(form.startDate)}</span>
+                            ) : "البدء"}
+                            <span className="opacity-40">→</span>
+                            {form.dueDate ? (
+                              <span className="text-neutral-900 dark:text-neutral-100 font-bold">{fmtDate(form.dueDate)}</span>
+                            ) : "التسليم"}
+                          </span>
+                        ) : "الموعد"}
+                      </span>
                       <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "dueDate" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "dueDate" && (
-                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-3 min-w-[280px]">
-                        <p className="text-xs font-semibold text-neutral-400 px-1 pb-2">موعد التسليم</p>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="flex-1 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-500 text-center">تاريخ البدء</span>
-                          <span className="flex-1 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-600 border border-blue-100 text-center">الموعد النهائي</span>
+                      <div className="absolute right-0 top-full mt-1.5 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-3 min-w-[300px]">
+                        <p className="text-xs font-semibold text-neutral-400 px-1 pb-2">تحديد المواعيد</p>
+                        <div className="flex items-center gap-2 p-1 bg-neutral-100 dark:bg-neutral-900 rounded-xl mb-3">
+                          <button 
+                            type="button"
+                            onClick={() => setFormDateTab('start')}
+                            className={cn("flex-1 py-2 text-[11px] font-bold rounded-lg transition-all", formDateTab === 'start' ? "bg-white dark:bg-neutral-800 text-teal-600 shadow-sm" : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400")}
+                          >
+                            تاريخ البدء
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => setFormDateTab('due')}
+                            className={cn("flex-1 py-2 text-[11px] font-bold rounded-lg transition-all", formDateTab === 'due' ? "bg-white dark:bg-neutral-800 text-blue-600 shadow-sm" : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400")}
+                          >
+                            موعد التسليم
+                          </button>
                         </div>
-                        <input type="date" value={form.dueDate || today} onChange={e => { setForm(f => ({ ...f, dueDate: e.target.value })); setFormTouched(t => new Set([...t, "dueDate"])); }} className="w-full rounded-lg border border-gray-200 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-700 px-3 py-2 text-sm text-gray-800 dark:text-gray-100 focus:outline-none mb-2" dir="ltr" />
-                        <div className="grid grid-cols-2 gap-1">
-                          {[
-                            { label: "اليوم", val: today },
-                            { label: "غداً", val: new Date(Date.now() + 86400000).toISOString().split("T")[0] },
-                            { label: "بعد أسبوع", val: new Date(Date.now() + 86400000 * 7).toISOString().split("T")[0] },
-                            { label: "بعد أسبوعين", val: new Date(Date.now() + 86400000 * 14).toISOString().split("T")[0] },
-                          ].map(q => (
-                            <button key={q.label} onClick={() => { setForm(f => ({ ...f, dueDate: q.val })); setFormTouched(t => new Set([...t, "dueDate"])); setFormDropdown(null); }} className="text-right px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">{q.label}</button>
-                          ))}
+
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-[10px] text-neutral-400 mb-1 px-1">{formDateTab === 'start' ? "اختر تاريخ البدء" : "اختر موعد التسليم"}</p>
+                            <input 
+                              type="date" 
+                              value={formDateTab === 'start' ? (form.startDate || today) : (form.dueDate || today)} 
+                              onChange={e => { 
+                                const val = e.target.value;
+                                setForm(f => ({ ...f, [formDateTab === 'start' ? 'startDate' : 'dueDate']: val })); 
+                                setFormTouched(t => new Set([...t, "dueDate"])); 
+                              }} 
+                              className="w-full rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-900/50 px-3 py-2.5 text-sm text-neutral-800 dark:text-neutral-100 focus:outline-none focus:ring-1 focus:ring-neutral-300" 
+                              dir="ltr" 
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {[
+                              { label: "اليوم", val: today },
+                              { label: "غداً", val: new Date(Date.now() + 86400000).toISOString().split("T")[0] },
+                              { label: "بعد أسبوع", val: new Date(Date.now() + 86400000 * 7).toISOString().split("T")[0] },
+                              { label: "بعد أسبوعين", val: new Date(Date.now() + 86400000 * 14).toISOString().split("T")[0] },
+                            ].map(q => (
+                              <button 
+                                key={q.label} 
+                                type="button"
+                                onClick={() => { 
+                                  setForm(f => ({ ...f, [formDateTab === 'start' ? 'startDate' : 'dueDate']: q.val })); 
+                                  setFormTouched(t => new Set([...t, "dueDate"])); 
+                                }} 
+                                className="text-right px-3 py-2.5 text-[11px] font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 rounded-lg transition-colors border border-transparent hover:border-neutral-200 dark:hover:border-neutral-600"
+                              >
+                                {q.label}
+                              </button>
+                            ))}
+                          </div>
+                          
+                          <button 
+                            type="button"
+                            onClick={() => setFormDropdown(null)}
+                            className="w-full py-2 text-xs font-bold text-white bg-neutral-900 dark:bg-neutral-700 rounded-xl mt-1 shadow-sm hover:brightness-110"
+                          >
+                            تأكيد المواعيد
+                          </button>
                         </div>
                       </div>
                     )}
@@ -2463,16 +2640,19 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   {/* Priority Pill */}
                   <div className="relative">
                     <button onClick={() => setFormDropdown(d => d === "priority" ? null : "priority")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", formDropdown === "priority" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                      <span className="truncate max-w-[120px]">{formTouched.has("priority") ? PRIORITY_CONFIG[form.priority || "medium"].label : "أولوية التنفيذ"}</span>
+                      {formTouched.has("priority") && (
+                        <Flag className={cn("w-4 h-4", PRIORITY_CONFIG[form.priority || "medium"].flag)} />
+                      )}
+                      <span className="truncate max-w-[120px]">{formTouched.has("priority") ? PRIORITY_CONFIG[form.priority || "medium"].label : "الأولوية"}</span>
                       <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "priority" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "priority" && (
-                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[160px]">
-                        <p className="text-xs font-semibold text-neutral-400 px-4 py-2">أولوية التنفيذ</p>
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px]">
+                        <p className="text-xs font-semibold text-neutral-400 px-3 py-1.5">الأولوية</p>
                         {(["urgent","high","medium","low"] as TaskPriority[]).map(p => (
-                          <button key={p} onClick={() => { setForm(f => ({ ...f, priority: p })); setFormTouched(t => new Set([...t, "priority"])); setFormDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", (form.priority || "medium") === p ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
+                          <button key={p} onClick={() => { setForm(f => ({ ...f, priority: p })); setFormTouched(t => new Set([...t, "priority"])); setFormDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center justify-between rounded-lg transition-colors", (form.priority || "medium") === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
+                            <span>{PRIORITY_CONFIG[p].label}</span>
                             <Flag className={cn("w-4 h-4", PRIORITY_CONFIG[p].flag)} />
-                            {PRIORITY_CONFIG[p].label}
                           </button>
                         ))}
                       </div>
@@ -2482,13 +2662,12 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   {/* Tags Pill */}
                   <div className="relative">
                     <button onClick={() => setFormDropdown(d => d === "tags" ? null : "tags")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", formDropdown === "tags" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                      <Hash className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                      <span className="truncate max-w-[120px]">{formTouched.has("tags") ? ((form.tags && form.tags.length > 0) ? (form.tags.length > 1 ? `${form.tags.length} وسوم` : form.tags[0]) : "وسوم المهمة") : "وسوم المهمة"}</span>
+                      <span className="truncate max-w-[120px]">{formTouched.has("tags") ? ((form.tags && form.tags.length > 0) ? (form.tags.length > 1 ? `${form.tags.length} وسوم` : form.tags[0]) : "وسم") : "وسم"}</span>
                       <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "tags" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "tags" && (
                       <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-3 min-w-[220px]">
-                        <p className="text-xs font-semibold text-neutral-400 mb-2">وسوم المهمة</p>
+                        <p className="text-xs font-semibold text-neutral-400 mb-2">وسم</p>
                         <div className="flex flex-wrap gap-1.5">
                           {["تصميم","تطوير","تسويق","مراجعة","عاجل","مبيعات"].map(tag => (
                             <button key={tag} onClick={() => { const cur = form.tags || []; const next = cur.includes(tag) ? cur.filter(t => t !== tag) : [...cur, tag]; setForm(f => ({ ...f, tags: next })); setFormTouched(t => new Set([...t, "tags"])); }} className={cn("px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors", (form.tags || []).includes(tag) ? "bg-teal-500 text-white" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600")}>{tag}</button>
@@ -2501,15 +2680,14 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   {/* Source Pill */}
                   <div className="relative">
                     <button onClick={() => setFormDropdown(d => d === "source" ? null : "source")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", formDropdown === "source" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                      <Megaphone className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                      <span className="truncate max-w-[120px]">{formTouched.has("source") ? (form.taskSource || "مصدر المهمة") : "مصدر المهمة"}</span>
+                      <span className="truncate max-w-[120px]">{formTouched.has("source") ? (form.taskSource || "المصدر") : "المصدر"}</span>
                       <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "source" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "source" && (
-                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[160px]">
-                        <p className="text-xs font-semibold text-neutral-400 px-4 py-2">مصدر المهمة</p>
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px]">
+                        <p className="text-xs font-semibold text-neutral-400 px-3 py-1.5">المصدر</p>
                         {SOURCES.map(s => (
-                          <button key={s} onClick={() => { setForm(f => ({ ...f, taskSource: s })); setFormTouched(t => new Set([...t, "source"])); setFormDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", form.taskSource === s ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
+                          <button key={s} onClick={() => { setForm(f => ({ ...f, taskSource: s })); setFormTouched(t => new Set([...t, "source"])); setFormDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right rounded-lg transition-colors", form.taskSource === s ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
                             {s}
                           </button>
                         ))}
@@ -2519,39 +2697,118 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
                   {/* Project Pill */}
                   <div className="relative">
-                    <button onClick={() => setFormDropdown(d => d === "project" ? null : "project")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", formDropdown === "project" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                      <Briefcase className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                    <button onClick={() => { setFormDropdown(d => d === "project" ? null : "project"); setProjectSearch(""); }} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", formDropdown === "project" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <span className="truncate max-w-[120px]">{formTouched.has("project") ? (form.projectName || "المشروع") : "المشروع"}</span>
                       <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "project" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "project" && (
-                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[200px]">
-                        <p className="text-xs font-semibold text-neutral-400 px-4 py-2">المشروع</p>
-                        {PROJECTS.map(p => (
-                          <button key={p} onClick={() => { setForm(f => ({ ...f, projectName: p })); setFormTouched(t => new Set([...t, "project"])); setFormDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", form.projectName === p ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                            {p}
-                          </button>
-                        ))}
+                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg min-w-[240px] max-h-[320px] flex flex-col overflow-hidden">
+                        <div className="p-2 border-b border-neutral-100 dark:border-neutral-700">
+                          <div className="relative">
+                            <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                            <input
+                              autoFocus
+                              value={projectSearch}
+                              onChange={(e) => setProjectSearch(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && projectSearch.trim()) {
+                                  const name = projectSearch.trim();
+                                  if (!projectsList.includes(name)) setProjectsList(p => [...p, name]);
+                                  setForm(f => ({ ...f, projectName: name }));
+                                  setFormTouched(t => new Set([...t, "project"]));
+                                  setFormDropdown(null);
+                                  setProjectSearch("");
+                                }
+                              }}
+                              placeholder="ابحث أو اكتب اسم مشروع جديد..."
+                              className="w-full bg-neutral-50 dark:bg-neutral-900 border-none rounded-lg py-1.5 ps-3 pe-8 text-xs focus:ring-1 focus:ring-teal-500 outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-1.5">
+                          <p className="text-xs font-semibold text-neutral-400 px-3 py-1.5">المشروع</p>
+                          {projectsList
+                            .filter(p => p.toLowerCase().includes(projectSearch.toLowerCase()))
+                            .map(p => (
+                            <button key={p} onClick={() => { setForm(f => ({ ...f, projectName: p })); setFormTouched(t => new Set([...t, "project"])); setFormDropdown(null); setProjectSearch(""); }} className={cn("w-full px-4 py-2 text-sm text-right rounded-lg transition-colors", form.projectName === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
+                              {p}
+                            </button>
+                          ))}
+                          {projectSearch.trim() && !projectsList.some(p => p.toLowerCase() === projectSearch.trim().toLowerCase()) && (
+                            <button
+                              onClick={() => {
+                                const name = projectSearch.trim();
+                                setProjectsList(p => [...p, name]);
+                                setForm(f => ({ ...f, projectName: name }));
+                                setFormTouched(t => new Set([...t, "project"]));
+                                setFormDropdown(null);
+                                setProjectSearch("");
+                              }}
+                              className="w-full px-4 py-2 text-sm text-right rounded-lg transition-colors flex items-center gap-2 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 font-medium"
+                            >
+                              <Plus className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">إنشاء مشروع "{projectSearch.trim()}"</span>
+                            </button>
+                          )}
+                          {!projectSearch.trim() && projectsList.length === 0 && (
+                            <p className="text-xs text-neutral-400 text-center py-3">لا توجد مشاريع</p>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
-
-                  {/* Start Date Pill */}
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700">
-                    <Clock className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200 truncate max-w-[120px]">موعد بدء</span>
-                  </div>
-
-                  {/* More */}
-                  <button className="flex items-center gap-1 px-2 py-1.5 rounded-lg border bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700/60 transition-colors"><MoreHorizontal className="w-3.5 h-3.5" /></button>
                 </div>
 
                 {/* Progress Pill */}
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700">
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                  <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">نسبة الإنجاز: {form.progress ?? 0}%</span>
-                  <input type="range" min={0} max={100} value={form.progress || 0} onChange={e => setForm(f => ({ ...f, progress: parseInt(e.target.value) }))} className="w-20 h-1.5 accent-teal-500 cursor-pointer" />
-                </div>
+                {((form.assignMode === "me" || !form.assignMode) && form.assignMembers && form.assignMembers.length > 1) ? (
+                  <div className="rounded-xl border bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 p-3 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">نسبة الإنجاز الكلية: {form.progress ?? 0}%</span>
+                      </div>
+                      <span className="text-[10px] text-neutral-400">{form.assignMembers.length} موظفين</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-neutral-100 dark:bg-neutral-700 overflow-hidden">
+                      <div className="h-full rounded-full bg-teal-500 transition-all" style={{ width: `${form.progress ?? 0}%` }} />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-700">
+                      {form.assignMembers.map(m => {
+                        const mp = (form.memberProgress || {})[m] ?? 0;
+                        return (
+                          <div key={m} className="min-w-0 rounded-lg border border-neutral-100 dark:border-neutral-700 bg-neutral-50/60 dark:bg-neutral-900/40 p-2 space-y-1.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <img src={avatarUrl(m)} alt={m} className="w-5 h-5 rounded-full object-cover shrink-0" />
+                              <span className="text-[11px] font-medium text-neutral-700 dark:text-neutral-200 whitespace-nowrap">{m}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <input
+                                type="range" min={0} max={100} value={mp}
+                                onChange={e => {
+                                  const val = parseInt(e.target.value);
+                                  setForm(f => {
+                                    const nextMp = { ...(f.memberProgress || {}), [m]: val };
+                                    const members = f.assignMembers || [];
+                                    const avg = members.length > 0 ? Math.round(members.reduce((s, x) => s + (nextMp[x] ?? 0), 0) / members.length) : val;
+                                    return { ...f, memberProgress: nextMp, progress: avg };
+                                  });
+                                }}
+                                className="flex-1 min-w-0 h-1.5 accent-teal-500 cursor-pointer"
+                              />
+                              <span className="text-[10px] font-bold text-neutral-600 dark:text-neutral-300 tabular-nums shrink-0">{mp}%</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                    <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">نسبة الإنجاز: {form.progress ?? 0}%</span>
+                    <input type="range" min={0} max={100} value={form.progress || 0} onChange={e => setForm(f => ({ ...f, progress: parseInt(e.target.value) }))} className="w-20 h-1.5 accent-teal-500 cursor-pointer" />
+                  </div>
+                )}
 
                 {/* Subtasks */}
                 <div className="space-y-2">
@@ -2606,15 +2863,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                             {/* Assignee picker */}
                             <div className="relative">
                               <button onClick={() => setFormEditingSubtaskDropdown(d => d === "assignee" ? null : "assignee")} className={cn("flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-medium transition-colors", formEditingSubtaskDropdown === "assignee" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                                <img src={avatarUrl(formEditingSubtaskForm.assignee)} alt={formEditingSubtaskForm.assignee} className="w-4 h-4 rounded-full object-cover" />
                                 <span className="max-w-[80px] truncate">{formEditingSubtaskForm.assignee}</span>
                                 <ChevronDown className={cn("w-3 h-3 transition-transform", formEditingSubtaskDropdown === "assignee" ? "rotate-180" : "")} />
                               </button>
                               {formEditingSubtaskDropdown === "assignee" && (
-                                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[160px] max-h-[200px] overflow-y-auto">
+                                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-h-[200px] overflow-y-auto">
                                   {ASSIGNEES.map(name => (
-                                    <button key={name} onClick={() => { setFormEditingSubtaskForm(f => ({ ...f, assignee: name })); setFormEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", formEditingSubtaskForm.assignee === name ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                      <img src={avatarUrl(name)} alt={name} className="w-4 h-4 rounded-full object-cover" />
+                                    <button key={name} onClick={() => { setFormEditingSubtaskForm(f => ({ ...f, assignee: name })); setFormEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right rounded-lg transition-colors", formEditingSubtaskForm.assignee === name ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
                                       {name}
                                     </button>
                                   ))}
@@ -2955,80 +3210,162 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
           <div
             ref={tableDropdownRef}
             className="fixed z-[9999] bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-xl shadow-xl"
-            style={{ top: tableDropdown.top + 4, right: tableDropdown.right }}
+            style={{ top: tableDropdown.top + 10, right: tableDropdown.right }}
           >
             {tableDropdown.field === "assignee" && (
-              <div className="py-1.5 min-w-[200px]">
-                {ASSIGNEES.map(name => (
-                  <button key={name} type="button"
-                    onClick={() => { updateTask(dt.id, { assignee: name, assignMode: "me", assignTarget: undefined, assignMembers: undefined }); setTableDropdown(null); }}
-                    className={cn("w-full px-4 py-2 text-sm text-right flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors", dt.assignee === name ? "text-teal-600 font-semibold" : "text-gray-700 dark:text-gray-200")}>
-                    <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0", avatarColor(name))}>{initials(name)}</div>
-                    <span className="truncate">{name}</span>
-                  </button>
-                ))}
+              <div className="p-1.5 min-w-[200px] flex flex-col max-h-[300px]">
+                <div className="p-1.5 border-b border-gray-100 dark:border-neutral-700">
+                  <div className="relative">
+                    <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                    <input
+                      autoFocus
+                      value={assignSearch}
+                      onChange={(e) => setAssignSearch(e.target.value)}
+                      placeholder="بحث..."
+                      className="w-full bg-gray-50 dark:bg-neutral-900 border-none rounded-lg py-1.5 ps-3 pe-8 text-xs focus:ring-1 focus:ring-teal-500 outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto py-1">
+                  {ASSIGNEES
+                    .filter(name => name.toLowerCase().includes(assignSearch.toLowerCase()))
+                    .map(name => (
+                    <button key={name} type="button"
+                      onClick={() => { 
+                        const current = dt.assignMembers || [dt.assignee];
+                        const next = current.includes(name) ? (current.length > 1 ? current.filter(x => x !== name) : current) : [...current, name];
+                        updateTask(dt.id, { assignee: next[0], assignMembers: next, assignMode: "me", assignTarget: undefined }); 
+                      }}
+                      className={cn("w-full px-4 py-2 text-sm text-right flex items-center justify-between rounded-lg transition-colors", (dt.assignMembers || [dt.assignee]).includes(name) ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700/50")}>
+                      <span>{name}</span>
+                      {(dt.assignMembers || [dt.assignee]).includes(name) && <CheckSquare className="w-3.5 h-3.5" />}
+                    </button>
+                  ))}
+                </div>
+                <div className="p-1.5 border-t border-gray-100 dark:border-neutral-700">
+                  <button onClick={() => setTableDropdown(null)} className="w-full py-1.5 text-xs font-semibold text-white bg-teal-500 hover:bg-teal-600 rounded-lg transition-colors">تم</button>
+                </div>
               </div>
             )}
             {tableDropdown.field === "project" && (
-              <div className="py-1.5 min-w-[220px]">
-                {PROJECTS.map(p => (
+              <div className="p-1.5 min-w-[220px]">
+                {projectsList.map(p => (
                   <button key={p} type="button"
                     onClick={() => { updateTask(dt.id, { projectName: p }); setTableDropdown(null); }}
-                    className={cn("w-full px-4 py-2 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors", dt.projectName === p ? "text-teal-600 font-semibold" : "text-gray-700 dark:text-gray-200")}>
+                    className={cn("w-full px-4 py-2 text-sm text-right rounded-lg transition-colors", dt.projectName === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700/50")}>
                     {p}
                   </button>
                 ))}
               </div>
             )}
             {tableDropdown.field === "source" && (
-              <div className="py-1.5 min-w-[200px]">
+              <div className="p-1.5 min-w-[200px]">
                 {SOURCES.map(s => (
                   <button key={s} type="button"
                     onClick={() => { updateTask(dt.id, { taskSource: s }); setTableDropdown(null); }}
-                    className={cn("w-full px-4 py-2 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors", dt.taskSource === s ? "text-teal-600 font-semibold" : "text-gray-700 dark:text-gray-200")}>
+                    className={cn("w-full px-4 py-2 text-sm text-right rounded-lg transition-colors", dt.taskSource === s ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700/50")}>
                     {s}
                   </button>
                 ))}
               </div>
             )}
             {tableDropdown.field === "progress" && (
-              <div className="p-3 w-[220px]">
-                <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">نسبة الإنجاز: {dt.progress}%</label>
-                <input type="range" min={0} max={100} value={dt.progress}
-                  onChange={e => updateTask(dt.id, { progress: parseInt(e.target.value || "0", 10) || 0 })}
-                  className="w-full accent-teal-500" />
-              </div>
+              (dt.assignMode === "me" || !dt.assignMode) && dt.assignMembers && dt.assignMembers.length > 1 ? (
+                <div className="p-3 w-[280px] space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-gray-600 dark:text-gray-300">نسبة الإنجاز الكلية: {dt.progress}%</label>
+                    <span className="text-[10px] text-neutral-400">{dt.assignMembers.length} موظفين</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-neutral-100 dark:bg-neutral-700 overflow-hidden">
+                    <div className="h-full rounded-full bg-teal-500 transition-all" style={{ width: `${dt.progress}%` }} />
+                  </div>
+                  <div className="space-y-2 pt-1.5 border-t border-neutral-100 dark:border-neutral-700">
+                    {dt.assignMembers.map(m => {
+                      const mp = (dt.memberProgress || {})[m] ?? 0;
+                      return (
+                        <div key={m} className="flex items-center gap-2">
+                          <img src={avatarUrl(m)} alt={m} className="w-5 h-5 rounded-full object-cover shrink-0" />
+                          <span className="text-[11px] font-medium text-neutral-700 dark:text-neutral-200 w-20 truncate shrink-0" title={m}>{m}</span>
+                          <input
+                            type="range" min={0} max={100} value={mp}
+                            onChange={e => {
+                              const val = parseInt(e.target.value);
+                              const nextMp = { ...(dt.memberProgress || {}), [m]: val };
+                              const members = dt.assignMembers || [];
+                              const avg = members.length > 0 ? Math.round(members.reduce((s, x) => s + (nextMp[x] ?? 0), 0) / members.length) : val;
+                              updateTask(dt.id, { memberProgress: nextMp, progress: avg });
+                            }}
+                            className="flex-1 h-1.5 accent-teal-500 cursor-pointer"
+                          />
+                          <span className="text-[10px] font-bold text-neutral-600 dark:text-neutral-300 w-8 text-left tabular-nums shrink-0">{mp}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 w-[220px]">
+                  <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">نسبة الإنجاز: {dt.progress}%</label>
+                  <input type="range" min={0} max={100} value={dt.progress}
+                    onChange={e => updateTask(dt.id, { progress: parseInt(e.target.value || "0", 10) || 0 })}
+                    className="w-full accent-teal-500" />
+                </div>
+              )
             )}
             {tableDropdown.field === "dueDate" && (
-              <div className="p-3 w-[220px]">
-                <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">الموعد النهائي</label>
-                <input type="date" value={dt.dueDate}
-                  onChange={e => updateTask(dt.id, { dueDate: e.target.value })}
-                  className="w-full text-xs rounded-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-2 py-1.5 text-right focus:outline-none focus:ring-1 focus:ring-teal-400" />
+              <div className="p-3 w-[240px] space-y-3">
+                <div>
+                  <label className="block text-[10px] font-medium text-neutral-400 mb-1 px-1 text-right">تاريخ البدء</label>
+                  <input type="date" value={dt.startDate || ""}
+                    onChange={e => updateTask(dt.id, { startDate: e.target.value })}
+                    className="w-full text-xs rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-right focus:outline-none focus:ring-1 focus:ring-teal-400" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-neutral-400 mb-1 px-1 text-right">الموعد النهائي</label>
+                  <input type="date" value={dt.dueDate}
+                    onChange={e => updateTask(dt.id, { dueDate: e.target.value })}
+                    className="w-full text-xs rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-3 py-2 text-right focus:outline-none focus:ring-1 focus:ring-teal-400" />
+                </div>
+                <button onClick={() => setTableDropdown(null)} className="w-full py-1.5 text-xs font-semibold text-white bg-teal-500 hover:bg-teal-600 rounded-lg transition-colors">تم</button>
               </div>
             )}
             {tableDropdown.field === "priority" && (
-              <div className="py-1.5 min-w-[180px]">
+              <div className="p-1.5 min-w-[180px]">
                 {(["low", "medium", "high", "urgent"] as TaskPriority[]).map(p => (
                   <button key={p} type="button"
                     onClick={() => { updateTask(dt.id, { priority: p }); setTableDropdown(null); }}
-                    className={cn("w-full px-4 py-2 text-sm text-right flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors", dt.priority === p ? "text-teal-600 font-semibold" : "text-gray-700 dark:text-gray-200")}>
-                    <Flag className={cn("w-4 h-4", PRIORITY_CONFIG[p].flag)} />
-                    <span className="text-sm">{PRIORITY_CONFIG[p].label}</span>
+                    className={cn("w-full px-4 py-2 text-sm text-right flex items-center justify-between rounded-lg transition-colors", dt.priority === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700/50")}>
+                            <span>{PRIORITY_CONFIG[p].label}</span>
+                            <Flag className={cn("w-4 h-4", PRIORITY_CONFIG[p].flag)} />
                   </button>
                 ))}
               </div>
             )}
             {tableDropdown.field === "status" && (
-              <div className="py-1.5 min-w-[200px]">
+              <div className="p-1.5 min-w-[200px]">
                 {(["todo","in-progress","in-review","overdue","completed"] as TaskStatus[]).map(s => (
                   <button key={s} type="button"
                     onClick={() => { updateTask(dt.id, { status: s }); setTableDropdown(null); }}
-                    className={cn("w-full px-4 py-2 text-sm text-right flex items-center gap-2 hover:bg-gray-50 dark:hoverBg-neutral-700 transition-colors", dt.status === s ? "text-teal-600 font-semibold" : "text-gray-700 dark:text-gray-200")}>
-                    <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[s].headerDot)} />
-                    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold", STATUS_CONFIG[s].badgeBg, STATUS_CONFIG[s].badgeText)}>{STATUS_CONFIG[s].label}</span>
+                    className={cn("w-full px-4 py-2 text-sm text-right rounded-lg transition-colors", dt.status === s ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700/50")}>
+                    {STATUS_CONFIG[s].label}
                   </button>
                 ))}
+              </div>
+            )}
+            {tableDropdown.field === "action" && (
+              <div className="py-1 min-w-[120px]">
+                <button
+                  onClick={() => { openEdit(dt); setTableDropdown(null); }}
+                  className="w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700/50 text-right transition-colors"
+                >
+                  تعديل
+                </button>
+                <button
+                  onClick={() => { remove(dt.id); setTableDropdown(null); }}
+                  className="w-full px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-right transition-colors"
+                >
+                  حذف
+                </button>
               </div>
             )}
           </div>
