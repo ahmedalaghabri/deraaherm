@@ -53,10 +53,11 @@ const _FIRST = ["أحمد","محمد","عبدالله","خالد","فهد","سع
 const _LAST  = ["السلمي","الشمري","الدوسري","العمري","الحربي","النجار","الزهراني","القرني","الغامدي","الحسن","البلوي","المطيري","الرشيدي","القحطاني","العتيبي","الحمدان","الغريب","العجمي","العنزي","الرشيد","الشمراني","الجهني","الشريف","السبيعي","الحكمي","الجبير","الفيفي","الهاجري","الكثيري","البقمي","الصبيحي","الرويلي","الأنصاري","التميمي","القرشي","السهلي","الزيد","البسام","العيسى","العساف","الفضل","النويصر","الدخيل","الشايع","البراهيم","الموسى","الحمود","الصالح","المنصور","الخالدي"];
 const _SFX   = ["العليا","المملكة","النزهة","الروضة","الملقا","الياسمين","الأندلس","السلام","الخليج","المزون","الراشد","النسيم","الوصل","الريان","الفيصلية","العقيق","حراء","النور","الصفاء","الجوهرة","البحر","الكورنيش","الفردوس","الغدير","التلال","الأفنان","البستان","الزيتون","الفلاح","الدانة","الهدى","المشرق","الرفيعة","الأمل","الريف","الواجهة","السحاب","الربوة","القمة","الأفق"];
 
-// ── 10 Regions ──
+// ── 13 Regions (10 original + 3 new) ──
 const _REGION_META = [
   { n: "الرياض" },{ n: "الغربية" },{ n: "الخليج" },{ n: "الشمال" },{ n: "الجنوب" },
   { n: "الوسط"  },{ n: "الشرق"  },{ n: "تهامة"  },{ n: "نجد"    },{ n: "الحجاز" },
+  { n: "قطر"    },{ n: "الامارات" },{ n: "عمان" },
 ];
 
 // ── 25 Areas (2–3 per region) ──
@@ -71,6 +72,12 @@ const _AREA_META: { n: string; ri: number }[] = [
   { n: "تبوك",              ri: 7 },{ n: "الوجه",             ri: 7 },
   { n: "عنيزة",             ri: 8 },{ n: "الرس",              ri: 8 },
   { n: "المدينة المنورة",   ri: 9 },{ n: "ينبع",              ri: 9 },
+  // قطر (ri: 10)
+  { n: "الدوحة",             ri: 10 },{ n: "الوكرة",            ri: 10 },{ n: "الخور",            ri: 10 },
+  // الامارات (ri: 11)
+  { n: "دبي",               ri: 11 },{ n: "أبوظبي",            ri: 11 },{ n: "الشارقة",          ri: 11 },
+  // عمان (ri: 12)
+  { n: "مسقط",              ri: 12 },{ n: "صلالة",             ri: 12 },{ n: "نزوى",             ri: 12 },
 ];
 
 export const REGIONS = _REGION_META.map((r, i) => ({ id: `r${i + 1}`, name: `إقليم ${r.n}` }));
@@ -81,66 +88,129 @@ export const AREAS = _AREA_META.map((a, i) => ({
   regionId: `r${a.ri + 1}`,
 }));
 
-// 100 supervisors: 4 per area (25 areas × 4 = 100)
-export const SUPERVISORS = Array.from({ length: 100 }, (_, i) => {
-  const areaIdx = Math.floor(i / 4);              // area 0-24, 4 supervisors each
-  const area    = AREAS[areaIdx];
-  const s1 = _ds(_dsk(i, 1, 31));
-  const s2 = _ds(_dsk(i, 2, 43));
-  return {
-    id: `sup${i + 1}`,
-    name: `المشرف ${_pick(_FIRST, s1)} ${_pick(_LAST, s2)}`,
-    areaId:   area.id,
-    regionId: area.regionId,
-  };
-});
+// 127 supervisors: 100 original (4 per area × 25 areas) + 27 new (3 per area × 9 new areas)
+export const SUPERVISORS = [
+  ...Array.from({ length: 100 }, (_, i) => {
+    const areaIdx = Math.floor(i / 4);              // area 0-24, 4 supervisors each
+    const area    = AREAS[areaIdx];
+    const s1 = _ds(_dsk(i, 1, 31));
+    const s2 = _ds(_dsk(i, 2, 43));
+    return {
+      id: `sup${i + 1}`,
+      name: `المشرف ${_pick(_FIRST, s1)} ${_pick(_LAST, s2)}`,
+      areaId:   area.id,
+      regionId: area.regionId,
+    };
+  }),
+  ...Array.from({ length: 27 }, (_, j) => {
+    const i = j + 100;                              // continue indexing from 100
+    const areaIdx = 25 + Math.floor(j / 3);          // new areas 25-33, 3 supervisors each
+    const area    = AREAS[areaIdx];
+    const s1 = _ds(_dsk(i, 1, 31));
+    const s2 = _ds(_dsk(i, 2, 43));
+    return {
+      id: `sup${i + 1}`,
+      name: `المشرف ${_pick(_FIRST, s1)} ${_pick(_LAST, s2)}`,
+      areaId:   area.id,
+      regionId: area.regionId,
+    };
+  }),
+];
 
-// 500 showrooms: 20 per area (25 areas × 20 = 500)
-// Each group of 5 showrooms inside an area shares one supervisor (20 showrooms ÷ 4 supervisors = 5)
-export const SHOWROOMS = Array.from({ length: 500 }, (_, i) => {
-  const areaIdx  = Math.floor(i / 20);            // area 0-24
-  const area     = AREAS[areaIdx];
-  const supLocal = Math.floor((i % 20) / 5);      // supervisor slot 0-3 within the area
-  const supIdx   = areaIdx * 4 + supLocal;
-  const sfx      = _pick(_SFX, _ds(_dsk(i, 77)));
-  return {
-    id:           `sh${i + 1}`,
-    name:         `معرض ${_AREA_META[areaIdx].n} - ${sfx}`,
-    regionId:     area.regionId,
-    areaId:       area.id,
-    supervisorId: `sup${supIdx + 1}`,
-  };
-});
+// 581 showrooms: 500 original (20 per area × 25 areas) + 81 new (3 per supervisor × 27 new supervisors)
+export const SHOWROOMS = [
+  ...Array.from({ length: 500 }, (_, i) => {
+    const areaIdx  = Math.floor(i / 20);            // area 0-24
+    const area     = AREAS[areaIdx];
+    const supLocal = Math.floor((i % 20) / 5);      // supervisor slot 0-3 within the area
+    const supIdx   = areaIdx * 4 + supLocal;
+    const sfx      = _pick(_SFX, _ds(_dsk(i, 77)));
+    return {
+      id:           `sh${i + 1}`,
+      name:         `معرض ${_AREA_META[areaIdx].n} - ${sfx}`,
+      regionId:     area.regionId,
+      areaId:       area.id,
+      supervisorId: `sup${supIdx + 1}`,
+    };
+  }),
+  ...Array.from({ length: 81 }, (_, j) => {
+    const i = j + 500;                              // continue indexing from 500
+    const newSupIdx = Math.floor(j / 3);             // 0-26, which new supervisor
+    const areaIdx   = 25 + Math.floor(newSupIdx / 3); // new area 25-33
+    const area      = AREAS[areaIdx];
+    const supIdx    = 100 + newSupIdx;               // new supervisors start at 100
+    const sfx       = _pick(_SFX, _ds(_dsk(i, 77)));
+    return {
+      id:           `sh${i + 1}`,
+      name:         `معرض ${_AREA_META[areaIdx].n} - ${sfx}`,
+      regionId:     area.regionId,
+      areaId:       area.id,
+      supervisorId: `sup${supIdx + 1}`,
+    };
+  }),
+];
 
-// 500 sellers: 1 per showroom
-export const SELLERS = Array.from({ length: 500 }, (_, i) => {
-  const showroom   = SHOWROOMS[i];
-  const f1  = _ds(_dsk(i, 11, 100));
-  const f2  = _ds(_dsk(i, 22, 200));
-  const sales      = _rng(75_000, 780_000,  _ds(_dsk(i, 33)));
-  const target     = Math.round(sales * (0.82 + _ds(_dsk(i, 44)) * 0.40) / 10_000) * 10_000;
-  const prevSales  = Math.round(sales * (0.68 + _ds(_dsk(i, 55)) * 0.42));
-  const invoices   = _rng(200, 3600, _ds(_dsk(i, 66)));
-  const pieces     = _rng(500, 9200, _ds(_dsk(i, 77)));
-  const avgPieceSar = parseFloat((2.4 + _ds(_dsk(i, 88)) * 1.6).toFixed(1));
-  return {
-    id:           `sel${i + 1}`,
-    name:         `${_pick(_FIRST, f1)} ${_pick(_LAST, f2)}`,
-    showroomId:   showroom.id,
-    regionId:     showroom.regionId,
-    areaId:       showroom.areaId,
-    supervisorId: showroom.supervisorId,
-    sales,
-    target,
-    prevSales,
-    invoices,
-    avgInvoice:   Math.max(1, Math.round(sales / invoices)),
-    pieces,
-    avgPiece:     Math.max(1, Math.round(sales / pieces)),
-    avgPieceSar,
-    customers:    _rng(12, 130, _ds(_dsk(i, 99))),
-  };
-});
+// 743 sellers: 500 original (1 per showroom) + 243 new (3 per showroom × 81 new showrooms)
+export const SELLERS = [
+  ...Array.from({ length: 500 }, (_, i) => {
+    const showroom   = SHOWROOMS[i];
+    const f1  = _ds(_dsk(i, 11, 100));
+    const f2  = _ds(_dsk(i, 22, 200));
+    const sales      = _rng(75_000, 780_000,  _ds(_dsk(i, 33)));
+    const target     = Math.round(sales * (0.82 + _ds(_dsk(i, 44)) * 0.40) / 10_000) * 10_000;
+    const prevSales  = Math.round(sales * (0.68 + _ds(_dsk(i, 55)) * 0.42));
+    const invoices   = _rng(200, 3600, _ds(_dsk(i, 66)));
+    const pieces     = _rng(500, 9200, _ds(_dsk(i, 77)));
+    const avgPieceSar = parseFloat((2.4 + _ds(_dsk(i, 88)) * 1.6).toFixed(1));
+    return {
+      id:           `sel${i + 1}`,
+      name:         `${_pick(_FIRST, f1)} ${_pick(_LAST, f2)}`,
+      showroomId:   showroom.id,
+      regionId:     showroom.regionId,
+      areaId:       showroom.areaId,
+      supervisorId: showroom.supervisorId,
+      sales,
+      target,
+      prevSales,
+      invoices,
+      avgInvoice:   Math.max(1, Math.round(sales / invoices)),
+      pieces,
+      avgPiece:     Math.max(1, Math.round(sales / pieces)),
+      avgPieceSar,
+      customers:    _rng(12, 130, _ds(_dsk(i, 99))),
+    };
+  }),
+  ...Array.from({ length: 243 }, (_, j) => {
+    const i = j + 500;                              // continue indexing from 500
+    const showroomIdx = 500 + Math.floor(j / 3);     // 3 sellers per new showroom
+    const showroom    = SHOWROOMS[showroomIdx];
+    const f1  = _ds(_dsk(i, 11, 100));
+    const f2  = _ds(_dsk(i, 22, 200));
+    const sales      = _rng(75_000, 780_000,  _ds(_dsk(i, 33)));
+    const target     = Math.round(sales * (0.82 + _ds(_dsk(i, 44)) * 0.40) / 10_000) * 10_000;
+    const prevSales  = Math.round(sales * (0.68 + _ds(_dsk(i, 55)) * 0.42));
+    const invoices   = _rng(200, 3600, _ds(_dsk(i, 66)));
+    const pieces     = _rng(500, 9200, _ds(_dsk(i, 77)));
+    const avgPieceSar = parseFloat((2.4 + _ds(_dsk(i, 88)) * 1.6).toFixed(1));
+    return {
+      id:           `sel${i + 1}`,
+      name:         `${_pick(_FIRST, f1)} ${_pick(_LAST, f2)}`,
+      showroomId:   showroom.id,
+      regionId:     showroom.regionId,
+      areaId:       showroom.areaId,
+      supervisorId: showroom.supervisorId,
+      sales,
+      target,
+      prevSales,
+      invoices,
+      avgInvoice:   Math.max(1, Math.round(sales / invoices)),
+      pieces,
+      avgPiece:     Math.max(1, Math.round(sales / pieces)),
+      avgPieceSar,
+      customers:    _rng(12, 130, _ds(_dsk(i, 99))),
+    };
+  }),
+];
 
 const CATEGORIES = [
   { name: "الهدايا", pct: 90, color: "#00C9A7" },
