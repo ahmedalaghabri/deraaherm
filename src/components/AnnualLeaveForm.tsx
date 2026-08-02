@@ -106,7 +106,7 @@ export default function AnnualLeaveForm({ onCancel, onSubmit }: AnnualLeaveFormP
 
   return (
     <div dir="rtl" className="min-h-screen">
-      <div className="mx-auto max-w-[1400px] p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="mx-auto max-w-[var(--page-max-w)] p-3 sm:p-6 space-y-4 sm:space-y-6">
 
         {/* Header Card */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
@@ -144,19 +144,19 @@ export default function AnnualLeaveForm({ onCancel, onSubmit }: AnnualLeaveFormP
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm text-muted-foreground">الاسم الكامل</Label>
-                    <div className="mt-1 rounded-2xl border bg-neutral-50 px-3 py-2.5 text-sm">{formData.employeeName}</div>
+                    <div className="mt-1 rounded-2xl border bg-neutral-50 dark:bg-neutral-900 px-3 py-2.5 text-sm">{formData.employeeName}</div>
                   </div>
                   <div>
                     <Label className="text-sm text-muted-foreground">الرقم الوظيفي</Label>
-                    <div className="mt-1 rounded-2xl border bg-neutral-50 px-3 py-2.5 text-sm">{formData.employeeId}</div>
+                    <div className="mt-1 rounded-2xl border bg-neutral-50 dark:bg-neutral-900 px-3 py-2.5 text-sm">{formData.employeeId}</div>
                   </div>
                   <div>
                     <Label className="text-sm text-muted-foreground">القسم</Label>
-                    <div className="mt-1 rounded-2xl border bg-neutral-50 px-3 py-2.5 text-sm">{formData.department}</div>
+                    <div className="mt-1 rounded-2xl border bg-neutral-50 dark:bg-neutral-900 px-3 py-2.5 text-sm">{formData.department}</div>
                   </div>
                   <div>
                     <Label className="text-sm text-muted-foreground">المسمى الوظيفي</Label>
-                    <div className="mt-1 rounded-2xl border bg-neutral-50 px-3 py-2.5 text-sm">{formData.position}</div>
+                    <div className="mt-1 rounded-2xl border bg-neutral-50 dark:bg-neutral-900 px-3 py-2.5 text-sm">{formData.position}</div>
                   </div>
                 </div>
               </CardContent>
@@ -304,15 +304,15 @@ export default function AnnualLeaveForm({ onCancel, onSubmit }: AnnualLeaveFormP
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 sm:px-6 space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-emerald-200">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-neutral-800 border border-emerald-200">
                   <span className="text-sm text-muted-foreground">الرصيد الكلي</span>
                   <span className="text-lg font-semibold text-emerald-700">{leaveBalance.total} يوم</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-amber-200">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-neutral-800 border border-amber-200">
                   <span className="text-sm text-muted-foreground">المستخدم</span>
                   <span className="text-lg font-semibold text-amber-700">{leaveBalance.used} يوم</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-xl bg-white border border-blue-200">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-neutral-800 border border-blue-200">
                   <span className="text-sm text-muted-foreground">المتبقي</span>
                   <span className="text-lg font-semibold text-blue-700">{leaveBalance.remaining} يوم</span>
                 </div>

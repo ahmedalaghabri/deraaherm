@@ -8,7 +8,7 @@ interface PageTabsProps<T extends string> {
 
 export default function PageTabs<T extends string>({ tabs, active, onChange }: PageTabsProps<T>) {
   return (
-    <div className="sticky top-0 z-40 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700 px-1 sm:px-4 py-2">
+    <div className="sticky top-0 z-40 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700 px-1 sm:px-4 py-2 rounded-t-xl">
       <div className="flex items-center gap-1.5 sm:gap-2 w-fit mx-auto">
         {tabs.map(([key, label]) => (
           <button

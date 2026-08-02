@@ -189,7 +189,7 @@ const TransactionReplyModal: React.FC<TransactionReplyModalProps> = ({
                   <label htmlFor="reply-file-upload" className="cursor-pointer">
                     <Upload className="h-8 w-8 mx-auto text-neutral-400 mb-2" />
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">اضغط لتحميل الملفات</p>
-                    <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">PDF, Word, Images (حد أقصى 10MB لكل ملف)</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">PDF, Word, Images (حد أقصى 10MB لكل ملف)</p>
                   </label>
                 </div>
 

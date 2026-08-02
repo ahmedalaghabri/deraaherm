@@ -115,7 +115,7 @@ const TransportAllowanceForm: React.FC<TransportAllowanceFormProps> = ({ onBack,
                       id="employeeName"
                       value={formData.employeeName}
                       disabled
-                      className="rounded-xl bg-gray-50"
+                      className="rounded-xl bg-gray-50 dark:bg-neutral-900"
                     />
                   </div>
 
@@ -125,7 +125,7 @@ const TransportAllowanceForm: React.FC<TransportAllowanceFormProps> = ({ onBack,
                       id="employeeNumber"
                       value={formData.employeeNumber}
                       disabled
-                      className="rounded-xl bg-gray-50"
+                      className="rounded-xl bg-gray-50 dark:bg-neutral-900"
                     />
                   </div>
 
@@ -135,7 +135,7 @@ const TransportAllowanceForm: React.FC<TransportAllowanceFormProps> = ({ onBack,
                       id="department"
                       value={formData.department}
                       disabled
-                      className="rounded-xl bg-gray-50"
+                      className="rounded-xl bg-gray-50 dark:bg-neutral-900"
                     />
                   </div>
 
@@ -254,7 +254,7 @@ const TransportAllowanceForm: React.FC<TransportAllowanceFormProps> = ({ onBack,
                     value={formData.reason}
                     onChange={(e) => handleInputChange('reason', e.target.value)}
                     placeholder="اذكر سبب طلب بدل المواصلات..."
-                    className="w-full min-h-[120px] px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all resize-none"
+                    className="w-full min-h-[120px] px-4 py-3 rounded-xl border border-gray-300 dark:border-neutral-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all resize-none"
                     required
                   />
                 </div>
@@ -277,7 +277,7 @@ const TransportAllowanceForm: React.FC<TransportAllowanceFormProps> = ({ onBack,
                     <Upload className="h-4 w-4" />
                     <span>المرفقات (فواتير، إثباتات)</span>
                   </Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                  <div className="border-2 border-dashed border-gray-300 dark:border-neutral-600 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
                     <input
                       type="file"
                       multiple
@@ -288,16 +288,16 @@ const TransportAllowanceForm: React.FC<TransportAllowanceFormProps> = ({ onBack,
                     />
                     <label htmlFor="file-upload" className="cursor-pointer">
                       <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">اضغط لتحميل الملفات</p>
-                      <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG (حد أقصى 5MB)</p>
+                      <p className="text-sm text-gray-600 dark:text-neutral-300">اضغط لتحميل الملفات</p>
+                      <p className="text-xs text-gray-500 dark:text-neutral-400 mt-1">PDF, JPG, PNG (حد أقصى 5MB)</p>
                     </label>
                   </div>
 
                   {attachments.length > 0 && (
                     <div className="space-y-2">
                       {attachments.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <span className="text-sm text-gray-700">{file.name}</span>
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-neutral-900 rounded-lg">
+                          <span className="text-sm text-gray-700 dark:text-neutral-200">{file.name}</span>
                           <Button
                             type="button"
                             variant="ghost"

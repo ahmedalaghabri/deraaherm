@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from "react";
+import { askGemini } from "./geminiClient";
 
 export interface ChatMessage {
   id: string;
@@ -32,15 +33,18 @@ export function AIProvider({ children }: { children: ReactNode }) {
     {
       id: "welcome",
       role: "assistant",
-      content: "مرحباً! أنا مساعدك الذكي. يمكنك سؤالي عن بيانات الصفحة الحالية، أو طلب تحليل، أو أي مساعدة تحتاجها.",
+      content: "مرحباً! أنا مساعدك الذكي 🤖 اسألني أي شيء عن النظام: المبيعات، المهام، الحضور والتأخير، الإجازات، المعاملات، المقارنات والتحليلات.",
       timestamp: new Date(),
     },
   ]);
   const [pageContext, setPageContext] = useState<PageContext | null>(null);
   const [isTyping, setIsTyping] = useState(false);
 
+  // سجل المحادثة لإرساله كسياق للنموذج (دون رسالة الترحيب)
+  const historyRef = useRef<{ role: "user" | "model"; text: string }[]>([]);
+
   const sendMessage = useCallback(
-    (text: string) => {
+    async (text: string) => {
       const userMsg: ChatMessage = {
         id: Date.now().toString(),
         role: "user",
@@ -50,23 +54,36 @@ export function AIProvider({ children }: { children: ReactNode }) {
       setMessages((prev) => [...prev, userMsg]);
       setIsTyping(true);
 
-      // Simulate assistant response
-      setTimeout(() => {
-        const reply = generateReply(text, pageContext);
-        const assistantMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: reply,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, assistantMsg]);
-        setIsTyping(false);
-      }, 1200);
+      let reply: string;
+      try {
+        // Gemini مباشرة من المتصفح (مؤقتاً حتى ترقية Blaze ثم ننتقل للدالة السحابية)
+        reply = await askGemini(text, historyRef.current);
+      } catch (err) {
+        console.warn("Gemini غير متاح، التحويل لمحرك سياق الصفحة:", err);
+        // fallback: محرك سياق الصفحة الحالية فقط (بيانات حقيقية تدفعها الصفحة) — لا أرقام مُخترعة
+        reply = generateReply(text, pageContext);
+      }
+
+      historyRef.current = [
+        ...historyRef.current.slice(-8),
+        { role: "user", text },
+        { role: "model", text: reply },
+      ];
+
+      const assistantMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: reply,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+      setIsTyping(false);
     },
     [pageContext]
   );
 
   const clearChat = useCallback(() => {
+    historyRef.current = [];
     setMessages([
       {
         id: "welcome",

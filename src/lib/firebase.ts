@@ -1,5 +1,11 @@
 // src/lib/firebase.ts
 import { initializeApp } from "firebase/app";
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "firebase/firestore";
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAd1BF-8w85SzPPmDVF1Ri0LLirFxDxdMI",
@@ -12,5 +18,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-export { app };
+// Firestore مع تخزين محلي دائم (يعمل دون اتصال ويُزامن تلقائياً عند عودة الشبكة)
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+});
+
+// Cloud Functions (نفس منطقة askAssistant)
+const functions = getFunctions(app, "europe-west1");
+
+export { app, db, functions };
 export default app;

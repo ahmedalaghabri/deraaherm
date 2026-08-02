@@ -6,6 +6,8 @@
    Light mode: exact Tailwind stock neutral values (untouched look).
    Dark mode: deep navy / indigo scale matching the reference design. */
 :root {
+  /* Unified page width: full on mobile, 15% narrower on desktop (shared by top bars + content) */
+  --page-max-w: 100%;
   --neutral-50: 250 250 250;
   --neutral-100: 245 245 245;
   --neutral-200: 229 229 229;
@@ -32,6 +34,13 @@
   --neutral-950: 7 9 21;       /* page background (near-black navy) */
 }
 
+/* Desktop: unified page width (92% — 7% wider than previous 85%) */
+@media (min-width: 1024px) {
+  :root {
+    --page-max-w: 92%;
+  }
+}
+
 /* Dark-mode ambient glow (matches reference home screen) */
 .dark .app-dark-glow {
   background-image:
@@ -47,6 +56,40 @@
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* WhatsApp-inspired task conversation canvas and message tails */
+.whatsapp-chat-bg {
+  background-color: #fafcff;
+  background-image: none;
+}
+.dark .whatsapp-chat-bg {
+  background-color: #0b141a;
+  background-image: none;
+}
+.wa-message-out::before,
+.wa-message-in::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 13px;
+}
+.wa-message-out::before {
+  right: -7px;
+  background-color: #d9fdd3;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+.wa-message-in::before {
+  left: -7px;
+  background-color: #ffffff;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+.dark .wa-message-out::before {
+  background-color: #005c4b;
+}
+.dark .wa-message-in::before {
+  background-color: #202c33;
 }
 
 /* Prevent zoom on iOS for dropdown menus */
@@ -65,7 +108,6 @@
   /* Prevent zoom on all interactive elements */
   button, input, select, textarea {
     touch-action: manipulation;
-    font-size: 12px !important;
   }
   
   /* Prevent zoom on all clickable elements */
@@ -137,6 +179,23 @@
     font-family: 'SF Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
       'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
       sans-serif;
+  }
+
+  /* Prevent horizontal page overflow (white gap on the left in RTL mobile view).
+     `clip` keeps position:sticky working, `hidden` is the fallback. */
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
+  }
+
+  /* Prevent iOS Safari auto-zoom when focusing form controls (<16px triggers zoom) */
+  @media (max-width: 640px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
   }
 }
 
@@ -263,4 +322,49 @@
 .card-stroke-indigo > * {
   position: relative;
   z-index: 2;
+}
+/* Task rich-text editor and rendered comments */
+.task-rich-text ul {
+  list-style: disc;
+  padding-inline-start: 1.25rem;
+}
+
+.task-rich-text ol {
+  list-style: decimal;
+  padding-inline-start: 1.25rem;
+}
+
+.task-rich-text li {
+  margin-block: 0.15rem;
+}
+
+.task-rich-text a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.task-rich-text code {
+  direction: ltr;
+  display: inline-block;
+  border-radius: 0.3rem;
+  background: rgb(15 23 42 / 0.06);
+  padding: 0.05rem 0.3rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.task-rich-text pre {
+  direction: ltr;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: rgb(15 23 42 / 0.06);
+  padding: 0.5rem 0.65rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre-wrap;
+}
+
+.dark .task-rich-text code,
+.dark .task-rich-text pre {
+  background: rgb(255 255 255 / 0.1);
 }

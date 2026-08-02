@@ -279,7 +279,7 @@ export default function VisitsPage({ selectedSupervisor }: VisitsPageProps) {
 
   return (
     <div dir="rtl" className="min-h-screen font-sans">
-      <div className="max-w-full mx-auto px-0 sm:px-0 py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <div className="max-w-[var(--page-max-w)] mx-auto px-2 sm:px-0 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {selectedSupervisor && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex lg:grid lg:grid-cols-5 gap-3 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 scrollbar-hide snap-x snap-mandatory">
             {/* Supervisor Card */}
@@ -291,7 +291,7 @@ export default function VisitsPage({ selectedSupervisor }: VisitsPageProps) {
                 </div>
               </div>
               <div className="text-base sm:text-lg font-black text-neutral-900 dark:text-white truncate">{selectedSupervisorName}</div>
-              <div className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">{visits.length} زيارة · {visits.filter(v => v.status === "completed").length} مكتملة</div>
+              <div className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">{visits.length} زيارة · {visits.filter(v => v.status === "completed").length} مكتملة</div>
             </div>
             {/* Stat 1 */}
             <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4 text-right min-w-[150px] lg:min-w-0 flex-1 snap-start">
@@ -389,7 +389,7 @@ export default function VisitsPage({ selectedSupervisor }: VisitsPageProps) {
                   <button key={day} onClick={() => setSelectedDay(isSel ? null : day)}
                     className={cn("flex flex-col items-center gap-1 rounded-xl py-2.5 px-1 transition-all active:scale-95 border", cardClass)}>
                     <div className="flex items-center gap-1">
-                      <span className={cn("text-[9px] font-semibold leading-none", isSel ? "text-white/60" : "text-neutral-500 dark:text-neutral-400")}>{dayName}</span>
+                      <span className={cn("text-[10px] font-semibold leading-none", isSel ? "text-white/60" : "text-neutral-500 dark:text-neutral-400")}>{dayName}</span>
                       <span className={cn("text-[14px] font-extrabold leading-tight", isSel ? "text-white" : "text-neutral-900 dark:text-white")}>{day}</span>
                     </div>
                     <span className={cn("text-[11px] font-bold leading-none min-h-[14px] px-1.5 py-0.5 rounded-full", badgeClass)}>{dayVisitCount > 0 ? `${dayVisitCount} نشاط` : "—"}</span>
@@ -481,13 +481,12 @@ export default function VisitsPage({ selectedSupervisor }: VisitsPageProps) {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {/* Showroom field for showroom-related activities */}
                         {(["زيارة معرض", "جرد معرض", "زيارة تدقيق", "اغلاق معرض", "افتتاح معرض"].includes(selectedActivityType)) && (
-                          <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">المعرض</label><select value={newVisit.showroom} onChange={e => setNewVisit(v => ({ ...v, showroom: e.target.value }))} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400/40 text-right">{SHOWROOMS.map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+                          <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">المعرض</label><EvalSelect fieldKey="visit-showroom" value={newVisit.showroom || ""} placeholder="اختر المعرض" options={SHOWROOMS.map(s => ({ value: s, label: s }))} onChange={val => setNewVisit(v => ({ ...v, showroom: val }))} /></div>
                         )}
                         {/* Visit reason */}
                         {(["زيارة معرض", "جرد معرض", "زيارة تدقيق", "جولة مع المدير المباشر"].includes(selectedActivityType)) && (
-                          <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">سبب الزيارة</label><select value={newVisit.reason} onChange={e => setNewVisit(v => ({ ...v, reason: e.target.value as VisitReason }))} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400/40 text-right">{VISIT_REASONS.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
+                          <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">سبب الزيارة</label><EvalSelect fieldKey="visit-reason" value={newVisit.reason || ""} placeholder="اختر السبب" options={VISIT_REASONS.map(r => ({ value: r, label: r }))} onChange={val => setNewVisit(v => ({ ...v, reason: val as VisitReason }))} /></div>
                         )}
-                        <div><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">التقييم</label><select value={newVisit.rating || ""} onChange={e => setNewVisit(v => ({ ...v, rating: e.target.value ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400/40 text-right"><option value="">بدون تقييم</option>{[1,2,3,4,5].map(r => <option key={r} value={r}>{r} نجوم</option>)}</select></div>
                         <div className="sm:col-span-2"><label className="block text-[11px] font-bold text-neutral-500 dark:text-neutral-400 mb-1">ملاحظات</label><textarea value={newVisit.notes} onChange={e => setNewVisit(v => ({ ...v, notes: e.target.value }))} placeholder="أي ملاحظات إضافية..." rows={3} className="w-full px-3 py-2.5 rounded-xl border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-sm text-neutral-800 dark:text-white placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-emerald-400/40 text-right resize-none" /></div>
                       </div>
                       <div className="flex items-center gap-2 pt-2">
@@ -502,7 +501,7 @@ export default function VisitsPage({ selectedSupervisor }: VisitsPageProps) {
                 <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-8 text-center">
                   <MapPin className="w-10 h-10 text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
                   <p className="text-sm font-bold text-neutral-500 dark:text-neutral-400 mb-1">لا توجد أنشطة</p>
-                  <p className="text-xs text-neutral-400 dark:text-neutral-500">لم يتم تخطيط أي أنشطة لهذا اليوم</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-500">لم يتم تخطيط أي أنشطة لهذا اليوم</p>
                 </div>
               ) : (
                 <div className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm overflow-hidden">
@@ -511,6 +510,7 @@ export default function VisitsPage({ selectedSupervisor }: VisitsPageProps) {
                       <thead className="bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700">
                         <tr>
                           <th className="px-4 py-3 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap">النشاط</th>
+                          <th className="px-4 py-3 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap">سبب الزيارة</th>
                           <th className="px-4 py-3 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap">المكان</th>
                           <th className="px-4 py-3 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap">التاريخ</th>
                           <th className="px-4 py-3 text-[11px] font-bold text-neutral-400 dark:text-neutral-500 whitespace-nowrap">الحالة</th>
@@ -527,16 +527,14 @@ export default function VisitsPage({ selectedSupervisor }: VisitsPageProps) {
                           return (
                             <tr key={v.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/30 transition-colors">
                               <td className="px-4 py-3">
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="text-sm font-bold text-neutral-800 dark:text-neutral-100">{v.type}</span>
-                                  {v.reason && <span className="text-[10px] text-neutral-500 dark:text-neutral-400">{v.reason}</span>}
-                                </div>
+                                <span className="text-sm font-bold text-neutral-800 dark:text-neutral-100">{v.type}</span>
                               </td>
+                              <td className="px-4 py-3 text-xs text-neutral-600 dark:text-neutral-300">{v.reason || "—"}</td>
                               <td className="px-4 py-3 text-sm text-neutral-600 dark:text-neutral-300">{place}</td>
                               <td className="px-4 py-3"><div className="flex items-center gap-1 text-sm text-neutral-600 dark:text-neutral-300"><CalendarIcon className="w-3 h-3 text-neutral-400" /><span>{dateStr}</span></div></td>
                               <td className="px-4 py-3"><span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold", cfg.badgeBg, cfg.badgeText)}><span className={cn("w-1.5 h-1.5 rounded-full", cfg.dot)} />{cfg.label}</span></td>
-                              <td className="px-4 py-3 text-xs text-neutral-400 dark:text-neutral-500">{v.notes || "—"}</td>
-                              <td className="px-4 py-3"><button onClick={() => { setEvaluatingVisit(v); setEvaluationForm(v.rating ? { rating: String(v.rating) } : {}); setEvalModalOpen(true); }} className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"><Star className="w-3.5 h-3.5" />تقييم الزيارة</button></td>
+                              <td className="px-4 py-3 text-xs text-neutral-500 dark:text-neutral-500">{v.notes || "—"}</td>
+                              <td className="px-4 py-3"><button onClick={() => { setEvaluatingVisit(v); setEvaluationForm(v.rating ? { rating: String(v.rating) } : {}); setEvalModalOpen(true); }} className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors", v.rating ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300" : "bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300")}><span className={cn("w-1.5 h-1.5 rounded-full shrink-0", v.rating ? "bg-emerald-500" : "bg-amber-400")} />{v.rating ? "تم التقييم" : "قيد التقييم"}</button></td>
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-1">
                                   <button onClick={() => handleEditVisit(v)} className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 text-neutral-400 hover:text-blue-500 transition-colors" title="تعديل"><Pencil className="w-3.5 h-3.5" /></button>
@@ -559,14 +557,14 @@ export default function VisitsPage({ selectedSupervisor }: VisitsPageProps) {
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex flex-col gap-0.5">
                               <span className="text-sm font-bold text-neutral-800 dark:text-white">{v.type}</span>
-                              {v.reason && <span className="text-[10px] text-neutral-500 dark:text-neutral-400">{v.reason}</span>}
+                              {v.reason && <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">سبب: {v.reason}</span>}
                             </div>
                             <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0", cfg.badgeBg, cfg.badgeText)}><span className={cn("w-1.5 h-1.5 rounded-full", cfg.dot)} />{cfg.label}</span>
                           </div>
                           {place && <div className="text-xs text-neutral-500 dark:text-neutral-400">{place}</div>}
                           {dateStr && <div className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400"><CalendarIcon className="w-3 h-3" /><span>{dateStr}</span></div>}
-                          {v.notes && <div className="text-[11px] text-neutral-400 dark:text-neutral-500 bg-neutral-50 dark:bg-neutral-700 rounded-lg p-2">{v.notes}</div>}
-                          <button onClick={() => { setEvaluatingVisit(v); setEvaluationForm(v.rating ? { rating: String(v.rating) } : {}); setEvalModalOpen(true); }} className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors self-start"><Star className="w-3.5 h-3.5" />تقييم الزيارة</button>
+                          {v.notes && <div className="text-[11px] text-neutral-500 dark:text-neutral-500 bg-neutral-50 dark:bg-neutral-700 rounded-lg p-2">{v.notes}</div>}
+                          <button onClick={() => { setEvaluatingVisit(v); setEvaluationForm(v.rating ? { rating: String(v.rating) } : {}); setEvalModalOpen(true); }} className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-colors self-start", v.rating ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300" : "bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300")}><span className={cn("w-1.5 h-1.5 rounded-full shrink-0", v.rating ? "bg-emerald-500" : "bg-amber-400")} />{v.rating ? "تم التقييم" : "قيد التقييم"}</button>
                           <div className="flex items-center justify-end gap-2 pt-1">
                             <button onClick={() => handleEditVisit(v)} className="text-xs font-bold text-blue-500 hover:text-blue-600 flex items-center gap-1"><Pencil className="w-3 h-3" />تعديل</button>
                             <button onClick={() => handleDeleteVisit(v.id)} className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center gap-1"><Trash2 className="w-3 h-3" />حذف</button>

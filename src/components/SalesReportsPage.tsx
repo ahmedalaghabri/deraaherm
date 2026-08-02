@@ -155,18 +155,18 @@ export default function SalesReportsPage({ onBack }: Props) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 pb-4">
         <div>
-          <h1 className="text-lg sm:text-xl font-bold text-neutral-900">التقارير التفصيلية</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100">التقارير التفصيلية</h1>
           <p className="text-xs sm:text-sm text-neutral-500">
             Multi-Region Sales Report | 6 {MONTHS_AR[month]} {year}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Month Nav */}
-          <div className="flex items-center gap-1 bg-white border border-neutral-200 rounded-xl px-2 py-1.5">
+          <div className="flex items-center gap-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl px-2 py-1.5">
             <button onClick={prevMonth} className="p-1 hover:bg-neutral-100 rounded-lg">
               <ChevronRight className="h-4 w-4 text-neutral-500" />
             </button>
-            <span className="text-xs sm:text-sm font-semibold text-neutral-700 px-1 min-w-[70px] sm:min-w-[80px] text-center">
+            <span className="text-xs sm:text-sm font-semibold text-neutral-700 dark:text-neutral-200 px-1 min-w-[70px] sm:min-w-[80px] text-center">
               {MONTHS_AR[month]} {year}
             </span>
             <button onClick={nextMonth} className="p-1 hover:bg-neutral-100 rounded-lg">
@@ -178,13 +178,13 @@ export default function SalesReportsPage({ onBack }: Props) {
           <div className="relative hidden sm:block">
             <button
               onClick={() => setShowColPicker(v => !v)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white border border-neutral-200 rounded-xl text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl text-sm font-semibold text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50"
             >
               <SlidersHorizontal className="h-4 w-4" />
               <span>الأعمدة</span>
             </button>
             {showColPicker && (
-              <div className="absolute left-0 top-10 bg-white border border-neutral-200 rounded-2xl shadow-xl p-3 z-50 min-w-[200px]">
+              <div className="absolute left-0 top-10 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-xl p-3 z-50 min-w-[200px]">
                 <div className="text-xs font-bold text-neutral-500 mb-2">إظهار/إخفاء الأعمدة</div>
                 {COLUMNS.map(c => (
                   <label key={c.key} className="flex items-center gap-2 py-1 cursor-pointer hover:bg-neutral-50 rounded-lg px-1">
@@ -199,7 +199,7 @@ export default function SalesReportsPage({ onBack }: Props) {
                       }}
                       className="accent-[#B21063]"
                     />
-                    <span className="text-xs text-neutral-700">{c.label}</span>
+                    <span className="text-xs text-neutral-700 dark:text-neutral-200">{c.label}</span>
                   </label>
                 ))}
               </div>
@@ -219,13 +219,13 @@ export default function SalesReportsPage({ onBack }: Props) {
         {paged.map((row, i) => {
           const isExpanded = expandedRows.has(i);
           return (
-            <div key={i} className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+            <div key={i} className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 shadow-sm overflow-hidden">
               <button
                 className="w-full text-right px-4 py-3 flex items-center justify-between gap-2"
                 onClick={() => toggleRow(i)}
               >
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-neutral-800 text-sm truncate">{row.name}</div>
+                  <div className="font-semibold text-neutral-800 dark:text-neutral-100 text-sm truncate">{row.name}</div>
                   <div className="text-xs text-neutral-500 mt-0.5">{row.region}</div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -238,45 +238,45 @@ export default function SalesReportsPage({ onBack }: Props) {
 
               {/* Summary always visible */}
               <div className="px-4 pb-3 grid grid-cols-2 gap-2">
-                <div className="bg-neutral-50 rounded-xl p-2.5">
-                  <div className="text-[10px] text-neutral-400 mb-0.5">المبيعات</div>
-                  <div className="font-bold text-neutral-900 text-sm">{formatFull(row.sales6)}</div>
+                <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-2.5">
+                  <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">المبيعات</div>
+                  <div className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">{formatFull(row.sales6)}</div>
                 </div>
-                <div className="bg-neutral-50 rounded-xl p-2.5">
-                  <div className="text-[10px] text-neutral-400 mb-0.5">المستهدف</div>
-                  <div className="font-semibold text-neutral-600 text-sm">{formatFull(row.target6)}</div>
+                <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-2.5">
+                  <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">المستهدف</div>
+                  <div className="font-semibold text-neutral-600 dark:text-neutral-300 text-sm">{formatFull(row.target6)}</div>
                 </div>
               </div>
 
               {/* Expanded details */}
               {isExpanded && (
-                <div className="px-4 pb-4 border-t border-neutral-100 pt-3 grid grid-cols-2 gap-2">
-                  <div className="bg-neutral-50 rounded-xl p-2.5">
-                    <div className="text-[10px] text-neutral-400 mb-0.5">المعارض</div>
-                    <div className="font-semibold text-neutral-700 text-sm">{row.customers}</div>
+                <div className="px-4 pb-4 border-t border-neutral-100 dark:border-neutral-800 pt-3 grid grid-cols-2 gap-2">
+                  <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-2.5">
+                    <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">المعارض</div>
+                    <div className="font-semibold text-neutral-700 dark:text-neutral-200 text-sm">{row.customers}</div>
                   </div>
-                  <div className="bg-neutral-50 rounded-xl p-2.5">
-                    <div className="text-[10px] text-neutral-400 mb-0.5">الفواتير</div>
-                    <div className="font-semibold text-neutral-700 text-sm">{formatFull(row.invoices)}</div>
+                  <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-2.5">
+                    <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">الفواتير</div>
+                    <div className="font-semibold text-neutral-700 dark:text-neutral-200 text-sm">{formatFull(row.invoices)}</div>
                   </div>
-                  <div className="bg-neutral-50 rounded-xl p-2.5">
-                    <div className="text-[10px] text-neutral-400 mb-0.5">القطع</div>
-                    <div className="font-semibold text-neutral-700 text-sm">{formatFull(row.pieces)}</div>
+                  <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-2.5">
+                    <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">القطع</div>
+                    <div className="font-semibold text-neutral-700 dark:text-neutral-200 text-sm">{formatFull(row.pieces)}</div>
                   </div>
-                  <div className="bg-neutral-50 rounded-xl p-2.5">
-                    <div className="text-[10px] text-neutral-400 mb-0.5">م. الفاتورة</div>
-                    <div className="font-semibold text-neutral-700 text-sm">{formatFull(row.avgInvoice)}</div>
+                  <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-2.5">
+                    <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">م. الفاتورة</div>
+                    <div className="font-semibold text-neutral-700 dark:text-neutral-200 text-sm">{formatFull(row.avgInvoice)}</div>
                   </div>
-                  <div className="bg-neutral-50 rounded-xl p-2.5">
-                    <div className="text-[10px] text-neutral-400 mb-0.5">م. عدد القطع</div>
-                    <div className="font-semibold text-neutral-700 text-sm">{row.avgPiece}</div>
+                  <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-2.5">
+                    <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">م. عدد القطع</div>
+                    <div className="font-semibold text-neutral-700 dark:text-neutral-200 text-sm">{row.avgPiece}</div>
                   </div>
-                  <div className="bg-neutral-50 rounded-xl p-2.5">
-                    <div className="text-[10px] text-neutral-400 mb-0.5">مبيعات مارس</div>
-                    <div className="font-semibold text-neutral-700 text-sm">{formatFull(row.salesMar)}</div>
+                  <div className="bg-neutral-50 dark:bg-neutral-900 rounded-xl p-2.5">
+                    <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">مبيعات مارس</div>
+                    <div className="font-semibold text-neutral-700 dark:text-neutral-200 text-sm">{formatFull(row.salesMar)}</div>
                   </div>
-                  <div className="col-span-2 bg-neutral-50 rounded-xl p-2.5">
-                    <div className="text-[10px] text-neutral-400 mb-1">متبقي 6 مارس</div>
+                  <div className="col-span-2 bg-neutral-50 dark:bg-neutral-900 rounded-xl p-2.5">
+                    <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-1">متبقي 6 مارس</div>
                     <div>{row.achieved ? <span className="text-emerald-600 font-bold text-sm">محقق</span> : <span className="text-amber-600 font-semibold text-sm">{formatFull(row.sales6)}</span>}</div>
                   </div>
                 </div>
@@ -286,40 +286,40 @@ export default function SalesReportsPage({ onBack }: Props) {
         })}
 
         {/* Mobile Totals Card */}
-        <div className="bg-neutral-50 rounded-2xl border border-neutral-200 p-4">
+        <div className="bg-neutral-50 dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="font-bold text-neutral-800 text-sm">الإجمالي</span>
+            <span className="font-bold text-neutral-800 dark:text-neutral-100 text-sm">الإجمالي</span>
             <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", pctColor(totals.achievement6))}>
               {totals.achievement6}%
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-white rounded-xl p-2.5 border border-neutral-100">
-              <div className="text-[10px] text-neutral-400 mb-0.5">إجمالي المبيعات</div>
-              <div className="font-bold text-neutral-900 text-sm">{formatFull(totals.sales6)}</div>
+            <div className="bg-white dark:bg-neutral-800 rounded-xl p-2.5 border border-neutral-100 dark:border-neutral-800">
+              <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">إجمالي المبيعات</div>
+              <div className="font-bold text-neutral-900 dark:text-neutral-100 text-sm">{formatFull(totals.sales6)}</div>
             </div>
-            <div className="bg-white rounded-xl p-2.5 border border-neutral-100">
-              <div className="text-[10px] text-neutral-400 mb-0.5">إجمالي الهدف</div>
-              <div className="font-semibold text-neutral-600 text-sm">{formatFull(totals.target6)}</div>
+            <div className="bg-white dark:bg-neutral-800 rounded-xl p-2.5 border border-neutral-100 dark:border-neutral-800">
+              <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">إجمالي الهدف</div>
+              <div className="font-semibold text-neutral-600 dark:text-neutral-300 text-sm">{formatFull(totals.target6)}</div>
             </div>
-            <div className="bg-white rounded-xl p-2.5 border border-neutral-100">
-              <div className="text-[10px] text-neutral-400 mb-0.5">الفواتير</div>
-              <div className="font-semibold text-neutral-700 text-sm">{formatFull(totals.invoices)}</div>
+            <div className="bg-white dark:bg-neutral-800 rounded-xl p-2.5 border border-neutral-100 dark:border-neutral-800">
+              <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">الفواتير</div>
+              <div className="font-semibold text-neutral-700 dark:text-neutral-200 text-sm">{formatFull(totals.invoices)}</div>
             </div>
-            <div className="bg-white rounded-xl p-2.5 border border-neutral-100">
-              <div className="text-[10px] text-neutral-400 mb-0.5">القطع</div>
-              <div className="font-semibold text-neutral-700 text-sm">{formatFull(totals.pieces)}</div>
+            <div className="bg-white dark:bg-neutral-800 rounded-xl p-2.5 border border-neutral-100 dark:border-neutral-800">
+              <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5">القطع</div>
+              <div className="font-semibold text-neutral-700 dark:text-neutral-200 text-sm">{formatFull(totals.pieces)}</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* ===== Desktop Table View ===== */}
-      <div className="hidden sm:block bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+      <div className="hidden sm:block bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-neutral-50 border-b border-neutral-200">
+              <tr className="bg-neutral-50 dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700">
                 {activeCols.map(col => (
                   <th
                     key={col.key}
@@ -346,7 +346,7 @@ export default function SalesReportsPage({ onBack }: Props) {
               ))}
             </tbody>
             <tfoot>
-              <tr className="bg-neutral-50 border-t border-neutral-200 font-bold">
+              <tr className="bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 font-bold">
                 {activeCols.map(col => (
                   <td key={col.key} className="px-4 py-3 whitespace-nowrap">
                     {renderTotal(col.key)}
@@ -358,7 +358,7 @@ export default function SalesReportsPage({ onBack }: Props) {
         </div>
 
         {/* Pagination */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-neutral-100">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-neutral-100 dark:border-neutral-800">
           <div className="text-xs text-neutral-500">
             عرض {Math.min((page - 1) * pageSize + 1, sorted.length)}-{Math.min(page * pageSize, sorted.length)} من {sorted.length}
           </div>
@@ -384,18 +384,18 @@ export default function SalesReportsPage({ onBack }: Props) {
 
       {/* Mobile Pagination */}
       {totalPages > 1 && (
-        <div className="sm:hidden flex items-center justify-between mt-3 bg-white rounded-2xl border border-neutral-200 px-4 py-3">
+        <div className="sm:hidden flex items-center justify-between mt-3 bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 px-4 py-3">
           <div className="text-xs text-neutral-500">
             {Math.min((page - 1) * pageSize + 1, sorted.length)}-{Math.min(page * pageSize, sorted.length)} من {sorted.length}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 border border-neutral-200">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 border border-neutral-200 dark:border-neutral-700">
               <ChevronRight className="h-4 w-4" />
             </button>
             <span className="px-3 py-1 bg-[#B21063] text-white rounded-full text-xs font-bold">
               {page} / {totalPages}
             </span>
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 border border-neutral-200">
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 border border-neutral-200 dark:border-neutral-700">
               <ChevronLeft className="h-4 w-4" />
             </button>
           </div>

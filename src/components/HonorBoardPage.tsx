@@ -69,7 +69,7 @@ export default function HonorBoardPage() {
             <Trophy className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-neutral-900">لوحة الشرف</h1>
+            <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">لوحة الشرف</h1>
             <p className="text-sm text-neutral-500">أفضل المندوبين والمعارض أداءً</p>
           </div>
         </div>
@@ -79,7 +79,7 @@ export default function HonorBoardPage() {
           <select
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
-            className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
           >
             {MONTHS_AR.map((m, i) => (
               <option key={i} value={i}>{m}</option>
@@ -88,7 +88,7 @@ export default function HonorBoardPage() {
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
           >
             {[2023, 2024, 2025, 2026].map((y) => (
               <option key={y} value={y}>{y}</option>
@@ -127,10 +127,10 @@ export default function HonorBoardPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.15 }}
-        className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden"
+        className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 shadow-sm overflow-hidden"
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
-          <h2 className="font-semibold text-neutral-800 text-sm">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 dark:border-neutral-800">
+          <h2 className="font-semibold text-neutral-800 dark:text-neutral-100 text-sm">
             {tab === "employees" ? "ترتيب المندوبين" : "ترتيب المعارض"} — {MONTHS_AR[month]} {year}
           </h2>
           <button
@@ -155,17 +155,17 @@ export default function HonorBoardPage() {
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.04 }}
-                    className="flex items-center gap-4 px-5 py-3.5 border-b border-neutral-50 hover:bg-neutral-50/70 transition-colors last:border-0"
+                    className="flex items-center gap-4 px-5 py-3.5 border-b border-neutral-50 dark:border-neutral-800 hover:bg-neutral-50/70 transition-colors last:border-0"
                   >
                     <div className={`size-9 rounded-xl bg-gradient-to-br ${style.bg} flex items-center justify-center shadow-sm shrink-0`}>
                       <BadgeIcon className="h-4 w-4 text-white" />
                     </div>
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ring-2 ${style.ring} ${style.text} bg-white shrink-0`}>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ring-2 ${style.ring} ${style.text} bg-white dark:bg-neutral-800 shrink-0`}>
                       {emp.rank}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-neutral-900 truncate">{emp.name}</p>
-                      <div className="flex items-center gap-2 text-xs text-neutral-400 mt-0.5">
+                      <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100 truncate">{emp.name}</p>
+                      <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                         <Store className="h-3 w-3 shrink-0" />
                         <span className="truncate">{emp.showroom}</span>
                         <span className="hidden sm:inline">•</span>
@@ -174,8 +174,8 @@ export default function HonorBoardPage() {
                       </div>
                     </div>
                     <div className="text-left hidden sm:block shrink-0">
-                      <p className="text-sm font-bold text-neutral-900">{fmt(emp.sales)}</p>
-                      <p className="text-xs text-neutral-400">من {fmt(emp.target)}</p>
+                      <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">{fmt(emp.sales)}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">من {fmt(emp.target)}</p>
                     </div>
                     <div className="shrink-0">
                       <AchievementPill value={emp.achievement} />
@@ -198,24 +198,24 @@ export default function HonorBoardPage() {
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="flex items-center gap-4 px-5 py-3.5 border-b border-neutral-50 hover:bg-neutral-50/70 transition-colors last:border-0"
+                    className="flex items-center gap-4 px-5 py-3.5 border-b border-neutral-50 dark:border-neutral-800 hover:bg-neutral-50/70 transition-colors last:border-0"
                   >
                     <div className={`size-9 rounded-xl bg-gradient-to-br ${style.bg} flex items-center justify-center shadow-sm shrink-0`}>
                       <BadgeIcon className="h-4 w-4 text-white" />
                     </div>
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ring-2 ${style.ring} ${style.text} bg-white shrink-0`}>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ring-2 ${style.ring} ${style.text} bg-white dark:bg-neutral-800 shrink-0`}>
                       {s.rank}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-neutral-900 truncate">{s.name}</p>
-                      <div className="flex items-center gap-1.5 text-xs text-neutral-400 mt-0.5">
+                      <p className="font-semibold text-sm text-neutral-900 dark:text-neutral-100 truncate">{s.name}</p>
+                      <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                         <MapPin className="h-3 w-3 shrink-0" />
                         <span className="truncate">{s.region}</span>
                       </div>
                     </div>
                     <div className="text-left hidden sm:block shrink-0">
-                      <p className="text-sm font-bold text-neutral-900">{fmt(s.sales)}</p>
-                      <p className="text-xs text-neutral-400">من {fmt(s.target)}</p>
+                      <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">{fmt(s.sales)}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">من {fmt(s.target)}</p>
                     </div>
                     <div className="shrink-0">
                       <AchievementPill value={s.achievement} />
@@ -252,8 +252,8 @@ function PodiumCard({ person, position, height, featured = false }: {
         <Icon className="h-6 w-6 text-white" />
       </div>
       <div className="text-center px-1">
-        <p className={`font-bold text-neutral-900 leading-tight ${featured ? "text-sm" : "text-xs"}`}>{person.name.split(" ").slice(0, 2).join(" ")}</p>
-        <p className="text-[10px] text-neutral-400 mt-0.5 truncate max-w-[90px]">{person.showroom}</p>
+        <p className={`font-bold text-neutral-900 dark:text-neutral-100 leading-tight ${featured ? "text-sm" : "text-xs"}`}>{person.name.split(" ").slice(0, 2).join(" ")}</p>
+        <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-0.5 truncate max-w-[90px]">{person.showroom}</p>
         <p className={`text-xs font-bold mt-1 ${position === 1 ? "text-yellow-600" : position === 2 ? "text-slate-500" : "text-amber-700"}`}>
           {person.achievement}%
         </p>

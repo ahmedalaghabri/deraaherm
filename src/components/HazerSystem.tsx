@@ -58,7 +58,7 @@ export default function HazerSystem() {
 
   return (
     <div dir="rtl" className="min-h-screen">
-      <div className="mx-auto max-w-[1200px] p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="mx-auto max-w-[var(--page-max-w)] p-3 sm:p-6 space-y-4 sm:space-y-6">
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <Card className="rounded-2xl border bg-white dark:bg-neutral-800 border-neutral-100 dark:border-neutral-700 shadow-sm">
             <CardHeader className="px-4 sm:px-6">

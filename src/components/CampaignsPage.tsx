@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { X, MoreHorizontal, CheckCircle2, Circle, AlertCircle, Clock, Megaphone, Users, FileText, Camera, Layout, Eye, Code, Rocket, Activity, BarChart3, Archive, Trash2, Edit3 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../lib/utils";
+import { useFirestoreCollection } from "../lib/useFirestoreCollection";
 
 type StageStatus = "pending" | "in-progress" | "completed" | "blocked";
 type CampaignStatus = "draft" | "active" | "paused" | "completed" | "archived";
@@ -130,7 +131,7 @@ function calcProgress(stages: CampaignStage[]) {
 }
 
 export default function CampaignsPage({ onBack: _onBack, search: externalSearch }: { onBack?: () => void; search?: string }) {
-  const [campaigns, setCampaigns] = useState<Campaign[]>(() => getInitialCampaigns());
+  const [campaigns, setCampaigns] = useFirestoreCollection<Campaign>("campaigns", getInitialCampaigns, STORAGE_KEY);
   const [_internalSearch, _setInternalSearch] = useState("");
   const search = externalSearch ?? _internalSearch;
   const [modalOpen, setModalOpen] = useState(false);
@@ -139,7 +140,7 @@ export default function CampaignsPage({ onBack: _onBack, search: externalSearch 
   const [editing, setEditing] = useState<Campaign | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
 
-  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(campaigns)); }, [campaigns]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(campaigns)); }, [campaigns]); // نسخة محلية احتياطية
 
   const [form, setForm] = useState<Partial<Campaign>>({
     name: "", description: "", status: "draft", startDate: "", endDate: "", budget: "", targetAudience: "", progress: 0,
@@ -237,7 +238,7 @@ export default function CampaignsPage({ onBack: _onBack, search: externalSearch 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-neutral-900 font-sans" dir="rtl">
       {/* Content */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-5 space-y-4">
+      <div className="max-w-[var(--page-max-w)] mx-auto px-4 sm:px-6 py-5 space-y-4">
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
@@ -273,11 +274,11 @@ export default function CampaignsPage({ onBack: _onBack, search: externalSearch 
                   const cfg = STATUS_CONFIG[c.status];
                   return (
                     <tr key={c.id} className="border-b border-gray-50 dark:border-neutral-700/50 hover:bg-gray-50/60 dark:hover:bg-neutral-700/20 transition-colors">
-                      <td className="px-4 py-3.5 text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap font-mono text-right">{c.id}</td>
+                      <td className="px-4 py-3.5 text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap font-mono text-right">{c.id}</td>
                       <td className="px-4 py-3.5">
                         <div>
                           <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{c.name}</p>
-                          <p className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[240px]">{c.description}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 truncate max-w-[240px]">{c.description}</p>
                         </div>
                       </td>
                       <td className="px-4 py-3.5">
@@ -386,7 +387,7 @@ export default function CampaignsPage({ onBack: _onBack, search: externalSearch 
                                   </div>
                                   <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-2">{stage.title}</p>
                                   {stage.notes && <p className="text-xs text-gray-500 dark:text-gray-400">{stage.notes}</p>}
-                                  <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-400">
+                                  <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-500 dark:text-neutral-400">
                                     {stage.startedAt && <span>بدأ: {fmtDate(stage.startedAt)}</span>}
                                     {stage.completedAt && <span>اكتمل: {fmtDate(stage.completedAt)}</span>}
                                   </div>

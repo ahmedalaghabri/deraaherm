@@ -38,7 +38,7 @@ export const ds = {
   /** خلفية الصفحة الكاملة */
   page: "min-h-screen bg-neutral-0 dark:bg-neutral-900",
   /** حاوية المحتوى القصوى */
-  container: "max-w-[1400px] mx-auto px-1 sm:px-2",
+  container: "max-w-[1190px] mx-auto px-1 sm:px-2",
 
   /* ── الأسطح (Surfaces) ── */
   /** بطاقة قياسية (rounded-xl) — مثل KpiCard */

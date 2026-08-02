@@ -285,7 +285,7 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
       dir="rtl"
       className="min-h-screen"
     >
-      <div className="mx-auto max-w-[1400px] p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="mx-auto max-w-[var(--page-max-w)] px-1 sm:px-2 py-3 sm:py-6 space-y-4 sm:space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}

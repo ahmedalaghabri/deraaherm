@@ -82,7 +82,7 @@ export default function TeamsPage({ filter: externalFilter, search: externalSear
   }, [filter, search]);
 
   return (
-    <div className="max-w-[1600px] mx-auto px-2 sm:px-4 py-4 space-y-4">
+    <div className="max-w-[var(--page-max-w)] mx-auto px-2 sm:px-4 py-4 space-y-4">
       {/* Groups */}
       {visibleGroups.length === 0 ? (
         <div className="py-20 text-center">
@@ -106,7 +106,7 @@ export default function TeamsPage({ filter: externalFilter, search: externalSear
                       <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">{group.name}</h3>
                       <span className={cn("text-[11px] font-semibold px-2 py-0.5 rounded-full", cfg.badgeBg, cfg.badgeText)}>{cfg.singular}</span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">{group.members.length} أعضاء{group.head ? ` · المسؤول: ${group.head}` : ""}</p>
+                    <p className="text-xs text-gray-500 dark:text-neutral-400 mt-0.5">{group.members.length} أعضاء{group.head ? ` · المسؤول: ${group.head}` : ""}</p>
                   </div>
                 </div>
               </div>
@@ -116,7 +116,7 @@ export default function TeamsPage({ filter: externalFilter, search: externalSear
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm min-w-[720px]">
                     <thead>
-                      <tr className="border-b border-gray-100 dark:border-neutral-700 text-right text-xs text-gray-400">
+                      <tr className="border-b border-gray-100 dark:border-neutral-700 text-right text-xs text-gray-500 dark:text-neutral-400">
                         <th className="px-4 py-3 font-medium">الاسم</th>
                         <th className="px-4 py-3 font-medium">المسمى الوظيفي</th>
                         <th className="px-4 py-3 font-medium">الرقم الوظيفي</th>

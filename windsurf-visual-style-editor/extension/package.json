@@ -1,0 +1,65 @@
+{
+  "name": "windsurf-visual-style-editor",
+  "displayName": "Visual Style Editor",
+  "description": "Click page elements and edit CSS from a Windsurf sidebar.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onCommand:visualStyleEditor.startBridge",
+    "onView:visualStyleEditor.properties"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "visualStyleEditor.startBridge", "title": "Visual Style Editor: Start Bridge" },
+      { "command": "visualStyleEditor.stopBridge", "title": "Visual Style Editor: Stop Bridge" }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "visualStyleEditor",
+          "title": "Visual Styles",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "visualStyleEditor": [
+        {
+          "type": "webview",
+          "id": "visualStyleEditor.properties",
+          "name": "Properties"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Visual Style Editor",
+      "properties": {
+        "visualStyleEditor.port": {
+          "type": "number",
+          "default": 49152,
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "Local WebSocket bridge port."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/vscode": "^1.85.0",
+    "@types/ws": "^8.5.13",
+    "@vscode/vsce": "^3.2.1",
+    "typescript": "^5.7.2"
+  }
+}

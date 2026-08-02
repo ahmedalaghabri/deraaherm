@@ -68,13 +68,13 @@ export default function SaudiCalendar() {
   }, {});
 
   return (
-    <div dir="rtl" className="p-2 sm:p-4 space-y-4 max-w-[1400px] mx-auto">
+    <div dir="rtl" className="p-2 sm:p-4 space-y-4 max-w-[var(--page-max-w)] mx-auto">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm px-4 py-3">
         <div>
           <h2 className="text-base font-bold text-neutral-800 dark:text-neutral-200">التقويم السنوي للمملكة العربية السعودية</h2>
-          <p className="text-xs text-neutral-400 dark:text-neutral-400 mt-0.5">الإجازات الرسمية والمناسبات الوطنية</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">الإجازات الرسمية والمناسبات الوطنية</p>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={() => setYear(y => y - 1)}
@@ -141,7 +141,7 @@ export default function SaudiCalendar() {
             })}
           </div>
           {!SAUDI_HOLIDAYS[year] && (
-            <div className="flex items-center gap-2 mt-3 text-xs text-neutral-400 dark:text-neutral-500 bg-neutral-50 dark:bg-neutral-700 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 mt-3 text-xs text-neutral-500 dark:text-neutral-500 bg-neutral-50 dark:bg-neutral-700 rounded-lg px-3 py-2">
               <Info className="w-3.5 h-3.5 shrink-0" />
               <span>تواريخ الأعياد الدينية تقديرية وتعتمد على رؤية الهلال</span>
             </div>
@@ -160,7 +160,7 @@ export default function SaudiCalendar() {
               {/* Month header */}
               <div className="px-3 py-2 bg-neutral-50 dark:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700 flex items-center justify-between">
                 <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200">{monthName}</span>
-                <span className="text-xs text-neutral-400 dark:text-neutral-400">{year}</span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400">{year}</span>
               </div>
               <div className="p-2">
                 {/* Day name headers */}
@@ -168,7 +168,7 @@ export default function SaudiCalendar() {
                   {DAYS_AR.map((d, i) => (
                     <div key={d}
                       className={cn(
-                        "text-center text-[9px] font-semibold py-0.5",
+                        "text-center text-[10px] font-semibold py-0.5",
                         i === 5 ? "text-rose-400 dark:text-rose-300" : i === 6 ? "text-rose-300 dark:text-rose-200" : "text-neutral-400 dark:text-neutral-400"
                       )}>
                       {d}
@@ -216,7 +216,7 @@ export default function SaudiCalendar() {
         })}
       </div>
 
-      <p className="text-center text-xs text-neutral-400 dark:text-neutral-500 pb-4">
+      <p className="text-center text-xs text-neutral-500 dark:text-neutral-500 pb-4">
         * تواريخ الأعياد الدينية تقديرية وتخضع لإعلان رسمي من المملكة العربية السعودية
       </p>
     </div>

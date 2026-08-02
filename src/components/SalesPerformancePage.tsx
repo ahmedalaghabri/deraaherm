@@ -30,7 +30,7 @@ import {
   Sun,
 } from "lucide-react";
 import { cn } from "../lib/utils";
-import PageTabs from "./PageTabs";
+import PageHeader from "./PageHeader";
 
 // ─────────────────────────────────────────
 // Constants
@@ -73,16 +73,16 @@ const _AREA_META: { n: string; ri: number }[] = [
   { n: "المدينة المنورة",   ri: 9 },{ n: "ينبع",              ri: 9 },
 ];
 
-const REGIONS = _REGION_META.map((r, i) => ({ id: `r${i + 1}`, name: `إقليم ${r.n}` }));
+export const REGIONS = _REGION_META.map((r, i) => ({ id: `r${i + 1}`, name: `إقليم ${r.n}` }));
 
-const AREAS = _AREA_META.map((a, i) => ({
+export const AREAS = _AREA_META.map((a, i) => ({
   id: `a${i + 1}`,
   name: `منطقة ${a.n}`,
   regionId: `r${a.ri + 1}`,
 }));
 
 // 100 supervisors: 4 per area (25 areas × 4 = 100)
-const SUPERVISORS = Array.from({ length: 100 }, (_, i) => {
+export const SUPERVISORS = Array.from({ length: 100 }, (_, i) => {
   const areaIdx = Math.floor(i / 4);              // area 0-24, 4 supervisors each
   const area    = AREAS[areaIdx];
   const s1 = _ds(_dsk(i, 1, 31));
@@ -97,7 +97,7 @@ const SUPERVISORS = Array.from({ length: 100 }, (_, i) => {
 
 // 500 showrooms: 20 per area (25 areas × 20 = 500)
 // Each group of 5 showrooms inside an area shares one supervisor (20 showrooms ÷ 4 supervisors = 5)
-const SHOWROOMS = Array.from({ length: 500 }, (_, i) => {
+export const SHOWROOMS = Array.from({ length: 500 }, (_, i) => {
   const areaIdx  = Math.floor(i / 20);            // area 0-24
   const area     = AREAS[areaIdx];
   const supLocal = Math.floor((i % 20) / 5);      // supervisor slot 0-3 within the area
@@ -113,7 +113,7 @@ const SHOWROOMS = Array.from({ length: 500 }, (_, i) => {
 });
 
 // 500 sellers: 1 per showroom
-const SELLERS = Array.from({ length: 500 }, (_, i) => {
+export const SELLERS = Array.from({ length: 500 }, (_, i) => {
   const showroom   = SHOWROOMS[i];
   const f1  = _ds(_dsk(i, 11, 100));
   const f2  = _ds(_dsk(i, 22, 200));
@@ -306,7 +306,7 @@ function genAggYearData(selIdxs: number[], year: number) {
 }
 
 // ── Per-seller derived KPIs for a period ────────────────────────────────────
-function sellerPeriodSales(selIdx: number, year: number, month: number, period: "day" | "month" | "year", day: number) {
+export function sellerPeriodSales(selIdx: number, year: number, month: number, period: "day" | "month" | "year", day: number) {
   if (period === "day") {
     return genSellerDayData(selIdx, year, month, day).reduce((s, h) => s + h.current, 0);
   }
@@ -318,7 +318,7 @@ function sellerPeriodSales(selIdx: number, year: number, month: number, period: 
     s + genSellerMonthData(selIdx, year, mIdx).reduce((ms, d) => ms + d.current, 0), 0);
 }
 
-function sellerPeriodPrevSales(selIdx: number, year: number, month: number, period: "day" | "month" | "year", day: number) {
+export function sellerPeriodPrevSales(selIdx: number, year: number, month: number, period: "day" | "month" | "year", day: number) {
   if (period === "day") {
     return genSellerDayData(selIdx, year, month, day).reduce((s, h) => s + h.prev, 0);
   }
@@ -330,7 +330,7 @@ function sellerPeriodPrevSales(selIdx: number, year: number, month: number, peri
 }
 
 // Scale target to the selected period
-function sellerPeriodTarget(selIdx: number, year: number, month: number, period: "day" | "month" | "year") {
+export function sellerPeriodTarget(selIdx: number, year: number, month: number, period: "day" | "month" | "year") {
   const annual = SELLERS[selIdx].target * 12;
   if (period === "year") return annual;
   const monthlyTarget = SELLERS[selIdx].target;
@@ -339,14 +339,14 @@ function sellerPeriodTarget(selIdx: number, year: number, month: number, period:
 }
 
 // Scale invoices / pieces / customers proportionally to the period
-function scalePeriodCount(base: number, year: number, month: number, period: "day" | "month" | "year") {
+export function scalePeriodCount(base: number, year: number, month: number, period: "day" | "month" | "year") {
   if (period === "year") return base * 12;
   if (period === "month") return base;
   return Math.max(1, Math.round(base / getDaysInMonth(year, month)));
 }
 
 // ── Date-range helpers (used when viewMode==="table") ──────────────────────
-function sellerRangeSales(selIdx: number, from: string, to: string): number {
+export function sellerRangeSales(selIdx: number, from: string, to: string): number {
   let total = 0;
   let [y, m] = [parseInt(from.slice(0, 4)), parseInt(from.slice(5, 7)) - 1];
   const [endY, endM] = [parseInt(to.slice(0, 4)), parseInt(to.slice(5, 7)) - 1];
@@ -361,7 +361,7 @@ function sellerRangeSales(selIdx: number, from: string, to: string): number {
   }
   return total;
 }
-function sellerRangePrevSales(selIdx: number, from: string, to: string): number {
+export function sellerRangePrevSales(selIdx: number, from: string, to: string): number {
   let total = 0;
   let [y, m] = [parseInt(from.slice(0, 4)), parseInt(from.slice(5, 7)) - 1];
   const [endY, endM] = [parseInt(to.slice(0, 4)), parseInt(to.slice(5, 7)) - 1];
@@ -376,7 +376,7 @@ function sellerRangePrevSales(selIdx: number, from: string, to: string): number 
   }
   return total;
 }
-function sellerRangeTarget(selIdx: number, from: string, to: string): number {
+export function sellerRangeTarget(selIdx: number, from: string, to: string): number {
   let total = 0;
   let [y, m] = [parseInt(from.slice(0, 4)), parseInt(from.slice(5, 7)) - 1];
   const [endY, endM] = [parseInt(to.slice(0, 4)), parseInt(to.slice(5, 7)) - 1];
@@ -392,7 +392,7 @@ function sellerRangeTarget(selIdx: number, from: string, to: string): number {
   }
   return total;
 }
-function scaleRangeCount(base: number, from: string, to: string): number {
+export function scaleRangeCount(base: number, from: string, to: string): number {
   let days = 0;
   let [y, m] = [parseInt(from.slice(0, 4)), parseInt(from.slice(5, 7)) - 1];
   const [endY, endM] = [parseInt(to.slice(0, 4)), parseInt(to.slice(5, 7)) - 1];
@@ -514,6 +514,208 @@ function KpiCard({ title, value, sub, icon: Icon, color = "#4D8AFF", progress }:
         </div>
       )}
     </div>
+  );
+}
+
+interface TemporarySalesSummaryCardProps {
+  sales: number;
+  target: number;
+  periodLabel: string;
+}
+
+function TemporarySalesSummaryCard({ sales, target, periodLabel }: TemporarySalesSummaryCardProps) {
+  const achievementRate = target > 0 ? Number(((sales / target) * 100).toFixed(1)) : 0;
+  const remainingToTarget = Math.max(target - sales, 0);
+  const achievementColor = pctColor(achievementRate);
+  const animatedSales = useCountUp(sales, 1100);
+  const animatedMonthlyTarget = useCountUp(target, 1200);
+  const animatedRemaining = useCountUp(remainingToTarget, 1150);
+
+  return (
+    <motion.section
+      data-testid="temporary-sales-summary-card"
+      initial={{ opacity: 0, y: 14, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      whileHover={{ y: -4, scale: 1.01, boxShadow: "0 18px 38px rgba(42, 37, 31, 0.13)" }}
+      transition={{ type: "spring", stiffness: 260, damping: 23 }}
+      className="relative flex h-full min-h-[390px] snap-start flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white px-4 pb-4 pt-5 shadow-[0_2px_16px_rgba(0,0,0,0.05)] ring-1 ring-black/[0.015] dark:border-neutral-700 dark:bg-neutral-800 sm:min-h-[430px] sm:px-5"
+      style={{
+        backgroundImage: `radial-gradient(ellipse 58% 48% at 100% 0%, ${achievementColor}18 0%, ${achievementColor}0A 46%, transparent 76%)`,
+      }}
+    >
+      <div className="pointer-events-none absolute inset-x-0 -top-16 h-40 bg-gradient-to-r from-transparent via-white/10 to-white/30 opacity-40 blur-2xl dark:to-white/5" />
+
+      <div className="relative flex min-h-[42px] items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="truncate text-[13px] font-bold text-[#171717] dark:text-white">إجمالي المبيعات</h3>
+          <p className="mt-0.5 text-[12px] font-medium text-[#756B61] dark:text-neutral-300">{periodLabel}</p>
+        </div>
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/80 text-black shadow-sm ring-1 ring-[#E6E2DD] dark:bg-white/10 dark:text-white dark:ring-white/10">
+          <ShoppingBag className="h-4 w-4" strokeWidth={1.8} />
+        </div>
+      </div>
+
+      <div className="relative mt-4">
+        <div>
+          <p className="text-[12px] font-medium text-[#7B7066] dark:text-neutral-400">المبيعات المحققة</p>
+          <div className="mt-1 flex items-end gap-1">
+            <motion.p
+              initial={{ opacity: 0.25 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.35 }}
+              className="text-[18px] font-extrabold leading-none tracking-tight tabular-nums sm:text-[20px]"
+              style={{ color: achievementColor }}
+            >
+              {animatedSales.toLocaleString("en-US")}
+            </motion.p>
+            <span className="text-[12px] font-bold text-black dark:text-white">ر.س</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative mt-3 flex items-center gap-3 rounded-2xl border border-white/70 bg-white/[0.38] px-2.5 py-2 shadow-sm backdrop-blur-sm">
+        <div className="relative h-3 min-w-0 flex-1 rounded-full bg-[#E7DED4] shadow-inner dark:bg-white/10">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(achievementRate, 100)}%` }}
+              transition={{ duration: 0.75, ease: "easeOut" }}
+              className="h-full rounded-full"
+              style={{
+                backgroundImage: `linear-gradient(to left, ${achievementColor} 0%, ${achievementColor}CC 80%, ${achievementColor}66 100%)`,
+              }}
+            />
+            <span
+              className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white shadow-[0_2px_8px_rgba(85,48,18,0.30)] dark:border-[#33271B]"
+              style={{ left: `${100 - Math.min(achievementRate, 100)}%`, backgroundColor: achievementColor }}
+            />
+        </div>
+        <b className="w-12 shrink-0 text-center text-[12px]" style={{ color: achievementColor }}>{achievementRate}%</b>
+      </div>
+
+      <div className="relative mt-auto divide-y divide-neutral-200/80 pt-3 dark:divide-neutral-700/80">
+        <div className="px-2.5 py-3">
+          <p className="text-[12px] font-semibold text-[#7B7066] dark:text-neutral-400">الهدف الشهري</p>
+          <p className="mt-0.5 text-[14px] font-bold text-[#171717] tabular-nums dark:text-white sm:text-[16px] xl:text-[18px]">
+            {animatedMonthlyTarget.toLocaleString("en-US")}
+          </p>
+        </div>
+        <div className="px-2.5 py-3">
+          <p className="text-[12px] font-semibold text-[#7B7066] dark:text-neutral-400">الهدف التراكمي</p>
+          <p className="mt-0.5 text-[14px] font-bold text-[#171717] tabular-nums dark:text-white sm:text-[16px] xl:text-[18px]">
+            {animatedMonthlyTarget.toLocaleString("en-US")}
+          </p>
+        </div>
+        <div className="px-2.5 py-3">
+          <p className="text-[12px] font-semibold text-[#7B7066] dark:text-neutral-400">المتبقي للهدف</p>
+          <p className="mt-0.5 text-[14px] font-bold text-[#171717] tabular-nums dark:text-white sm:text-[16px] xl:text-[18px]">
+            {animatedRemaining.toLocaleString("en-US")}
+          </p>
+        </div>
+      </div>
+    </motion.section>
+  );
+}
+
+interface SummaryMetric {
+  label: string;
+  value: string;
+  accent?: boolean;
+}
+
+function MetricSummaryCard({
+  title,
+  value,
+  icon: Icon,
+  color,
+  progress,
+  periodLabel,
+  metrics,
+}: {
+  title: string;
+  value: string;
+  icon: React.ElementType;
+  color: string;
+  progress: number;
+  periodLabel: string;
+  metrics: SummaryMetric[];
+}) {
+  const safeProgress = Math.max(0, Math.min(progress, 100));
+
+  const { num: mainNum, suffix: mainSuffix, prefix: mainPrefix } = parseFormattedValue(value);
+  const animatedMainValue = useCountUp(mainNum, 1100);
+  const displayMainValue = formatAnimated(animatedMainValue, mainSuffix, mainPrefix);
+
+  const animatedMetrics = metrics.map((metric, idx) => {
+    const { num, suffix, prefix } = parseFormattedValue(metric.value);
+    const animated = useCountUp(num, 1200 + (idx * 100));
+    return { ...metric, animatedValue: formatAnimated(animated, suffix, prefix) };
+  });
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 14, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      whileHover={{ y: -4, scale: 1.01, boxShadow: "0 18px 38px rgba(42, 37, 31, 0.13)" }}
+      transition={{ type: "spring", stiffness: 260, damping: 23 }}
+      className="relative flex h-full min-h-[390px] snap-start flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white px-4 pb-4 pt-5 shadow-[0_2px_16px_rgba(0,0,0,0.05)] ring-1 ring-black/[0.015] dark:border-neutral-700 dark:bg-neutral-800 sm:min-h-[430px] sm:px-5"
+      style={{
+        backgroundImage: `radial-gradient(ellipse 58% 48% at 100% 0%, ${color}18 0%, ${color}0A 46%, transparent 76%)`,
+      }}
+    >
+      <div className="pointer-events-none absolute inset-x-0 -top-16 h-40 bg-gradient-to-r from-transparent via-white/10 to-white/30 opacity-40 blur-2xl dark:to-white/5" />
+
+      <div className="relative flex min-h-[42px] items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="truncate text-[13px] font-bold text-black">{title}</h3>
+          <p className="mt-0.5 truncate text-[12px] font-medium text-[#4A4540]">{periodLabel}</p>
+        </div>
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/80 text-black shadow-sm ring-1 ring-[#E6E2DD]">
+          <Icon className="h-4 w-4" strokeWidth={1.8} />
+        </div>
+      </div>
+
+      <div className="relative mt-4">
+        <p className="text-[12px] font-medium text-[#4A4540]">القيمة الحالية</p>
+        <motion.p
+          initial={{ opacity: 0.25, y: 3 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="mt-1 text-[18px] font-extrabold leading-none tracking-tight text-black tabular-nums"
+        >
+          {displayMainValue}
+        </motion.p>
+      </div>
+
+      <div className="relative mt-3 flex items-center gap-3 rounded-2xl border border-white/70 bg-white/[0.38] px-2.5 py-2 shadow-sm backdrop-blur-sm">
+        <div className="relative h-3 min-w-0 flex-1 rounded-full bg-[#E7DED4] shadow-inner">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${safeProgress}%` }}
+            transition={{ duration: 0.75, ease: "easeOut" }}
+            className="h-full rounded-full"
+            style={{ backgroundImage: `linear-gradient(to left, ${color} 0%, ${color}CC 80%, ${color}66 100%)` }}
+          />
+          <span
+            className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white shadow-[0_2px_8px_rgba(23,23,23,0.22)]"
+            style={{ left: `${100 - safeProgress}%`, backgroundColor: color }}
+          />
+        </div>
+        <b className="w-12 shrink-0 text-center text-[12px] text-black">
+          {Number(progress.toFixed(1))}%
+        </b>
+      </div>
+
+      <div className="relative mt-auto divide-y divide-neutral-200/80 pt-3 dark:divide-neutral-700/80">
+        {animatedMetrics.map((metric) => (
+          <div key={metric.label} className="min-w-0 px-2 py-3">
+            <p className="line-clamp-2 text-[12px] font-semibold leading-4 text-[#4A4540]">{metric.label}</p>
+            <p className="mt-1 truncate text-[14px] font-bold text-black tabular-nums sm:text-[16px] xl:text-[18px]">
+              {metric.animatedValue}
+            </p>
+          </div>
+        ))}
+      </div>
+    </motion.section>
   );
 }
 
@@ -951,9 +1153,9 @@ function DrillTable({
 
       {/* Default table view */}
       {(!mobileTableMode || mobileTableMode === "default") && (
-      <div className="overflow-x-auto max-h-[70vh] overflow-y-auto relative">
+      <div className="overflow-x-auto relative">
         <table className="w-full text-[11px] sm:text-[13px]" style={{ minWidth: 600 }}>
-          <thead className="sticky top-0 z-10">
+          <thead>
             <tr className="bg-neutral-50 dark:bg-neutral-700 border-b border-neutral-100 dark:border-neutral-700">
               {visibleCols.map(col => (
                 <th key={col.key}
@@ -1311,7 +1513,7 @@ function DateRangePicker({ dateFrom, dateTo, onFromChange, onToChange, iconOnly,
     if (btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
       const vw = window.innerWidth;
-      const panelW = Math.min(520, vw - 32);
+      const panelW = Math.min(560, vw - 32);
       const center = rect.left + rect.width / 2;
       let left = center - panelW / 2;
       if (left < 16) left = 16;
@@ -1360,7 +1562,7 @@ function DateRangePicker({ dateFrom, dateTo, onFromChange, onToChange, iconOnly,
     while (cells.length % 7 !== 0) cells.push(null);
 
     return (
-      <div className="flex-1 min-w-[200px] sm:min-w-[240px]">
+      <div className="flex-1 min-w-[200px] sm:min-w-[230px]">
         {/* Month header */}
         <div className="flex items-center justify-between px-2 sm:px-3 pb-2 sm:pb-3">
           {isLeft ? (
@@ -1380,7 +1582,7 @@ function DateRangePicker({ dateFrom, dateTo, onFromChange, onToChange, iconOnly,
         <div className="grid grid-cols-7 mb-1">
           {DAYS_FULL_AR.map((d, i) => (
             <div key={i} className={cn(
-              "text-center text-[9px] sm:text-[12px] font-semibold py-0.5 sm:py-1",
+              "text-center text-[10px] sm:text-[12px] font-semibold py-0.5 sm:py-1",
               i === 5 ? "text-[#2563EB]" : i === 6 ? "text-[#2563EB]" : "text-neutral-500 dark:text-neutral-400"
             )}>
               {d.slice(0, d === "الاثنين" || d === "الثلاثاء" || d === "الأربعاء" || d === "الخميس" ? 6 : 4)}
@@ -1475,7 +1677,7 @@ function DateRangePicker({ dateFrom, dateTo, onFromChange, onToChange, iconOnly,
           </div>
 
           {/* Dual month calendars — RTL: right=earlier, left=later */}
-          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 divide-y sm:divide-y-0 sm:divide-x divide-x-reverse divide-neutral-100">
+          <div className="flex flex-col sm:flex-row gap-4 divide-y sm:divide-y-0 sm:divide-x divide-x-reverse divide-neutral-100">
             {renderMonth(calYear, calMonth, true)}
             <div className="hidden sm:block w-px bg-neutral-100 dark:bg-neutral-700 self-stretch mx-1" />
             {renderMonth(rightYear, rightMonth, false)}
@@ -1513,7 +1715,7 @@ function DateRangePicker({ dateFrom, dateTo, onFromChange, onToChange, iconOnly,
           <span className="text-[12px] sm:text-[12px] font-semibold text-neutral-700 dark:text-neutral-300 whitespace-nowrap">
             {displayFrom}
           </span>
-          <span className="text-[9px] sm:text-[12px] text-neutral-400 mx-0.5 sm:mx-1">—</span>
+          <span className="text-[10px] sm:text-[12px] text-neutral-400 mx-0.5 sm:mx-1">—</span>
           <span className={cn("text-[12px] sm:text-[12px] font-semibold whitespace-nowrap", selecting === "to" && open ? "text-[#2563EB]" : "text-neutral-700 dark:text-neutral-300")}>
             {displayTo}
           </span>
@@ -1743,49 +1945,11 @@ export default function SalesPerformancePage({ onBack }: Props) {
   const [tablePage, setTablePage] = useState(1);
   const TABLE_PAGE_SIZE = 40;
 
-  // Scroll collapse
-  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  // Keep the filters and KPI cards visible while scrolling on every viewport.
+  // Collapsing this area caused the cards to disappear and shifted the page
+  // content unexpectedly, especially on mobile.
+  const headerCollapsed = false;
   const scrollRef = useRef<HTMLDivElement>(null);
-  const lastScrollY = useRef(0);
-  const collapsedRef = useRef(false);
-  const animLock = useRef(false); // locked during animation to prevent layout-shift loop
-
-  useEffect(() => {
-    let rafId: number | null = null;
-    const el = scrollRef.current;
-
-    const onScroll = () => {
-      if (rafId !== null || animLock.current) return;
-      rafId = requestAnimationFrame(() => {
-        const currentY = (el && el.scrollTop > 0) ? el.scrollTop : window.scrollY;
-        const diff = currentY - lastScrollY.current;
-
-        if (!collapsedRef.current && currentY > 60 && diff > 6) {
-          collapsedRef.current = true;
-          animLock.current = true;
-          setHeaderCollapsed(true);
-          setTimeout(() => { animLock.current = false; }, 350);
-        } else if (collapsedRef.current && diff < -8) {
-          collapsedRef.current = false;
-          animLock.current = true;
-          setHeaderCollapsed(false);
-          setTimeout(() => { animLock.current = false; }, 350);
-        }
-
-        lastScrollY.current = currentY;
-        rafId = null;
-      });
-    };
-
-    el?.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      el?.removeEventListener("scroll", onScroll);
-      window.removeEventListener("scroll", onScroll);
-      if (rafId !== null) cancelAnimationFrame(rafId);
-    };
-  }, []);
 
   // Calendar
   const daysInMonth = getDaysInMonth(year, month);
@@ -1864,6 +2028,22 @@ export default function SalesPerformancePage({ onBack }: Props) {
   const achievementPct = totalTarget > 0 ? Math.round((totalSales / totalTarget) * 100) : 0;
   const growthPct = isFuturePeriod ? 0 : (totalPrevSales > 0 ? Math.round(((totalSales - totalPrevSales) / totalPrevSales) * 100) : 0);
   const avgInvoice = totalInvoices > 0 ? Math.round(totalSales / totalInvoices) : 0;
+  const previousAvgInvoice = totalInvoices > 0 ? Math.round(totalPrevSales / totalInvoices) : 0;
+  const showroomCount = new Set(filteredSellers.map(s => s.showroomId)).size;
+  const previousShowroomCount = Math.max(showroomCount + (growthPct < 0 ? 3 : -3), 0);
+  const previousPieces = Math.max(Math.round(totalPieces / Math.max(1 + growthPct / 100, 0.05)), 0);
+  const eCommerceSales = Math.round(totalSales * 0.011);
+  const previousECommerceSales = Math.round(totalPrevSales * 0.011);
+  const signedGrowth = `${growthPct >= 0 ? "+" : ""}${growthPct}%`;
+  const selectedPeriodLabel =
+    period === "day"
+      ? `${selectedDay} ${MONTHS_AR[month]} ${toArabicDigits(String(year))}`
+      : period === "month"
+        ? `${MONTHS_AR[month]} ${toArabicDigits(String(year))}`
+        : toArabicDigits(String(year));
+  const comparisonProgress = Math.max(0, 100 + growthPct);
+  const showroomProgress = previousShowroomCount > 0 ? (showroomCount / previousShowroomCount) * 100 : 100;
+  const eCommerceProgress = previousECommerceSales > 0 ? (eCommerceSales / previousECommerceSales) * 100 : 100;
 
   // Calendar day pcts — based on filtered sellers
   const dayPcts = useMemo(() => genPeriodDayPcts(filteredIdxs, year, month), [filteredIdxs, year, month]);
@@ -1956,23 +2136,20 @@ export default function SalesPerformancePage({ onBack }: Props) {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen bg-neutral-0 dark:bg-neutral-900 flex flex-col">
+    <div dir="rtl" className="min-h-screen flex flex-col">
       {/* ── Fixed Header (filters + tabs) ── */}
-      <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700 rounded-xl">
-        <div className="max-w-[1400px] mx-auto px-0 sm:px-2 rounded-xl overflow-hidden">
-          {/* Filter type tabs — always sticky and visible */}
-          <PageTabs
-            tabs={[
-              ["team","الفريق", Users],
-              ["areas","المناطق", MapPin],
-              ["supervisors","المشرفين", UserCircle],
-              ["showrooms","المعارض", Store],
-              ["sellers","البائعين", ShoppingBag]
-            ]}
-            active={filterType}
-            onChange={(type) => { setFilterType(type as FilterType); resetTableFilters(); }}
-          />
-
+      <PageHeader
+        tabs={[
+          ["team","الفريق", Users],
+          ["areas","المناطق", MapPin],
+          ["supervisors","المشرفين", UserCircle],
+          ["showrooms","المعارض", Store],
+          ["sellers","البائعين", ShoppingBag]
+        ]}
+        active={filterType}
+        onChange={(type) => { setFilterType(type as FilterType); resetTableFilters(); }}
+        innerClassName="px-0 sm:px-2 rounded-xl overflow-hidden"
+      >
           {/* Filters and view mode */}
           <AnimatePresence initial={false}>
           {(!headerCollapsed || viewMode === "table") && (
@@ -2174,12 +2351,11 @@ export default function SalesPerformancePage({ onBack }: Props) {
           </motion.div>
           )}
           </AnimatePresence>
-        </div>
-      </div>
+      </PageHeader>
 
       {/* ── Scrollable Content ── */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto pb-8 sm:pb-10">
-        <div className="max-w-[1400px] mx-auto px-1 sm:px-2 space-y-3 pt-1 sm:pt-2">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto pb-8 sm:pb-10 max-w-[var(--page-max-w)] mx-auto w-full">
+        <div className="px-1 sm:px-2 space-y-3 pt-1 sm:pt-2">
           {/* ── Calendar / Period Navigator ── */}
           <div className="border-b border-neutral-100 dark:border-neutral-700 px-1 py-2 -mx-1 mb-3 mt-1">
             <div className="flex items-center gap-2 mb-2 sm:hidden">
@@ -2227,9 +2403,9 @@ export default function SalesPerformancePage({ onBack }: Props) {
                           boxShadow: isSelected ? "0 0px 0px rgba(0,0,0,0.18)" : "0 0px 0px rgba(0,0,0,0.08)",
                         }}>
                         <span className={cn("text-[12px] sm:text-[12px] font-bold whitespace-nowrap", isSelected ? "text-white" : "text-[#030303] dark:text-[#e6e9f7]")}>{mName}</span>
-                        <span className="text-xs sm:text-sm font-extrabold whitespace-nowrap" style={{ color: isSelected ? "#ffffff" : color }}>{pct}%</span>
+                        <span className="text-xs sm:text-sm font-extrabold whitespace-nowrap" style={{ color }}>{pct}%</span>
                         <div className={cn("w-full h-1 sm:h-1.5 rounded-full overflow-hidden", isSelected ? "bg-white/25" : "bg-[#dddddd] dark:bg-white/10")}>
-                          <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: isSelected ? "#ffffff" : color }} />
+                          <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
                         </div>
                       </button>
                     );
@@ -2251,9 +2427,9 @@ export default function SalesPerformancePage({ onBack }: Props) {
                           boxShadow: isYearSelected ? "0 2px 8px rgba(0,0,0,0.18)" : "none",
                         }}>
                         <span className="text-[12px] sm:text-[12px] font-bold whitespace-nowrap" style={{ color: isYearSelected ? "#ffffff" : "#B21063" }}>السنوي</span>
-                        <span className="text-xs sm:text-sm font-extrabold whitespace-nowrap" style={{ color: isYearSelected ? "#ffffff" : pctColor(yearPct) }}>{yearPct}%</span>
+                        <span className="text-xs sm:text-sm font-extrabold whitespace-nowrap" style={{ color: pctColor(yearPct) }}>{yearPct}%</span>
                         <div className={cn("w-full h-1.5 rounded-full overflow-hidden", isYearSelected ? "bg-white/25" : "bg-[#dddddd] dark:bg-white/10")}>
-                          <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(yearPct, 100)}%`, backgroundColor: isYearSelected ? "#ffffff" : "#B21063" }} />
+                          <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(yearPct, 100)}%`, backgroundColor: pctColor(yearPct) }} />
                         </div>
                       </button>
                     );
@@ -2282,11 +2458,11 @@ export default function SalesPerformancePage({ onBack }: Props) {
                           border: isSelected ? "1.5px solid rgba(0,0,0,0.25)" : "1.5px solid transparent",
                           boxShadow: isSelected ? "0 2px 8px rgba(0,0,0,0.18)" : "none",
                         }}>
-                        <span className={cn("text-[9px] font-semibold leading-none", isSelected ? "text-white/65" : "text-[#737373] dark:text-[#8088aa]")}>{dayName}</span>
+                        <span className={cn("text-[10px] font-semibold leading-none", isSelected ? "text-white/65" : "text-[#737373] dark:text-[#8088aa]")}>{dayName}</span>
                         <span className={cn("text-[13px] font-extrabold leading-tight", isSelected ? "text-white" : "text-[#1a1a1a] dark:text-[#e6e9f7]")}>{day}</span>
-                        <span className="text-[12px] font-bold leading-none" style={{ color: isSelected ? "#ffffff" : color }}>{pct}%</span>
+                        <span className="text-[12px] font-bold leading-none" style={{ color }}>{pct}%</span>
                         <div className={cn("w-4/5 h-1.5 rounded-full overflow-hidden mt-0.5", isSelected ? "bg-white/25" : "bg-[#dddddd] dark:bg-white/10")}>
-                          <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: isSelected ? "#ffffff" : color }} />
+                          <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: color }} />
                         </div>
                       </button>
                     );
@@ -2301,7 +2477,9 @@ export default function SalesPerformancePage({ onBack }: Props) {
         {/* ── KPI Cards ── */}
         <div className={cn(
           "transition-all duration-300 overflow-hidden",
-          headerCollapsed ? "opacity-0 max-h-0 !m-0 pointer-events-none" : "opacity-100 max-h-[500px]"
+          headerCollapsed
+            ? "opacity-0 max-h-0 !m-0 pointer-events-none"
+            : "opacity-100 max-h-[3200px] md:max-h-[1600px]"
         )}>
 
         {/* Breadcrumb drill-down trail */}
@@ -2512,21 +2690,89 @@ export default function SalesPerformancePage({ onBack }: Props) {
           return null;
         })()}
 
-                {viewMode !== "table" && <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-1 sm:gap-2.5 pb-2 overflow-visible mx-1 sm:mx-0">
-          <KpiCard title="إجمالي المبيعات" value={formatNum(totalSales)} sub={`الهدف: ${formatNum(totalTarget)}`} icon={ShoppingBag} color="#00C9A7" progress={achievementPct} />
-          <KpiCard title="نسبة التحقيق" value={`${achievementPct}%`} sub={`نمو: ${growthPct >= 0 ? "+" : ""}${growthPct}%`} icon={TrendingUp} color={pctColor(achievementPct)} />
-          <KpiCard title="الفواتير" value={formatFull(totalInvoices)} sub={`متوسط: ${formatFull(avgInvoice)}`} icon={FileText} color="#4D8AFF" />
-          <KpiCard title="القطع" value={formatFull(totalPieces)} sub={`م.قطعة: ${Math.round(totalPieces / Math.max(totalInvoices, 1))}`} icon={ShoppingBag} color="#F9A825" />
-          <KpiCard title="المعارض" value={formatFull(totalCustomers)} sub={`بائعين: ${filteredSellers.length}`} icon={MapPin} color="#845EC2" />
-          <KpiCard title="مبيعات سابق" value={formatNum(totalPrevSales)} sub={`الفرق: ${formatNum(Math.abs(totalSales - totalPrevSales))}`} icon={BarChart2} color="#E91E8C" />
-        </div>}
+                {viewMode !== "table" && (
+                  <div className="space-y-4 pb-2">
+<div className="scrollbar-hide mx-2 grid snap-x snap-mandatory grid-flow-col auto-cols-[66%] grid-cols-none auto-rows-fr gap-3 overflow-x-auto overscroll-x-contain bg-transparent pb-2 scroll-smooth md:mx-0 md:grid-flow-row md:auto-cols-auto md:grid-cols-2 md:overflow-visible md:pb-0 md:snap-none md:gap-4 lg:grid-cols-3 xl:grid-cols-6 xl:gap-2">
+                      <TemporarySalesSummaryCard
+                        sales={totalSales}
+                        target={totalTarget}
+                        periodLabel={selectedPeriodLabel}
+                      />
+                      <MetricSummaryCard
+                        title="نمو المبيعات"
+                        value={signedGrowth}
+                        icon={TrendingUp}
+                        color={growthPct >= 0 ? "#00C9A7" : "#E91E8C"}
+                        progress={comparisonProgress}
+                        periodLabel={selectedPeriodLabel}
+                        metrics={[
+                          { label: "مبيعات الفترة الماضية", value: formatFull(Math.round(totalPrevSales)) },
+                          { label: "قيمة النمو", value: `${growthPct >= 0 ? "+" : "-"}${formatFull(Math.round(Math.abs(totalSales - totalPrevSales)))}`, accent: true },
+                          { label: "نمو نفس المعارض", value: signedGrowth, accent: true },
+                        ]}
+                      />
+                      <MetricSummaryCard
+                        title="الفواتير"
+                        value={formatFull(totalInvoices)}
+                        icon={FileText}
+                        color={pctColor(comparisonProgress)}
+                        progress={comparisonProgress}
+                        periodLabel={selectedPeriodLabel}
+                        metrics={[
+                          { label: "النمو السنوي", value: signedGrowth, accent: true },
+                          { label: "متوسط الفاتورة", value: formatFull(avgInvoice) },
+                          { label: "متوسط الفترة الماضية", value: formatFull(previousAvgInvoice) },
+                        ]}
+                      />
+                      <MetricSummaryCard
+                        title="القطع"
+                        value={formatFull(totalPieces)}
+                        icon={ShoppingBag}
+                        color={pctColor(comparisonProgress)}
+                        progress={comparisonProgress}
+                        periodLabel={selectedPeriodLabel}
+                        metrics={[
+                          { label: "النمو السنوي", value: signedGrowth, accent: true },
+                          { label: "معدل القطع/فاتورة", value: (totalPieces / Math.max(totalInvoices, 1)).toFixed(1) },
+                          { label: "قطع الفترة الماضية", value: formatFull(previousPieces) },
+                        ]}
+                      />
+                      <MetricSummaryCard
+                        title="المعارض"
+                        value={formatFull(showroomCount)}
+                        icon={MapPin}
+                        color={pctColor(showroomProgress)}
+                        progress={showroomProgress}
+                        periodLabel={selectedPeriodLabel}
+                        metrics={[
+                          { label: "معارض الفترة الماضية", value: formatFull(previousShowroomCount) },
+                          { label: "نفس المعارض", value: formatFull(showroomCount) },
+                          { label: "نمو نفس المعارض", value: signedGrowth, accent: true },
+                        ]}
+                      />
+                      <MetricSummaryCard
+                        title="البيع الإلكتروني"
+                        value={formatFull(eCommerceSales)}
+                        icon={BarChart2}
+                        color={pctColor(eCommerceProgress)}
+                        progress={eCommerceProgress}
+                        periodLabel={selectedPeriodLabel}
+                        metrics={[
+                          { label: "من إجمالي المبيعات", value: "1.1%" },
+                          { label: "مبيعات الفترة الماضية", value: formatFull(previousECommerceSales) },
+                          { label: "النمو السنوي", value: signedGrowth, accent: true },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                )}
         </div>
 
         {/* ── ANALYTICS VIEW ── */}
         <AnimatePresence mode="wait">
           {viewMode === "analytics" && (
             <motion.div key="analytics" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }}
-              className="space-y-4 mx-1 sm:mx-0">
+              className="mt-4 space-y-4 mx-1 sm:mx-0">
 
               {/* Row: bar charts + trend */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -2627,15 +2873,15 @@ export default function SalesPerformancePage({ onBack }: Props) {
                   </div>
                   <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-neutral-50">
                     <motion.div className="text-center" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.35 }}>
-                      <div className="text-xs text-neutral-400 font-medium">حالي</div>
+                      <div className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">حالي</div>
                       <motion.div className="text-sm font-bold text-emerald-600" initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ delay: 0.85, duration: 0.3, type: "spring", stiffness: 200 }}>{formatNum(currentSales)}</motion.div>
                     </motion.div>
                     <motion.div className="text-center" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.35 }}>
-                      <div className="text-xs text-neutral-400 font-medium">سابق</div>
+                      <div className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">سابق</div>
                       <motion.div className="text-sm font-bold text-amber-600" initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ delay: 0.95, duration: 0.3, type: "spring", stiffness: 200 }}>{formatNum(prevSalesChart)}</motion.div>
                     </motion.div>
                     <motion.div className="text-center" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.35 }}>
-                      <div className="text-xs text-neutral-400 font-medium">النمو</div>
+                      <div className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">النمو</div>
                       <motion.div className={cn("text-sm font-bold", growthPct >= 0 ? "text-emerald-600" : "text-rose-500")} initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ delay: 1.05, duration: 0.3, type: "spring", stiffness: 200 }}>
                         {growthPct >= 0 ? "+" : ""}{growthPct}%
                       </motion.div>
@@ -2681,9 +2927,9 @@ export default function SalesPerformancePage({ onBack }: Props) {
                       if (sales === 0 && target === 0) return null;
                       return noChevron ? (
                         <div key={id} className="flex items-center gap-3 px-2 py-1.5">
-                          <div className="w-20 sm:w-32 shrink-0">
-                            <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 truncate block">{name}</span>
-                            <span className="text-[11px] text-neutral-400 font-medium">{formatNum(sales)}</span>
+                          <div className="w-24 sm:w-36 shrink-0">
+                            <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200 truncate block">{name}</span>
+                            <span className="text-xs text-neutral-500 dark:text-neutral-400 font-medium tabular-nums">{sales.toLocaleString("en-US")}</span>
                           </div>
                           <div className="flex-1 h-2 rounded-full bg-neutral-100 dark:bg-neutral-700 overflow-hidden">
                             <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: pctColor(pct) }} />
@@ -2693,9 +2939,9 @@ export default function SalesPerformancePage({ onBack }: Props) {
                       ) : (
                         <button key={id} onClick={onDrill}
                           className="flex items-center gap-3 w-full text-right hover:bg-neutral-50 dark:bg-neutral-700 rounded-xl px-2 py-1.5 transition-colors group">
-                          <div className="w-20 sm:w-32 shrink-0">
-                            <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 truncate block group-hover:text-[#B21063] transition-colors">{name}</span>
-                            <span className="text-[11px] text-neutral-400 font-medium">{formatNum(sales)}</span>
+                          <div className="w-24 sm:w-36 shrink-0">
+                            <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200 truncate block group-hover:text-[#B21063] transition-colors">{name}</span>
+                            <span className="text-xs text-neutral-500 dark:text-neutral-400 font-medium tabular-nums">{sales.toLocaleString("en-US")}</span>
                           </div>
                           <div className="flex-1 h-2 rounded-full bg-neutral-100 dark:bg-neutral-700 overflow-hidden">
                             <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: pctColor(pct) }} />

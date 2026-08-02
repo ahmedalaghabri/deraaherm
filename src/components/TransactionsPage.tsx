@@ -6,13 +6,20 @@ import PageTabs from "./PageTabs";
 type Tab = "new" | "inbox" | "outbox" | "archive";
 type StatusFilter = "all" | "completed" | "pending" | "urgent" | "rejected";
 
-interface Transaction {
+export interface Transaction {
   id: string; number: string; title: string; type: string;
   date: string; status: "completed" | "pending" | "urgent" | "rejected";
   person: string;
 }
 
-const MOCK_INBOX: Transaction[] = [
+export const TX_STATUS_LABELS: Record<Transaction["status"], string> = {
+  completed: "مكتملة",
+  pending: "معلقة",
+  urgent: "عاجلة",
+  rejected: "مرفوضة",
+};
+
+export const MOCK_INBOX: Transaction[] = [
   { id: "1", number: "TRX-2026-001", title: "طلب إجازة سنوية", type: "إجازة سنوية", date: "2026-05-04", status: "pending", person: "أحمد محمد السالم" },
   { id: "2", number: "TRX-2026-002", title: "طلب بدل مواصلات - أبريل", type: "بدل مواصلات", date: "2026-05-03", status: "completed", person: "سارة عبدالله" },
   { id: "3", number: "TRX-2026-003", title: "طلب إذن خروج مبكر", type: "إذن خروج", date: "2026-05-05", status: "urgent", person: "خالد العمر" },
@@ -21,14 +28,14 @@ const MOCK_INBOX: Transaction[] = [
   { id: "6", number: "TRX-2026-006", title: "طلب إجازة أمومة", type: "إجازة أمومة", date: "2026-04-28", status: "completed", person: "فاطمة علي" },
 ];
 
-const MOCK_OUTBOX: Transaction[] = [
+export const MOCK_OUTBOX: Transaction[] = [
   { id: "7", number: "OUT-2026-001", title: "موافقة على طلب الإجازة", type: "إجازة سنوية", date: "2026-05-04", status: "completed", person: "أحمد محمد السالم" },
   { id: "8", number: "OUT-2026-002", title: "رفض طلب بدل المواصلات", type: "بدل مواصلات", date: "2026-05-03", status: "rejected", person: "سارة عبدالله" },
   { id: "9", number: "OUT-2026-003", title: "معالجة طلب الخروج المبكر", type: "إذن خروج", date: "2026-05-05", status: "pending", person: "خالد العمر" },
   { id: "10", number: "OUT-2026-004", title: "طلب مراجعة البيانات", type: "بيانات شخصية", date: "2026-05-02", status: "urgent", person: "منى أحمد" },
 ];
 
-const MOCK_ARCHIVE: Transaction[] = [
+export const MOCK_ARCHIVE: Transaction[] = [
   { id: "11", number: "ARC-2026-001", title: "إجازة سنوية - يناير 2026", type: "إجازة سنوية", date: "2026-01-20", status: "completed", person: "محمد علي" },
   { id: "12", number: "ARC-2026-002", title: "طلب نقل قسم", type: "نقل داخلي", date: "2026-02-15", status: "completed", person: "فاطمة أحمد" },
   { id: "13", number: "ARC-2026-003", title: "بدل مواصلات - Q1", type: "بدل مواصلات", date: "2026-03-31", status: "completed", person: "عبدالله خالد" },
@@ -121,7 +128,7 @@ export default function TransactionsPage({ onNewTransaction }: Props) {
               <h3 className="text-sm font-bold text-neutral-800">
                 {activeTab === "inbox" ? "المعاملات الواردة" : activeTab === "outbox" ? "المعاملات الصادرة" : "أرشيف الصادر"}
               </h3>
-              <span className="text-xs text-neutral-400 bg-neutral-100 px-2.5 py-0.5 rounded-full font-medium">{rows.length} معاملة</span>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-100 px-2.5 py-0.5 rounded-full font-medium">{rows.length} معاملة</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-right">
@@ -155,7 +162,7 @@ export default function TransactionsPage({ onNewTransaction }: Props) {
                             {row.person}
                           </span>
                         </td>
-                        <td className="px-3 py-2.5 text-xs text-neutral-400 whitespace-nowrap">
+                        <td className="px-3 py-2.5 text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
                           <span className="flex items-center gap-1 justify-end">
                             <Calendar className="w-3 h-3" />
                             {row.date}

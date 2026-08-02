@@ -3,6 +3,22 @@ import { motion } from "framer-motion";
 import { X, Send, Mic, Bot, Plus } from "lucide-react";
 import { useAI } from "./AIContext";
 
+// يحوّل **bold** وأسطر جديدة إلى JSX
+function renderContent(text: string) {
+  return text.split("\n").map((line, li) => (
+    <span key={li}>
+      {li > 0 && <br />}
+      {line.split(/(\*\*[^*]+\*\*)/g).map((part, pi) =>
+        part.startsWith("**") && part.endsWith("**") ? (
+          <strong key={pi} className="font-bold">{part.slice(2, -2)}</strong>
+        ) : (
+          <span key={pi}>{part}</span>
+        )
+      )}
+    </span>
+  ));
+}
+
 export function ChatPanel() {
   const { isOpen, setIsOpen, messages, sendMessage, isTyping } = useAI();
   const [input, setInput] = useState("");
@@ -79,7 +95,7 @@ export function ChatPanel() {
                       : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 rounded-bl-none border border-neutral-200/60 dark:border-neutral-700/60"
                   }`}
                 >
-                  {msg.content}
+                  {renderContent(msg.content)}
                 </div>
               </motion.div>
             ))}

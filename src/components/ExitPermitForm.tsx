@@ -240,7 +240,7 @@ export default function ExitPermitForm() {
 
   return (
     <div dir="rtl" className="min-h-screen">
-      <div className="mx-auto max-w-[1400px] p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="mx-auto max-w-[var(--page-max-w)] p-3 sm:p-6 space-y-4 sm:space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -348,7 +348,7 @@ export default function ExitPermitForm() {
                                   setSelectedExitType(type);
                                   setShowExitTypes(false);
                                 }}
-                                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-right hover:bg-sky-50 dark:hover:bg-neutral-700 dark:text-neutral-200 transition-colors border-b border-gray-100 dark:border-neutral-700 last:border-0 text-xs sm:text-sm"
+                                className="w-full px-2.5 sm:px-3 py-2.5 sm:py-3 text-right hover:bg-sky-50 dark:hover:bg-neutral-700 dark:text-neutral-200 transition-colors border-b border-gray-100 dark:border-neutral-700 last:border-0 text-xs sm:text-sm"
                               >
                                 {type}
                               </button>
@@ -502,7 +502,7 @@ export default function ExitPermitForm() {
                       <textarea
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
-                        className="w-full h-24 sm:h-32 px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 dark:placeholder:text-neutral-500 focus:border-sky-500 rounded-xl resize-none focus:outline-none transition-all text-sm"
+                        className="w-full h-24 sm:h-32 px-2.5 sm:px-3 py-2.5 sm:py-3 border-2 border-gray-200 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 dark:placeholder:text-neutral-500 focus:border-sky-500 rounded-xl resize-none focus:outline-none transition-all text-sm"
                         placeholder="اكتب السبب والملاحظات هنا..."
                         required
                       />
@@ -596,17 +596,17 @@ export default function ExitPermitForm() {
                     transition={{ duration: 0.2 }}
                     className="overflow-x-auto"
                   >
-                    <table className="w-full min-w-[900px] text-xs sm:text-sm">
+                    <table className="w-full text-xs sm:text-sm">
                       <thead className="bg-gradient-to-b from-slate-50/70 to-white/80 dark:from-neutral-800 dark:to-neutral-800 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-neutral-800/80 dark:text-neutral-300">
                         <tr className="text-right">
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">رقم مرجعي</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">التاريخ</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">وقت الخروج</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">وقت العودة</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">قرار مدير الإدارة</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">نوع المأمورية</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">الموظف</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">ملاحظة</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">رقم مرجعي</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">التاريخ</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">وقت الخروج</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">وقت العودة</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">قرار مدير الإدارة</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">نوع المأمورية</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">الموظف</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">ملاحظة</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -618,18 +618,18 @@ export default function ExitPermitForm() {
                             transition={{ delay: index * 0.05 }}
                             className="border-t dark:border-neutral-700/60 dark:text-neutral-200 hover:bg-sky-50/30 dark:hover:bg-neutral-700/30 transition-colors"
                           >
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.refNumber}</td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.date}</td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.exitTime}</td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.returnTime}</td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">{permit.refNumber}</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">{permit.date}</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">{permit.exitTime}</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">{permit.returnTime}</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">
                               <Badge className={getDecisionBadge(permit.decision)}>
                                 {permit.decision}
                               </Badge>
                             </td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.requestType}</td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.employeeName}</td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-gray-400">—</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">{permit.requestType}</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">{permit.employeeName}</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3 text-gray-400">—</td>
                           </motion.tr>
                         ))}
                       </tbody>
@@ -644,17 +644,17 @@ export default function ExitPermitForm() {
                     transition={{ duration: 0.2 }}
                     className="overflow-x-auto"
                   >
-                    <table className="w-full min-w-[900px] text-xs sm:text-sm">
+                    <table className="w-full text-xs sm:text-sm">
                       <thead className="bg-gradient-to-b from-slate-50/70 to-white/80 dark:from-neutral-800 dark:to-neutral-800 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-neutral-800/80 dark:text-neutral-300">
                         <tr className="text-right">
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">رقم مرجعي</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">التاريخ</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">وقت الخروج</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">وقت العودة</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">قرار مدير الإدارة</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">نوع الإذن</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">الموظف</th>
-                          <th className="px-3 sm:px-4 py-2.5 sm:py-3 font-medium">ملاحظة</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">رقم مرجعي</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">التاريخ</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">وقت الخروج</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">وقت العودة</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">قرار مدير الإدارة</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">نوع الإذن</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">الموظف</th>
+                          <th className="px-2.5 sm:px-3 py-2.5 sm:py-3 font-medium">ملاحظة</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -666,18 +666,18 @@ export default function ExitPermitForm() {
                             transition={{ delay: index * 0.05 }}
                             className="border-t dark:border-neutral-700/60 dark:text-neutral-200 hover:bg-sky-50/30 dark:hover:bg-neutral-700/30 transition-colors"
                           >
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.refNumber}</td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.date}</td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.exitTime}</td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.returnTime}</td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">{permit.refNumber}</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">{permit.date}</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">{permit.exitTime}</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">{permit.returnTime}</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">
                               <Badge className={getDecisionBadge(permit.decision)}>
                                 {permit.decision}
                               </Badge>
                             </td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.requestType}</td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3">{permit.employeeName}</td>
-                            <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-gray-400">—</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">{permit.requestType}</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3">{permit.employeeName}</td>
+                            <td className="px-2.5 sm:px-3 py-2.5 sm:py-3 text-gray-400">—</td>
                           </motion.tr>
                         ))}
                       </tbody>

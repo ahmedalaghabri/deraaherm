@@ -117,7 +117,7 @@ export default function SickLeaveForm({ onCancel, onSaved }: SickLeaveFormProps)
 
   return (
     <div dir="rtl" className="min-h-screen">
-      <div className="mx-auto max-w-[1200px] p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="mx-auto max-w-[var(--page-max-w)] p-3 sm:p-6 space-y-4 sm:space-y-6">
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <Card className="rounded-2xl border bg-gradient-to-b from-rose-50/70 to-white border-rose-100 shadow-sm">
             <CardHeader className="pb-3 px-4 sm:px-6">
@@ -179,25 +179,25 @@ export default function SickLeaveForm({ onCancel, onSaved }: SickLeaveFormProps)
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 sm:px-6">
                   <div>
                     <Label className="text-xs sm:text-sm">الاسم الكامل</Label>
-                    <div className="mt-1.5 px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-sm">
+                    <div className="mt-1.5 px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-sm">
                       {form.employeeName}
                     </div>
                   </div>
                   <div>
                     <Label className="text-xs sm:text-sm">الرقم الوظيفي</Label>
-                    <div className="mt-1.5 px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-sm">
+                    <div className="mt-1.5 px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-sm">
                       {form.employeeId}
                     </div>
                   </div>
                   <div>
                     <Label className="text-xs sm:text-sm">القسم</Label>
-                    <div className="mt-1.5 px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-sm">
+                    <div className="mt-1.5 px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-sm">
                       {form.department}
                     </div>
                   </div>
                   <div>
                     <Label className="text-xs sm:text-sm">المسمى الوظيفي</Label>
-                    <div className="mt-1.5 px-3 py-2 rounded-xl bg-neutral-50 border border-neutral-200 text-sm">
+                    <div className="mt-1.5 px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-sm">
                       {form.position}
                     </div>
                   </div>
@@ -296,7 +296,7 @@ export default function SickLeaveForm({ onCancel, onSaved }: SickLeaveFormProps)
                     <select
                       value={form.leaveType}
                       onChange={(e) => setField("leaveType", e.target.value)}
-                      className="w-full rounded-xl px-3 py-2 bg-white border border-neutral-200 mt-1.5 text-sm"
+                      className="w-full rounded-xl px-3 py-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 mt-1.5 text-sm"
                     >
                       <option>إجازة مرضية عادية</option>
                       <option>إجازة مرضية طارئة</option>
@@ -420,7 +420,7 @@ export default function SickLeaveForm({ onCancel, onSaved }: SickLeaveFormProps)
                       value={form.notes}
                       onChange={(e) => setField("notes", e.target.value)}
                       rows={3}
-                      className="w-full rounded-xl px-3 py-2 bg-white border border-neutral-200 mt-1.5 text-sm resize-none"
+                      className="w-full rounded-xl px-3 py-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 mt-1.5 text-sm resize-none"
                       placeholder="أي معلومات إضافية ترغب في ذكرها..."
                     />
                   </div>
@@ -446,14 +446,14 @@ export default function SickLeaveForm({ onCancel, onSaved }: SickLeaveFormProps)
                   <div
                     className={cn(
                       "rounded-2xl border-2 border-dashed p-6 sm:p-8 transition-colors",
-                      errors.attachments ? "border-red-300 bg-red-50" : "border-neutral-300 bg-neutral-50/50"
+                      errors.attachments ? "border-red-300 bg-red-50" : "border-neutral-300 dark:border-neutral-600 bg-neutral-50/50"
                     )}
                   >
                     <div className="text-center">
                       <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-blue-100 flex items-center justify-center mb-3">
                         <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
                       </div>
-                      <div className="text-sm sm:text-base text-neutral-600 mb-3">
+                      <div className="text-sm sm:text-base text-neutral-600 dark:text-neutral-300 mb-3">
                         اسحب وأفلت التقرير الطبي هنا أو
                       </div>
                       <input
@@ -492,7 +492,7 @@ export default function SickLeaveForm({ onCancel, onSaved }: SickLeaveFormProps)
                         {attachments.map((a) => (
                           <div
                             key={a.id}
-                            className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm"
+                            className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 py-3 text-sm"
                           >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                               <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />

@@ -120,7 +120,7 @@ function WeeklyLeaveSelect({ employeeId, year, month, setSchedules, getDefaultRe
           {/* Day names */}
           <div className="grid grid-cols-7 gap-0.5 mb-1">
             {DAYS_SHORT.map(d => (
-              <div key={d} className="text-center text-[9px] font-bold text-neutral-400 dark:text-neutral-500 py-0.5">{d}</div>
+              <div key={d} className="text-center text-[10px] font-bold text-neutral-400 dark:text-neutral-500 py-0.5">{d}</div>
             ))}
           </div>
           {/* Calendar grid */}
@@ -156,7 +156,7 @@ function WeeklyLeaveSelect({ employeeId, year, month, setSchedules, getDefaultRe
               className="w-3.5 h-3.5 rounded border-neutral-300 dark:border-neutral-600 text-amber-500 focus:ring-amber-400/40 cursor-pointer"
             />
             <span className="text-[11px] font-bold text-neutral-600 dark:text-neutral-300">كل الأيام</span>
-            <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mr-auto">
+            <span className="text-[10px] text-neutral-500 dark:text-neutral-500 mr-auto">
               {selectedDays.length > 0 ? `${selectedDays.length} يوم مختار` : ""}
             </span>
           </label>
@@ -188,7 +188,7 @@ function WeeklyLeaveSelect({ employeeId, year, month, setSchedules, getDefaultRe
                 onChange={e => setDayShift1Start(e.target.value)}
                 className="flex-1 text-[11px] font-bold px-1.5 py-1 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
               />
-              <span className="text-[10px] text-neutral-400">—</span>
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-400">—</span>
               <input
                 type="time"
                 value={dayShift1End}
@@ -205,7 +205,7 @@ function WeeklyLeaveSelect({ employeeId, year, month, setSchedules, getDefaultRe
                   onChange={e => setDayShift2Start(e.target.value)}
                   className="flex-1 text-[11px] font-bold px-1.5 py-1 rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
                 />
-                <span className="text-[10px] text-neutral-400">—</span>
+                <span className="text-[10px] text-neutral-500 dark:text-neutral-400">—</span>
                 <input
                   type="time"
                   value={dayShift2End}
@@ -432,7 +432,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
   return (
     <>
     <div dir="rtl" className="min-h-screen font-sans">
-      <div className="max-w-full mx-auto px-0 sm:px-0 pt-4 sm:pt-6 space-y-4 sm:space-y-6">
+      <div className="max-w-[var(--page-max-w)] mx-auto px-2 sm:px-0 pt-4 sm:pt-6 space-y-4 sm:space-y-6">
         <div className="grid grid-cols-1 gap-4">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
             className="w-full">
@@ -443,7 +443,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
               </button>
               <div className="text-center">
                 <span className="text-base font-bold text-neutral-800 dark:text-neutral-200">{MONTHS_AR[month]} {year}</span>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500">اختر يوماً لتحديد الدوام</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-500">اختر يوماً لتحديد الدوام</p>
               </div>
               <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
                 <ChevronLeft className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
@@ -585,7 +585,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-neutral-800 dark:text-white">المخطط الزمني للشهر</h3>
-                    <p className="text-[10px] text-neutral-400 dark:text-neutral-500">{MONTHS_AR[month]} {year} — التغطية الساعية</p>
+                    <p className="text-[10px] text-neutral-500 dark:text-neutral-500">{MONTHS_AR[month]} {year} — التغطية الساعية</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -801,7 +801,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
               <h3 className="text-sm font-bold text-neutral-800 dark:text-white">
                 {hourPopup.day} {MONTHS_AR[month]} — الساعة {to12Hour(hourPopup.hour)}
               </h3>
-              <p className="text-[10px] text-neutral-400 dark:text-neutral-500">
+              <p className="text-[10px] text-neutral-500 dark:text-neutral-500">
                 {(() => {
                   const dk = `${year}-${String(month + 1).padStart(2, "0")}-${String(hourPopup.day).padStart(2, "0")}`;
                   const daySched = schedules[dk];
@@ -907,7 +907,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
               </div>
               <div>
                 <h3 className="text-sm font-bold text-neutral-800 dark:text-white">يوم {selectedDay} {MONTHS_AR[month]} {year}</h3>
-                <p className="text-[10px] text-neutral-400 dark:text-neutral-500">{selectedShowroom}</p>
+                <p className="text-[10px] text-neutral-500 dark:text-neutral-500">{selectedShowroom}</p>
               </div>
             </div>
             <button onClick={() => setModalOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
@@ -1003,7 +1003,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                 if (!isPresent) {
                   return (
                     <div className="p-3 text-center">
-                      <p className="text-[11px] text-neutral-400 dark:text-neutral-500">لا يوجد دوام — الحالة: {STATUS_CONFIG[rec.status].label}</p>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-500">لا يوجد دوام — الحالة: {STATUS_CONFIG[rec.status].label}</p>
                     </div>
                   );
                 }
@@ -1031,7 +1031,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                       <p className="text-[10px] font-bold text-neutral-400">الفترة الأولى</p>
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-1">
-                          <span className="text-[10px] text-neutral-400 w-5">من</span>
+                          <span className="text-[10px] text-neutral-500 dark:text-neutral-400 w-5">من</span>
                           <input
                             type="time"
                             value={rec.shift1.start}
@@ -1040,7 +1040,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                           />
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="text-[10px] text-neutral-400 w-5">إلى</span>
+                          <span className="text-[10px] text-neutral-500 dark:text-neutral-400 w-5">إلى</span>
                           <input
                             type="time"
                             value={rec.shift1.end}
@@ -1056,7 +1056,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                         <p className="text-[10px] font-bold text-neutral-400">الفترة الثانية</p>
                         <div className="space-y-1.5">
                           <div className="flex items-center gap-1">
-                            <span className="text-[10px] text-neutral-400 w-5">من</span>
+                            <span className="text-[10px] text-neutral-500 dark:text-neutral-400 w-5">من</span>
                             <input
                               type="time"
                               value={rec.shift2.start}
@@ -1065,7 +1065,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                             />
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className="text-[10px] text-neutral-400 w-5">إلى</span>
+                            <span className="text-[10px] text-neutral-500 dark:text-neutral-400 w-5">إلى</span>
                             <input
                               type="time"
                               value={rec.shift2.end}
@@ -1111,7 +1111,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-neutral-800 dark:text-white">توزيع الدوام بالساعة</h3>
-                  <p className="text-[10px] text-neutral-400 dark:text-neutral-500">يوم {displayDay} {MONTHS_AR[month]} {year}</p>
+                  <p className="text-[10px] text-neutral-500 dark:text-neutral-500">يوم {displayDay} {MONTHS_AR[month]} {year}</p>
                 </div>
               </div>
               {selectedShowroom && (
@@ -1189,7 +1189,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                             {/* Count number */}
                             <text x={cx} y={cy - 10} textAnchor="middle" className="text-[10px] font-extrabold" fill={countColor}>{count}</text>
                             {/* Hour label */}
-                            <text x={cx} y={height - 2} textAnchor="middle" className="text-[8px]" fill="#a3a3a3">{to12Hour(hour).replace(" ", "")}</text>
+                            <text x={cx} y={height - 2} textAnchor="middle" className="text-[10px]" fill="#a3a3a3">{to12Hour(hour).replace(" ", "")}</text>
                           </g>
                         );
                       })}
@@ -1217,7 +1217,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                 if (displayDayEmpty) {
                   return (
                     <div className="text-center py-4">
-                      <p className="text-[10px] text-neutral-400 dark:text-neutral-500">لم تجدول بعد</p>
+                      <p className="text-[10px] text-neutral-500 dark:text-neutral-500">لم تجدول بعد</p>
                     </div>
                   );
                 }
@@ -1237,7 +1237,7 @@ export default function TeamSchedulePage({ selectedShowroom }: TeamSchedulePageP
                 if (filtered.length === 0) {
                   return (
                     <div className="text-center py-4">
-                      <p className="text-[10px] text-neutral-400 dark:text-neutral-500">لا يوجد موظفين في هذه الساعة</p>
+                      <p className="text-[10px] text-neutral-500 dark:text-neutral-500">لا يوجد موظفين في هذه الساعة</p>
                     </div>
                   );
                 }

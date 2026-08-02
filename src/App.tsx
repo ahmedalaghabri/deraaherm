@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import AttendanceDashboard from "./components/AttendanceDashboard";
+import DailyRoutineModal, { DAILY_TASKS, dailyRoutineStorageKey, loadDailyCompleted } from "./components/DailyRoutineModal";
 import HazerSystem from "./components/HazerSystem";
 import AnnualLeaveForm from "./components/AnnualLeaveForm";
 import OutboxPage from "./components/OutboxPage";
@@ -11,8 +12,9 @@ import TransportAllowanceForm from "./components/TransportAllowanceForm";
 import SalesPerformancePage from "./components/SalesPerformancePage";
 import TasksPage from "./components/TasksPage";
 import CampaignsPage from "./components/CampaignsPage";
+import EmployeeProfilePage from "./components/EmployeeProfilePage";
 import SaudiCalendar from "./components/SaudiCalendar";
-import PageTabs from "./components/PageTabs";
+import PageHeader from "./components/PageHeader";
 import { supabase } from "./lib/supabase";
 import { Bell, Search, Settings, LogOut, Inbox, Send, FileText, Users, ShieldCheck, ClipboardList, Award, Accessibility, GaugeCircle, Sparkles, ChevronRight, ChevronLeft, ChevronDown, Upload, X, Save, Check, ArrowRight, Tag, Calendar, Building2, Shield, AlertTriangle, Clock, CheckCircle, Phone, Archive, FilePlus, Mail, BarChart3, LayoutDashboard, ArrowLeftRight, ExternalLink, Globe, Database, MessageSquare, TrendingUp, FileSpreadsheet, Briefcase, CreditCard, Home, Car, Plane, Heart, GraduationCap, Baby, MapPin, Zap, User, Lock, Eye, EyeOff, Smartphone, CircleUser as UserCircle, ListTodo, Megaphone, Languages, Type, Moon, Sun, UserPlus, Trophy, ScanFace } from "lucide-react";
 import { AIProvider, useAI } from "./components/ai/AIContext";
@@ -362,7 +364,7 @@ function TransactionSelectionPage({ onCancel, onTransactionSelect }) {
 
   return (
     <div dir="rtl" className="min-h-screen">
-      <div className="mx-auto max-w-[1400px] p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="mx-auto max-w-[var(--page-max-w)] p-3 sm:p-6 space-y-4 sm:space-y-6">
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <div className="rounded-2xl border bg-white dark:bg-neutral-800 border-neutral-100 dark:border-neutral-700 shadow-sm p-4 sm:p-6">
             <div className="mb-4 sm:mb-6">
@@ -779,7 +781,7 @@ function ReminderCarousel({ setView, setActiveKey, setTransactionsSubTab }: {
             {cards.length}
           </span>
         </h3>
-        <span className="hidden sm:inline text-xs text-neutral-400 dark:text-neutral-500 font-medium">
+        <span className="hidden sm:inline text-xs text-neutral-500 dark:text-neutral-500 font-medium">
           {currentIndex + 1} / {pageCount}
         </span>
       </div>
@@ -840,7 +842,7 @@ function ReminderCarousel({ setView, setActiveKey, setTransactionsSubTab }: {
 
       {/* Dots + mobile counter */}
       <div className="flex items-center justify-center gap-3 mt-3">
-        <span className="sm:hidden text-xs text-neutral-400 dark:text-neutral-500 font-medium">
+        <span className="sm:hidden text-xs text-neutral-500 dark:text-neutral-500 font-medium">
           {currentIndex + 1} / {pageCount}
         </span>
         <div className="flex items-center gap-2">
@@ -857,7 +859,7 @@ function ReminderCarousel({ setView, setActiveKey, setTransactionsSubTab }: {
           ))}
         </div>
       </div>
-      <p className="text-[10px] text-neutral-400 dark:text-neutral-500 text-center mt-1 sm:hidden">اسحب للتنقل بين البطاقات</p>
+      <p className="text-[10px] text-neutral-500 dark:text-neutral-500 text-center mt-1 sm:hidden">اسحب للتنقل بين البطاقات</p>
     </motion.div>
   );
 }
@@ -949,6 +951,18 @@ export default function ResponsiveDashboard() {
     return saved === "true";
   });
   const [showChart, setShowChart] = useState(false);
+  const [dailyRoutineOpen, setDailyRoutineOpen] = useState(false);
+  const [dailyCompleted, setDailyCompleted] = useState<Set<string>>(() => loadDailyCompleted());
+  const saveDailyCompleted = (next: Set<string>) => {
+    setDailyCompleted(next);
+    localStorage.setItem(dailyRoutineStorageKey(), JSON.stringify([...next]));
+  };
+  const toggleDailyTask = (task: string) => {
+    const next = new Set(dailyCompleted);
+    if (next.has(task)) next.delete(task);
+    else next.add(task);
+    saveDailyCompleted(next);
+  };
 
   // Apply dark mode to html element
   useEffect(() => {
@@ -1199,7 +1213,7 @@ export default function ResponsiveDashboard() {
     setIsLoggingIn(true);
     setTimeout(() => {
       setIsLoggingIn(false);
-      setCurrentPage("welcome");
+      setCurrentPage("main-dashboard");
     }, 1500);
   }
 
@@ -1225,7 +1239,7 @@ export default function ResponsiveDashboard() {
       setIsLoggingIn(true);
       setTimeout(() => {
         setIsLoggingIn(false);
-        setCurrentPage("welcome");
+        setCurrentPage("main-dashboard");
       }, 1000);
     } else {
       alert("رمز التحقق غير صحيح");
@@ -1905,83 +1919,6 @@ export default function ResponsiveDashboard() {
     );
   }
 
-  // صفحة الترحيب
-  function renderWelcomePage() {
-    const welcomeCards = [
-      { title: "بوابة المعاملات", subtitle: "إدارة المعاملات والمكاتبات", icon: FileText, accent: "from-blue-500/50 to-sky-600/50", action: "دخول", onClick: () => setCurrentPage("main-dashboard") },
-      { title: "المهام وإدارة الفريق", subtitle: "متابعة المهام والفرق", icon: Users, accent: "from-emerald-500/50 to-green-600/50", action: "دخول", onClick: () => { setCurrentPage("main-dashboard"); setView("tasks"); } },
-      { title: "نظام الحضور والغياب", subtitle: "تتبع الحضور والانصراف", icon: Clock, accent: "from-amber-500/50 to-orange-500/50", action: "دخول" },
-      { title: "إحصائيات المبيعات", subtitle: "تقارير ومؤشرات الأداء", icon: BarChart3, accent: "from-rose-500/50 to-pink-600/50", action: "دخول", onClick: () => { setCurrentPage("main-dashboard"); setView("sales_kpi"); setActiveKey("sales_kpi"); } },
-      { title: "التعميمات والتنبيهات", subtitle: "الإشعارات والتعميمات", icon: Bell, accent: "from-red-500/50 to-rose-500/50", action: "دخول" },
-    ];
-
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900 p-4">
-        <div className="max-w-6xl mx-auto py-12">
-          {/* الترحيب */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
-          >
-            <div className="mb-16">
-              <img
-                src="/logonew.svg"
-                alt="شعار درعه"
-                className="h-14 w-auto mx-auto object-contain mb-4 cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => setCurrentView('welcome')}
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling.style.display = 'block';
-                }}
-              />
-              <div className="hidden text-4xl font-bold text-blue-600 mb-4">درعه</div>
-            </div>
-            <h1 className="text-4xl font-bold text-neutral-900 mb-4">أهلاً بكم في درعه</h1>
-            <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
-              المنصة الإلكترونية لخدمات شركة درعه لجميع الموظفين
-            </p>
-          </motion.div>
-
-          {/* البطاقات */}
-          <div className="grid grid-cols-3 gap-3 sm:gap-6 lg:grid-cols-3">
-            {welcomeCards.map((card, idx) => (
-              <motion.button
-                key={card.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * idx }}
-                onClick={card.onClick || (() => console.log(`تم النقر على: ${card.title}`))}
-                className="group h-full w-full text-right cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-              >
-                <div className="relative h-full min-h-[120px] sm:min-h-[200px] flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-neutral-200 bg-white dark:bg-neutral-800 shadow-md hover:shadow-2xl transition-all duration-300">
-                  {/* طبقة التدرّج */}
-                  <div className={cn("absolute inset-x-0 -top-16 h-40 bg-gradient-to-r opacity-20 group-hover:opacity-30 blur-2xl transition", card.accent)} />
-                  
-                  <div className="relative p-3 sm:p-6 flex flex-col sm:flex-row items-start gap-2 sm:gap-4 flex-1">
-                    <div className="shrink-0">
-                      <div className="size-8 sm:size-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-white/70 to-white/30 border border-neutral-200/70 backdrop-blur flex items-center justify-center">
-                        <card.icon className="h-4 w-4 sm:h-7 sm:w-7" />
-                      </div>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-[11px] sm:text-lg font-bold tracking-tight leading-tight text-gray-900 mb-0.5 sm:mb-2">{card.title}</h3>
-                      <p className="hidden sm:block text-sm text-gray-600">{card.subtitle}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="px-3 sm:px-6 pb-3 sm:pb-6 flex items-center justify-start text-xs sm:text-sm mt-auto">
-                    <span className="font-medium text-blue-600 group-hover:underline">{card.action}</span>
-                  </div>
-                </div>
-              </motion.button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   function PerformanceTrendsChart() {
     const monthsMeta = [
       { short: 'يناير' }, { short: 'فبراير' }, { short: 'مارس' },
@@ -2076,7 +2013,7 @@ export default function ResponsiveDashboard() {
         <div className="grid grid-cols-3 gap-2 text-center pt-1">
           {seriesDef.map(s => (
             <div key={s.name} className="flex flex-col gap-0.5">
-              <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium">{s.name}</span>
+              <span className="text-[10px] text-neutral-500 dark:text-neutral-500 font-medium">{s.name}</span>
               <span className="text-sm font-bold" style={{ color: s.color }}>+{s.vals[s.vals.length - 1] - s.vals[0]}%</span>
             </div>
           ))}
@@ -2099,10 +2036,10 @@ export default function ResponsiveDashboard() {
             <p className="text-xs text-neutral-500 dark:text-neutral-400">مدير المبيعات</p>
           </div>
           <div className="py-1">
-            <button onClick={() => { setView("settings"); setAccountMenuType(null); }}
+            <button onClick={() => { setView("employee_profile"); setAccountMenuType(null); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
               <UserCircle className="h-4 w-4 text-neutral-400 dark:text-neutral-400" />
-              الملف الشخصي
+              ملف الموظف
             </button>
             <button onClick={() => { setView("settings"); setAccountMenuType(null); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
@@ -2124,7 +2061,7 @@ export default function ResponsiveDashboard() {
                 <span className="text-xs font-bold tabular-nums" style={{ color: '#B21063' }}>{fontScale}%</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] text-neutral-400 dark:text-neutral-400 font-bold shrink-0 select-none">أ</span>
+                <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-bold shrink-0 select-none">أ</span>
                 <div className="relative flex-1">
                   <input
                     type="range"
@@ -2142,16 +2079,16 @@ export default function ResponsiveDashboard() {
                 <span className="text-[15px] text-neutral-400 dark:text-neutral-400 font-bold shrink-0 select-none">أ</span>
               </div>
               <div className="flex justify-between mt-1.5">
-                <button onClick={() => setFontScale(75)} className="text-[10px] text-neutral-400 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200">أصغر</button>
-                <button onClick={() => setFontScale(100)} className="text-[10px] text-neutral-400 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 font-semibold">افتراضي</button>
-                <button onClick={() => setFontScale(150)} className="text-[10px] text-neutral-400 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200">أكبر</button>
+                <button onClick={() => setFontScale(75)} className="text-[10px] text-neutral-500 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200">أصغر</button>
+                <button onClick={() => setFontScale(100)} className="text-[10px] text-neutral-500 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 font-semibold">افتراضي</button>
+                <button onClick={() => setFontScale(150)} className="text-[10px] text-neutral-500 dark:text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200">أكبر</button>
               </div>
             </div>
             <button onClick={() => setAccountMenuType(null)}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
               <Languages className="h-4 w-4 text-neutral-400 dark:text-neutral-400" />
               <span>اللغة</span>
-              <span className="ms-auto text-xs text-neutral-400 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 rounded-full">العربية</span>
+              <span className="ms-auto text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 rounded-full">العربية</span>
             </button>
           </div>
           <div className="border-t border-neutral-100 dark:border-neutral-700 py-1">
@@ -2168,7 +2105,7 @@ export default function ResponsiveDashboard() {
 
   function renderDashboard() {
     return (
-      <div className="space-y-8">
+      <div className="space-y-8 max-w-[var(--page-max-w)] mx-auto w-full">
         {/* ====== بطاقة ملخص KPI الموظف ====== */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -2225,7 +2162,7 @@ export default function ResponsiveDashboard() {
               >
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs sm:text-sm font-bold text-neutral-700 dark:text-neutral-200">توجهات الأداء</span>
-                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium">12 شهراً</span>
+                  <span className="text-[10px] text-neutral-500 dark:text-neutral-500 font-medium">12 شهراً</span>
                 </div>
                 <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform ${showChart ? 'rotate-180' : ''}`} />
               </button>
@@ -2250,7 +2187,7 @@ export default function ResponsiveDashboard() {
                         transition={{ delay: 0.04 * idx }}
                         className="flex flex-col gap-1 px-3 sm:px-5 lg:px-6"
                       >
-                        <span className="text-[10px] sm:text-[11px] text-neutral-400 dark:text-neutral-500 font-medium tracking-wide">{m.label}</span>
+                        <span className="text-[10px] sm:text-[11px] text-neutral-500 dark:text-neutral-500 font-medium tracking-wide">{m.label}</span>
                         <div className="flex items-baseline gap-1">
                           <span className="text-xl sm:text-3xl font-extrabold text-neutral-800 dark:text-white tabular-nums leading-none">{m.value}</span>
                           {m.unit && <span className="text-sm sm:text-base font-bold text-neutral-500 dark:text-neutral-400">{m.unit}</span>}
@@ -2258,7 +2195,7 @@ export default function ResponsiveDashboard() {
                         <span className={"inline-flex w-fit text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 rounded-full " + (m.positive ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400" : "bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400")}>
                           {m.delta}
                         </span>
-                        <span className="text-[9px] sm:text-[10px] text-neutral-400 dark:text-neutral-600 hidden sm:block mt-0.5">{m.sub}</span>
+                        <span className="text-[9px] sm:text-[10px] text-neutral-500 dark:text-neutral-600 hidden sm:block mt-0.5">{m.sub}</span>
                       </motion.div>
                     ))}
                   </section>
@@ -2274,6 +2211,144 @@ export default function ResponsiveDashboard() {
           setActiveKey={setActiveKey}
           setTransactionsSubTab={setTransactionsSubTab}
         />
+
+        {/* ====== قسم المهام ====== */}
+        <div>
+          {/* Desktop header row */}
+          <div className="hidden sm:grid grid-cols-6 gap-2.5 mb-4">
+            <div className="col-span-3 flex items-center justify-start">
+              <h2 className="text-base font-bold text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">
+                مهامك اليوم — {(() => { const d = new Date(); const m = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']; return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`; })()}
+              </h2>
+            </div>
+            <div className="col-span-3 flex items-center justify-start">
+              <h3 className="text-sm sm:text-base font-bold text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">
+                معاملات اليوم — {(() => { const d = new Date(); const m = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']; return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`; })()}
+              </h3>
+            </div>
+          </div>
+          {/* Mobile header */}
+          <h2 className="sm:hidden text-sm font-bold mb-3 text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">
+            مهامك اليوم — {(() => { const d = new Date(); const m = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']; return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`; })()}
+          </h2>
+          <section className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2.5 mx-1 sm:mx-0 overflow-visible">
+            {[
+              { title: "جديدة", value: "17", sub: "12 جديدة · ", subRed: "5 طارئة", subColor: undefined, icon: ListTodo, accent: "from-green-500/50 to-green-600/50" },
+              { title: "متأخرة", value: "3", sub: "مهام متأخرة", subRed: undefined, subColor: undefined, icon: Clock, accent: "from-red-500/50 to-red-600/50" },
+              { title: "يومية", value: `${dailyCompleted.size}/${DAILY_TASKS.length}`, sub: `${dailyCompleted.size} مكتملة · ${DAILY_TASKS.length - dailyCompleted.size} متبقية`, subRed: undefined, subColor: undefined, icon: Calendar, accent: "from-blue-500/50 to-blue-600/50" },
+            ].map((card, idx) => (
+              <motion.button
+                key={card.title + idx}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.03 * idx }}
+                onClick={() => { if (idx === 2) { setDailyCompleted(loadDailyCompleted()); setDailyRoutineOpen(true); } }}
+                className="group h-full w-full text-right cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+              >
+                {idx === 0 ? (
+                  <div className="card-stroke-green h-full">
+                    <div className="relative z-[2] overflow-hidden shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
+                      <div className={cn("absolute inset-x-0 -top-10 h-28 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
+                      <div className="relative flex items-center justify-between gap-1">
+                        <span className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                          <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-700 dark:text-neutral-300" />
+                        </div>
+                      </div>
+                      <div className="relative text-[22px] sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
+                      {(card.sub || card.subRed) && (
+                        <div className="relative text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-medium truncate">
+                          {card.sub}
+                          {card.subRed && <span className="text-red-500">{card.subRed}</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative overflow-hidden bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
+                    <div className={cn("absolute inset-x-0 -top-10 h-28 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
+                    <div className="relative flex items-center justify-between gap-1">
+                      <span className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                        <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-700 dark:text-neutral-300" />
+                      </div>
+                    </div>
+                    <div className="relative text-[22px] sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
+                    {(card.sub || card.subRed) && (
+                      <div className="relative text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-medium truncate">
+                        {card.sub}
+                        {card.subRed && <span className="text-red-500">{card.subRed}</span>}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </motion.button>
+            ))}
+
+            {/* Transactions label (mobile only) */}
+            <div className="col-span-3 sm:hidden flex items-center justify-start py-1 px-1">
+              <h3 className="text-sm font-bold text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">معاملات اليوم</h3>
+            </div>
+
+            {[
+              { title: "جديدة", value: "8", sub: "معاملات جديدة", subRed: undefined, subColor: undefined, icon: Inbox, accent: "from-indigo-500/50 to-indigo-600/50" },
+              { title: "طارئة", value: "5", sub: "معاملات طارئة", subRed: undefined, subColor: "text-red-500", icon: AlertTriangle, accent: "from-orange-500/50 to-orange-600/50" },
+              { title: "متأخرة", value: "3", sub: "معاملات متأخرة", subRed: undefined, subColor: "text-amber-500", icon: Clock, accent: "from-amber-500/50 to-amber-600/50" },
+            ].map((card, idx) => (
+              <motion.button
+                key={card.title + idx}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.03 * (idx + 3) }}
+                className="group h-full w-full text-right cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+              >
+                {idx === 0 ? (
+                  <div className="card-stroke-indigo h-full">
+                    <div className="relative z-[2] overflow-hidden shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
+                      <div className={cn("absolute inset-x-0 -top-10 h-28 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
+                      <div className="relative flex items-center justify-between gap-1">
+                        <span className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                          <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-700 dark:text-neutral-300" />
+                        </div>
+                      </div>
+                      <div className="relative text-[22px] sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
+                      {(card.sub || card.subRed) && (
+                        <div className="relative text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-medium truncate">
+                          {card.sub}
+                          {card.subRed && <span className="text-red-500">{card.subRed}</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative overflow-hidden bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
+                    <div className={cn("absolute inset-x-0 -top-10 h-28 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
+                    <div className="relative flex items-center justify-between gap-1">
+                      <span className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                        <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-700 dark:text-neutral-300" />
+                      </div>
+                    </div>
+                    <div className="relative text-[22px] sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
+                    {(card.sub || card.subRed) && (
+                      <div className="relative text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-medium truncate">
+                        {card.sub}
+                        {card.subRed && <span className="text-red-500">{card.subRed}</span>}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </motion.button>
+            ))}
+          </section>
+          <DailyRoutineModal
+            open={dailyRoutineOpen}
+            onClose={() => setDailyRoutineOpen(false)}
+            completed={dailyCompleted}
+            onToggle={toggleDailyTask}
+          />
+        </div>
 
         {/* ====== المسابقات - مدمجة مباشرة ====== */}
         <motion.div
@@ -2345,7 +2420,7 @@ export default function ResponsiveDashboard() {
                   <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥇 10000</span>
                   <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥈 5000</span>
                   <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥉 2000</span>
-                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mr-auto">ريال</span>
+                  <span className="text-[10px] text-neutral-500 dark:text-neutral-500 mr-auto">ريال</span>
                 </div>
               </div>
 
@@ -2404,7 +2479,7 @@ export default function ResponsiveDashboard() {
                   <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥇 10000</span>
                   <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥈 5000</span>
                   <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥉 2000</span>
-                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mr-auto">ريال</span>
+                  <span className="text-[10px] text-neutral-500 dark:text-neutral-500 mr-auto">ريال</span>
                 </div>
               </div>
 
@@ -2463,7 +2538,7 @@ export default function ResponsiveDashboard() {
                   <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥇 10000</span>
                   <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥈 5000</span>
                   <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">🥉 2000</span>
-                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 mr-auto">ريال</span>
+                  <span className="text-[10px] text-neutral-500 dark:text-neutral-500 mr-auto">ريال</span>
                 </div>
               </div>
             </div>
@@ -2939,137 +3014,6 @@ export default function ResponsiveDashboard() {
           </div>
         )}
 
-        {/* ====== قسم المهام ====== */}
-        <div>
-          {/* Desktop header row */}
-          <div className="hidden sm:grid grid-cols-6 gap-2.5 mb-4">
-            <div className="col-span-3 flex items-center justify-start">
-              <h2 className="text-base font-bold text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">
-                مهامك اليوم — {(() => { const d = new Date(); const m = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']; return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`; })()}
-              </h2>
-            </div>
-            <div className="col-span-3 flex items-center justify-start">
-              <h3 className="text-sm sm:text-base font-bold text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">
-                معاملات اليوم — {(() => { const d = new Date(); const m = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']; return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`; })()}
-              </h3>
-            </div>
-          </div>
-          {/* Mobile header */}
-          <h2 className="sm:hidden text-sm font-bold mb-3 text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">
-            مهامك اليوم — {(() => { const d = new Date(); const m = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']; return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`; })()}
-          </h2>
-          <section className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2.5 mx-1 sm:mx-0 overflow-visible">
-            {[
-              { title: "جديدة", value: "17", sub: "12 جديدة · ", subRed: "5 طارئة", subColor: undefined, icon: ListTodo, accent: "from-green-500/50 to-green-600/50" },
-              { title: "متأخرة", value: "3", sub: "مهام متأخرة", subRed: undefined, subColor: undefined, icon: Clock, accent: "from-red-500/50 to-red-600/50" },
-              { title: "يومية", value: "8", sub: "مهام يومية", subRed: undefined, subColor: undefined, icon: Calendar, accent: "from-blue-500/50 to-blue-600/50" },
-            ].map((card, idx) => (
-              <motion.button
-                key={card.title + idx}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.03 * idx }}
-                className="group h-full w-full text-right cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-              >
-                {idx === 0 ? (
-                  <div className="card-stroke-green h-full">
-                    <div className="relative z-[2] overflow-hidden shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
-                      <div className={cn("absolute inset-x-0 -top-10 h-28 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
-                      <div className="relative flex items-center justify-between gap-1">
-                        <span className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
-                        <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
-                          <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-700 dark:text-neutral-300" />
-                        </div>
-                      </div>
-                      <div className="relative text-[22px] sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
-                      {(card.sub || card.subRed) && (
-                        <div className="relative text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-medium truncate">
-                          {card.sub}
-                          {card.subRed && <span className="text-red-500">{card.subRed}</span>}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="relative overflow-hidden bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
-                    <div className={cn("absolute inset-x-0 -top-10 h-28 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
-                    <div className="relative flex items-center justify-between gap-1">
-                      <span className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
-                        <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-700 dark:text-neutral-300" />
-                      </div>
-                    </div>
-                    <div className="relative text-[22px] sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
-                    {(card.sub || card.subRed) && (
-                      <div className="relative text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-medium truncate">
-                        {card.sub}
-                        {card.subRed && <span className="text-red-500">{card.subRed}</span>}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </motion.button>
-            ))}
-
-            {/* Transactions label (mobile only) */}
-            <div className="col-span-3 sm:hidden flex items-center justify-start py-1 px-1">
-              <h3 className="text-sm font-bold text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">معاملات اليوم</h3>
-            </div>
-
-            {[
-              { title: "جديدة", value: "8", sub: "معاملات جديدة", subRed: undefined, subColor: undefined, icon: Inbox, accent: "from-indigo-500/50 to-indigo-600/50" },
-              { title: "طارئة", value: "5", sub: "معاملات طارئة", subRed: undefined, subColor: "text-red-500", icon: AlertTriangle, accent: "from-orange-500/50 to-orange-600/50" },
-              { title: "متأخرة", value: "3", sub: "معاملات متأخرة", subRed: undefined, subColor: "text-amber-500", icon: Clock, accent: "from-amber-500/50 to-amber-600/50" },
-            ].map((card, idx) => (
-              <motion.button
-                key={card.title + idx}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.03 * (idx + 3) }}
-                className="group h-full w-full text-right cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-              >
-                {idx === 0 ? (
-                  <div className="card-stroke-indigo h-full">
-                    <div className="relative z-[2] overflow-hidden shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
-                      <div className={cn("absolute inset-x-0 -top-10 h-28 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
-                      <div className="relative flex items-center justify-between gap-1">
-                        <span className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
-                        <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
-                          <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-700 dark:text-neutral-300" />
-                        </div>
-                      </div>
-                      <div className="relative text-[22px] sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
-                      {(card.sub || card.subRed) && (
-                        <div className="relative text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-medium truncate">
-                          {card.sub}
-                          {card.subRed && <span className="text-red-500">{card.subRed}</span>}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="relative overflow-hidden bg-white dark:bg-neutral-800 rounded-xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5 hover:shadow-md transition-shadow h-full">
-                    <div className={cn("absolute inset-x-0 -top-10 h-28 bg-gradient-to-r opacity-10 group-hover:opacity-20 blur-2xl transition", card.accent)} />
-                    <div className="relative flex items-center justify-between gap-1">
-                      <span className="text-sm sm:text-base text-neutral-700 dark:text-neutral-300 font-semibold leading-tight line-clamp-1">{card.title}</span>
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
-                        <card.icon className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-700 dark:text-neutral-300" />
-                      </div>
-                    </div>
-                    <div className="relative text-[22px] sm:text-2xl font-bold text-neutral-800 dark:text-neutral-200 tracking-tight tabular-nums">{card.value}</div>
-                    {(card.sub || card.subRed) && (
-                      <div className="relative text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 font-medium truncate">
-                        {card.sub}
-                        {card.subRed && <span className="text-red-500">{card.subRed}</span>}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </motion.button>
-            ))}
-          </section>
-        </div>
-
         {/* ====== قسم الأداء والتنبيهات ====== */}
         <div>
           <h2 className="text-sm sm:text-base font-bold mb-3 sm:mb-4 text-neutral-700 dark:text-neutral-200 tracking-wide uppercase">أداء المبيعات والتنبيهات</h2>
@@ -3397,7 +3341,7 @@ export default function ResponsiveDashboard() {
           {/* Footer */}
           <div className="text-center pt-8 space-y-4 pb-4">
             <p className="text-[13px] text-neutral-400 dark:text-neutral-500 font-medium">
-              بنك فيجن v1.36.0 606014
+             Deraah 2026
             </p>
             <button
               onClick={() => {
@@ -3424,15 +3368,12 @@ export default function ResponsiveDashboard() {
     return (
       <div dir="rtl" className="min-h-screen dark:bg-neutral-900 flex flex-col">
         {/* ── Fixed Header (tabs) — نفس تخطيط صفحة الأداء ── */}
-        <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700 rounded-xl">
-          <div className="max-w-[1400px] mx-auto px-0 sm:px-2 rounded-xl overflow-hidden">
-            <PageTabs
-              tabs={ATTEND_TABS}
-              active={attendanceSubTab}
-              onChange={(key) => setAttendanceSubTab(key)}
-            />
-          </div>
-        </div>
+        <PageHeader
+          tabs={ATTEND_TABS}
+          active={attendanceSubTab}
+          onChange={(key) => setAttendanceSubTab(key)}
+          innerClassName="px-0 sm:px-2 rounded-xl overflow-hidden"
+        />
         {/* ── Content ── */}
         <div className="flex-1">
           {attendanceSubTab === 'report'   && <AttendanceDashboard />}
@@ -3454,15 +3395,12 @@ export default function ResponsiveDashboard() {
     return (
       <div dir="rtl" className="min-h-screen dark:bg-neutral-900 flex flex-col">
         {/* ── Fixed Header (tabs) — نفس تخطيط صفحة الأداء ── */}
-        <div className="sticky top-0 z-40 md:z-30 bg-white dark:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700 rounded-xl">
-          <div className="max-w-[1400px] mx-auto px-0 sm:px-2 rounded-xl overflow-hidden">
-            <PageTabs
-              tabs={TRANS_TABS}
-              active={transactionsSubTab}
-              onChange={(key) => setTransactionsSubTab(key)}
-            />
-          </div>
-        </div>
+        <PageHeader
+          tabs={TRANS_TABS}
+          active={transactionsSubTab}
+          onChange={(key) => setTransactionsSubTab(key)}
+          innerClassName="px-0 sm:px-2 rounded-xl overflow-hidden"
+        />
         {/* Content */}
         <div className="flex-1">
         {transactionsSubTab === 'new' && (
@@ -3514,6 +3452,7 @@ export default function ResponsiveDashboard() {
     if (view === "transaction_details") return renderTransactionDetailsView();
     if (view === "sales_kpi") return <SalesPerformancePage onBack={() => setView("dashboard")} />;
     if (view === "tasks") return <TasksPage onBack={() => setView("dashboard")} onNewCampaign={() => setView("campaigns")} />;
+    if (view === "employee_profile") return <EmployeeProfilePage onBack={() => setView("dashboard")} />;
     if (view === "campaigns") return <CampaignsPage onBack={() => setView("dashboard")} />;
     if (view === "shortcuts") return renderShortcutsPage();
     if (view === "notifications") return renderNotificationsPage();
@@ -3885,10 +3824,6 @@ export default function ResponsiveDashboard() {
   // عرض الصفحة المناسبة
   if (currentPage === "login") {
     return renderLoginPage();
-  }
-
-  if (currentPage === "welcome") {
-    return renderWelcomePage();
   }
 
   if (currentPage === "main-dashboard") {

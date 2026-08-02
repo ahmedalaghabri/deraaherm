@@ -251,7 +251,7 @@ export default function AttendanceDashboard() {
 
   return (
     <div dir="rtl" className="min-h-screen">
-      <div className="mx-auto max-w-[1400px] p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="mx-auto max-w-[var(--page-max-w)] px-1 sm:px-2 py-3 sm:py-6 space-y-4 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:gap-4">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <Card className="rounded-2xl border bg-white dark:bg-neutral-800 border-neutral-100 dark:border-neutral-700 shadow-sm">
@@ -316,20 +316,20 @@ export default function AttendanceDashboard() {
           <CardContent className="p-0">
             {/* Desktop Table View */}
             <div className="hidden md:block w-full overflow-x-auto">
-              <table className="w-full min-w-[900px] text-sm">
+              <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-gradient-to-b from-slate-50/70 to-white/80 dark:from-neutral-800 dark:to-neutral-800 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-neutral-800/80 dark:text-neutral-300">
                   <tr className="text-right">
-                    <th className="px-4 py-3 font-medium text-right">اليوم</th>
-                    <th className="px-4 py-3 font-medium text-right">التاريخ</th>
-                    <th className="px-4 py-3 font-medium text-right">الدخول</th>
-                    <th className="px-4 py-3 font-medium text-right">الخروج</th>
-                    <th className="px-4 py-3 font-medium text-right">عدد الساعات</th>
-                    <th className="px-4 py-3 font-medium text-right">ساعات العمل</th>
-                    <th className="px-4 py-3 font-medium text-right">التأخير</th>
-                    <th className="px-4 py-3 font-medium text-right">الإضافي</th>
-                    <th className="px-4 py-3 font-medium text-right">نسبة التحقيق</th>
-                    <th className="px-4 py-3 font-medium text-right">الحالة</th>
-                    <th className="px-4 py-3 font-medium text-right">تفاصيل</th>
+                    <th className="px-2.5 py-3 font-medium text-right">اليوم</th>
+                    <th className="px-2.5 py-3 font-medium text-right">التاريخ</th>
+                    <th className="px-2.5 py-3 font-medium text-right">الدخول</th>
+                    <th className="px-2.5 py-3 font-medium text-right">الخروج</th>
+                    <th className="px-2.5 py-3 font-medium text-right">عدد الساعات</th>
+                    <th className="px-2.5 py-3 font-medium text-right">ساعات العمل</th>
+                    <th className="px-2.5 py-3 font-medium text-right">التأخير</th>
+                    <th className="px-2.5 py-3 font-medium text-right">الإضافي</th>
+                    <th className="px-2.5 py-3 font-medium text-right">نسبة التحقيق</th>
+                    <th className="px-2.5 py-3 font-medium text-right">الحالة</th>
+                    <th className="px-2.5 py-3 font-medium text-right">تفاصيل</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -349,29 +349,29 @@ export default function AttendanceDashboard() {
                             : "bg-muted/10 dark:bg-neutral-700/20"
                         )}
                       >
-                        <td className="px-4 py-3 whitespace-nowrap">{r.weekday}</td>
-                        <td className="px-4 py-3 whitespace-nowrap tabular-nums">{r.date}</td>
-                        <td className="px-4 py-3 whitespace-nowrap tabular-nums">{r.checkIn ?? "—"}</td>
-                        <td className="px-4 py-3 whitespace-nowrap tabular-nums">{r.checkOut ?? "—"}</td>
-                        <td className="px-4 py-3 whitespace-nowrap tabular-nums">{formatHours(r.totalHours)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap tabular-nums">{formatHours(r.workingHours)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap tabular-nums">{formatHours(r.delayHours)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap tabular-nums">{formatHours(r.overtimeHours)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-2.5 py-3 whitespace-nowrap">{r.weekday}</td>
+                        <td className="px-2.5 py-3 whitespace-nowrap tabular-nums">{r.date}</td>
+                        <td className="px-2.5 py-3 whitespace-nowrap tabular-nums">{r.checkIn ?? "—"}</td>
+                        <td className="px-2.5 py-3 whitespace-nowrap tabular-nums">{r.checkOut ?? "—"}</td>
+                        <td className="px-2.5 py-3 whitespace-nowrap tabular-nums">{formatHours(r.totalHours)}</td>
+                        <td className="px-2.5 py-3 whitespace-nowrap tabular-nums">{formatHours(r.workingHours)}</td>
+                        <td className="px-2.5 py-3 whitespace-nowrap tabular-nums">{formatHours(r.delayHours)}</td>
+                        <td className="px-2.5 py-3 whitespace-nowrap tabular-nums">{formatHours(r.overtimeHours)}</td>
+                        <td className="px-2.5 py-3 whitespace-nowrap">
                           {auditRate !== null ? (
                             <AuditRateBadge rate={auditRate!} />
                           ) : (
                             <span className="text-muted-foreground text-xs">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-2.5 py-3 whitespace-nowrap">
                           {isHoliday ? (
                             <Badge className="rounded-full bg-slate-100 text-slate-700 hover:bg-slate-100 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-700">إجازة</Badge>
                           ) : (
                             statusBadge(status)
                           )}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-2.5 py-3 whitespace-nowrap">
                           <Sheet>
                             <SheetTrigger asChild>
                               <Button variant="outline" size="sm" className="rounded-xl dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700">عرض</Button>

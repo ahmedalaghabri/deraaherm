@@ -48,14 +48,14 @@ export default function SalesDashboard({ onBack }: SalesDashboardProps) {
     <div dir="rtl" className="min-h-screen flex flex-col font-sans antialiased">
 
       {/* ─── Top Header ─── */}
-      <header className="sticky top-0 z-30 backdrop-blur border-b border-neutral-200 bg-white/80">
+      <header className="sticky top-0 z-30 backdrop-blur border-b border-neutral-200 dark:border-neutral-700 bg-white/80">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="h-16 flex items-center gap-3">
 
             {/* Mobile: hamburger */}
             <button
               onClick={() => setDrawerOpen(true)}
-              className="md:hidden p-2 rounded-xl border border-neutral-200 hover:bg-blue-50 active:bg-blue-100"
+              className="md:hidden p-2 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-blue-50 active:bg-blue-100"
               aria-label="فتح القائمة"
             >
               <Menu className="h-5 w-5" />
@@ -64,7 +64,7 @@ export default function SalesDashboard({ onBack }: SalesDashboardProps) {
             {/* Desktop: collapse sidebar */}
             <button
               onClick={() => setSidebarCollapsed((v) => !v)}
-              className="hidden md:inline-flex p-2 rounded-xl border border-neutral-200 hover:bg-blue-50 active:bg-blue-100"
+              className="hidden md:inline-flex p-2 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-blue-50 active:bg-blue-100"
               aria-label="طي القائمة الجانبية"
             >
               <Menu className="h-5 w-5" />
@@ -85,7 +85,7 @@ export default function SalesDashboard({ onBack }: SalesDashboardProps) {
             <div className="ms-auto flex items-center gap-2 sm:gap-3">
               <button
                 onClick={onBack}
-                className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-neutral-500 hover:text-neutral-800 transition-colors px-3 py-1.5 rounded-xl border border-neutral-200 hover:bg-blue-50"
+                className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-neutral-500 hover:text-neutral-800 transition-colors px-3 py-1.5 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-blue-50"
               >
                 <ArrowRight className="h-4 w-4" />
                 الرئيسية
@@ -94,13 +94,13 @@ export default function SalesDashboard({ onBack }: SalesDashboardProps) {
                 <Bell className="h-5 w-5" />
                 <span className="absolute -top-0.5 -left-0.5 h-5 min-w-[1.25rem] px-1 rounded-full bg-red-600 text-white text-[10px] flex items-center justify-center">3</span>
               </button>
-              <button className="hidden sm:flex items-center gap-2 p-2 rounded-xl border border-neutral-200 hover:bg-blue-50 active:bg-blue-100">
+              <button className="hidden sm:flex items-center gap-2 p-2 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-blue-50 active:bg-blue-100">
                 <Settings className="h-5 w-5" />
                 <span className="text-sm">الإعدادات</span>
               </button>
               <button
                 onClick={onBack}
-                className="p-2 rounded-xl border border-neutral-200 hover:bg-blue-50 active:bg-blue-100"
+                className="p-2 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-blue-50 active:bg-blue-100"
                 aria-label="تسجيل الخروج"
               >
                 <LogOut className="h-5 w-5" />
@@ -118,7 +118,7 @@ export default function SalesDashboard({ onBack }: SalesDashboardProps) {
           "hidden md:flex flex-col transition-all duration-300 shrink-0 mr-2 sm:mr-3 lg:mr-4 ml-2 sm:ml-3 lg:ml-4",
           sidebarCollapsed ? "w-14" : "w-48"
         )}>
-          <nav className="relative rounded-2xl p-2 bg-white border border-neutral-200 shadow-sm flex-1 overflow-hidden">
+          <nav className="relative rounded-2xl p-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 shadow-sm flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto pe-1">
               {SIDEBAR_GROUPS.map((group) => (
                 <div key={group.label} className="mb-1">
@@ -145,8 +145,8 @@ export default function SalesDashboard({ onBack }: SalesDashboardProps) {
                           className={cn(
                             "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition outline-none",
                             activeTab === key
-                              ? "bg-neutral-100 text-neutral-900 ring-1 ring-neutral-200"
-                              : "text-neutral-700 hover:bg-[#B21063]/10 active:bg-[#B21063]/20"
+                              ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 ring-1 ring-neutral-200"
+                              : "text-neutral-700 dark:text-neutral-200 hover:bg-[#B21063]/10 active:bg-[#B21063]/20"
                           )}
                           title={sidebarCollapsed ? label : undefined}
                         >
@@ -165,7 +165,7 @@ export default function SalesDashboard({ onBack }: SalesDashboardProps) {
             <div className="sticky bottom-0 -mb-2 mt-2 bg-gradient-to-t from-white/90 to-transparent pt-2">
               <button
                 onClick={() => setSidebarCollapsed((v) => !v)}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-neutral-200 hover:bg-blue-50 active:bg-blue-100 text-sm"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-blue-50 active:bg-blue-100 text-sm"
               >
                 {sidebarCollapsed
                   ? (<><ChevronLeft className="h-4 w-4" /><span>توسيع</span></>)
@@ -198,14 +198,14 @@ export default function SalesDashboard({ onBack }: SalesDashboardProps) {
       {drawerOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
-          <aside className="absolute top-0 right-0 h-full w-[85%] max-w-sm bg-white border-s border-neutral-200 shadow-xl p-4 flex flex-col">
+          <aside className="absolute top-0 right-0 h-full w-[85%] max-w-sm bg-white dark:bg-neutral-800 border-s border-neutral-200 dark:border-neutral-700 shadow-xl p-4 flex flex-col">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold">القائمة</span>
-              <button onClick={() => setDrawerOpen(false)} className="text-sm px-3 py-1 rounded-lg border border-neutral-200">إغلاق</button>
+              <button onClick={() => setDrawerOpen(false)} className="text-sm px-3 py-1 rounded-lg border border-neutral-200 dark:border-neutral-700">إغلاق</button>
             </div>
             <div className="relative mb-3">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70" />
-              <input placeholder="ابحث..." className="w-full rounded-xl ps-9 pe-3 py-2 bg-neutral-100 border border-neutral-200 outline-none focus:ring-2 ring-blue-500" />
+              <input placeholder="ابحث..." className="w-full rounded-xl ps-9 pe-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 outline-none focus:ring-2 ring-blue-500" />
             </div>
             {SIDEBAR_GROUPS.map((group) => (
               <div key={group.label} className="mb-2">
@@ -225,10 +225,10 @@ export default function SalesDashboard({ onBack }: SalesDashboardProps) {
                 </ul>
               </div>
             ))}
-            <div className="mt-auto pt-4 border-t border-neutral-100">
+            <div className="mt-auto pt-4 border-t border-neutral-100 dark:border-neutral-800">
               <button
                 onClick={() => { setDrawerOpen(false); onBack(); }}
-                className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border border-neutral-200 text-sm text-neutral-600 hover:bg-neutral-50 transition-colors"
+                className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-700 text-sm text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 transition-colors"
               >
                 <ArrowRight className="h-4 w-4" />
                 <span>العودة للرئيسية</span>
