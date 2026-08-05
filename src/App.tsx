@@ -10,13 +10,14 @@ import TransactionDetailsPage from "./components/TransactionDetailsPage";
 import ExitPermitForm from "./components/ExitPermitForm";
 import TransportAllowanceForm from "./components/TransportAllowanceForm";
 import SalesPerformancePage from "./components/SalesPerformancePage";
+import ShowroomsPage from "./components/ShowroomsPage";
 import TasksPage from "./components/TasksPage";
 import CampaignsPage from "./components/CampaignsPage";
 import EmployeeProfilePage from "./components/EmployeeProfilePage";
 import SaudiCalendar from "./components/SaudiCalendar";
 import PageHeader from "./components/PageHeader";
 import { supabase } from "./lib/supabase";
-import { Bell, Search, Settings, LogOut, Inbox, Send, FileText, Users, ShieldCheck, ClipboardList, Award, Accessibility, GaugeCircle, Sparkles, ChevronRight, ChevronLeft, ChevronDown, Upload, X, Save, Check, ArrowRight, Tag, Calendar, Building2, Shield, AlertTriangle, Clock, CheckCircle, Phone, Archive, FilePlus, Mail, BarChart3, LayoutDashboard, ArrowLeftRight, ExternalLink, Globe, Database, MessageSquare, TrendingUp, FileSpreadsheet, Briefcase, CreditCard, Home, Car, Plane, Heart, GraduationCap, Baby, MapPin, Zap, User, Lock, Eye, EyeOff, Smartphone, CircleUser as UserCircle, ListTodo, Megaphone, Languages, Type, Moon, Sun, UserPlus, Trophy, ScanFace } from "lucide-react";
+import { Bell, Search, Settings, LogOut, Inbox, Send, FileText, Users, ShieldCheck, ClipboardList, Award, Accessibility, GaugeCircle, Sparkles, ChevronRight, ChevronLeft, ChevronDown, Upload, X, Save, Check, ArrowRight, Tag, Calendar, Building2, Shield, AlertTriangle, Clock, CheckCircle, Phone, Archive, FilePlus, Mail, BarChart3, LayoutDashboard, ArrowLeftRight, ExternalLink, Globe, Database, MessageSquare, TrendingUp, FileSpreadsheet, Briefcase, CreditCard, Home, Car, Plane, Heart, GraduationCap, Baby, MapPin, Zap, User, Lock, Eye, EyeOff, Smartphone, CircleUser as UserCircle, ListTodo, Megaphone, Languages, Type, Moon, Sun, UserPlus, Trophy, ScanFace, Store } from "lucide-react";
 import { AIProvider, useAI } from "./components/ai/AIContext";
 import { FloatingAssistant } from "./components/ai/FloatingAssistant";
 import { ChatPanel } from "./components/ai/ChatPanel";
@@ -28,6 +29,7 @@ const sidebarGroups = [
     items: [
       { key: "tasks",        title: "المهام",     icon: ListTodo },
       { key: "sales_kpi",    title: "الأداء",     icon: TrendingUp },
+      { key: "showrooms",    title: "المعارض",    icon: Store },
       { key: "transactions", title: "المعاملات",  icon: ArrowLeftRight },
       { key: "attendance",   title: "الحضور",     icon: Calendar },
       { key: "shortcuts",    title: "اختصارات",  icon: Zap },
@@ -3366,7 +3368,7 @@ export default function ResponsiveDashboard() {
       ['calendar', 'التقويم السنوي',        Calendar],
     ];
     return (
-      <div dir="rtl" className="min-h-screen dark:bg-neutral-900 flex flex-col">
+      <div dir="rtl" className="min-h-screen dark:bg-neutral-900 flex flex-col" style={{ ["--page-max-w" as string]: "calc(92% + 20px)" }}>
         {/* ── Fixed Header (tabs) — نفس تخطيط صفحة الأداء ── */}
         <PageHeader
           tabs={ATTEND_TABS}
@@ -3393,7 +3395,7 @@ export default function ResponsiveDashboard() {
       ['archive', 'أرشيف الصادر', Archive],
     ];
     return (
-      <div dir="rtl" className="min-h-screen dark:bg-neutral-900 flex flex-col">
+      <div dir="rtl" className="min-h-screen dark:bg-neutral-900 flex flex-col" style={{ ["--page-max-w" as string]: "calc(92% + 20px)" }}>
         {/* ── Fixed Header (tabs) — نفس تخطيط صفحة الأداء ── */}
         <PageHeader
           tabs={TRANS_TABS}
@@ -3452,6 +3454,7 @@ export default function ResponsiveDashboard() {
     if (view === "transaction_details") return renderTransactionDetailsView();
     if (view === "sales_kpi") return <SalesPerformancePage onBack={() => setView("dashboard")} />;
     if (view === "tasks") return <TasksPage onBack={() => setView("dashboard")} onNewCampaign={() => setView("campaigns")} />;
+    if (view === "showrooms") return <ShowroomsPage />;
     if (view === "employee_profile") return <EmployeeProfilePage onBack={() => setView("dashboard")} />;
     if (view === "campaigns") return <CampaignsPage onBack={() => setView("dashboard")} />;
     if (view === "shortcuts") return renderShortcutsPage();
@@ -3566,7 +3569,7 @@ export default function ResponsiveDashboard() {
           view === "dashboard" ? "px-3 sm:px-4 pt-4 gap-3" : "px-0 pt-0 gap-0"
         )}>
           {/* Sidebar — Navigation Rail (ديسكتوب فقط) */}
-          <aside className="hidden md:flex flex-col w-[72px] shrink-0 items-center gap-2 pt-3">
+          <aside className="hidden md:flex flex-col w-[72px] shrink-0 items-center gap-2 pt-3 -mr-[30px]">
             {/* Logo above sidebar */}
             <div className="shrink-0 mb-[65px]">
               <img
@@ -3778,6 +3781,7 @@ export default function ResponsiveDashboard() {
                 { key: "dashboard", label: "الرئيسية", icon: LayoutDashboard, view: "dashboard" },
                 { key: "tasks", label: "المهام", icon: ListTodo, view: "tasks" },
                 { key: "sales_kpi", label: "الأداء", icon: TrendingUp, view: "sales_kpi" },
+                { key: "showrooms", label: "المعارض", icon: Store, view: "showrooms" },
                 { key: "transactions", label: "المعاملات", icon: ArrowLeftRight, view: "transactions" },
                 { key: "attendance", label: "الحضور", icon: Calendar, view: "attendance" },
               ].map((item) => {

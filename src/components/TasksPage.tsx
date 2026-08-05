@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, Fragment } from "react";
-import { Plus, Search, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, MoreHorizontal, List, LayoutGrid, Calendar as CalendarIcon, ArrowUpDown, Megaphone, Flag, UserCircle, Paperclip, Bell, Calendar, Users, Building2, FolderOpen, Inbox, Clock, Check, CheckSquare, Send, Star, Play, FilePlus, Pencil, Trash2, Printer, FileDown, MapPin, Store, ExternalLink, Video, Layers, Smile, Mic, Camera, Image as ImageIcon, FileText, CheckCheck, Square, AtSign, MessageSquare, Bold, Italic, Underline, Strikethrough, Code2, AlignRight, AlignCenter, AlignLeft, Link2, ListChecks, Highlighter, HelpCircle, Repeat } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, MoreHorizontal, List, LayoutGrid, Calendar as CalendarIcon, ArrowUpDown, Megaphone, Flag, UserCircle, Paperclip, Bell, Calendar, Users, Building2, FolderOpen, Inbox, Clock, Check, CheckSquare, Send, Star, Play, FilePlus, Pencil, Trash2, Printer, FileDown, ExternalLink, Video, Layers, Smile, Mic, Camera, Image as ImageIcon, FileText, CheckCheck, Square, AtSign, MessageSquare, Bold, Italic, Underline, Strikethrough, Code2, AlignRight, AlignCenter, AlignLeft, Link2, ListChecks, Highlighter, Repeat } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../lib/utils";
 import { useAI } from "./ai/AIContext";
@@ -7,12 +7,9 @@ import PageHeader from "./PageHeader";
 import { useFirestoreCollection } from "../lib/useFirestoreCollection";
 import CampaignsPage from "./CampaignsPage";
 import TeamsPage from "./TeamsPage";
-import VisitsPage from "./VisitsPage";
-import TeamSchedulePage from "./TeamSchedulePage";
-import TeamAttendancePage, { TA_REGIONS, TA_SHOWROOMS_BY_REGION, TA_SELLERS_BY_SHOWROOM } from "./TeamAttendancePage";
 
 export type TaskStatus = "todo" | "in-progress" | "in-review" | "completed" | "overdue";
-type TaskPriority = "low" | "medium" | "high" | "urgent";
+type TaskPriority = "low" | "medium" | "high" | "urgent" | "emergency";
 type ViewMode = "list" | "kanban" | "calendar";
 type SortKey = "title" | "assignee" | "assignedBy" | "createdAt" | "progress" | "dueDate" | "priority" | "projectName" | "source" | "status";
 type AssignMode = "me" | "team" | "department" | "committee";
@@ -31,11 +28,12 @@ export interface Task {
   progress: number;
   projectName: string;
   tags?: string[];
+  tagColors?: Record<string, string>;
   assignMode?: AssignMode;
   assignTarget?: string;
   assignMembers?: string[];
-  taskOwner?: string;
   assignedBy?: string;
+  supervisor?: string;
   progressMode?: "individual" | "collective";
   memberProgress?: Record<string, number>;
   taskSource?: string;
@@ -59,7 +57,39 @@ export interface TaskRecurrence {
 }
 
 export const ASSIGNEES = ["فهد العتيبي", "نورة السبيعي", "خالد القحطاني", "منى الزهراني", "أحمد الشمري", "سارة الدوسري"];
+const CURRENT_USER_NAME = "احمد الاغبري";
 const PROJECTS = ["معرض الرياض بارك", "فرع جدة بارك", "معرض الظهران مول", "فرع الرياض جاليري", "معرض الخبر بلازا", "فرع مكة مول"];
+
+const DEFAULT_TAGS = ["تصميم", "تطوير", "تسويق", "مراجعة", "عاجل", "مبيعات"];
+const TAG_COLOR_PRESETS = [
+  { name: "أزرق", bg: "bg-blue-500", text: "text-white", light: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300", dot: "bg-blue-500" },
+  { name: "أخضر", bg: "bg-emerald-500", text: "text-white", light: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300", dot: "bg-emerald-500" },
+  { name: "بنفسجي", bg: "bg-violet-500", text: "text-white", light: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300", dot: "bg-violet-500" },
+  { name: "برتقالي", bg: "bg-orange-500", text: "text-white", light: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300", dot: "bg-orange-500" },
+  { name: "وردي", bg: "bg-pink-500", text: "text-white", light: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300", dot: "bg-pink-500" },
+  { name: "سماوي", bg: "bg-cyan-500", text: "text-white", light: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300", dot: "bg-cyan-500" },
+  { name: "أحمر", bg: "bg-red-500", text: "text-white", light: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300", dot: "bg-red-500" },
+  { name: "كهرماني", bg: "bg-amber-500", text: "text-white", light: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300", dot: "bg-amber-500" },
+];
+const DEFAULT_TAG_COLORS: Record<string, { bg: string; text: string; light: string; dot: string }> = {
+  "تصميم": TAG_COLOR_PRESETS[0],
+  "تطوير": TAG_COLOR_PRESETS[2],
+  "تسويق": TAG_COLOR_PRESETS[1],
+  "مراجعة": TAG_COLOR_PRESETS[5],
+  "عاجل": TAG_COLOR_PRESETS[6],
+  "مبيعات": TAG_COLOR_PRESETS[4],
+};
+
+function getTagColor(tag: string, tagColors?: Record<string, string>): { bg: string; text: string; light: string; dot: string } {
+  const colorKey = tagColors?.[tag];
+  if (colorKey) {
+    const preset = TAG_COLOR_PRESETS.find(p => p.name === colorKey);
+    if (preset) return preset;
+  }
+  if (DEFAULT_TAG_COLORS[tag]) return DEFAULT_TAG_COLORS[tag];
+  const hash = tag.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return TAG_COLOR_PRESETS[hash % TAG_COLOR_PRESETS.length];
+}
 
 const TEAMS = [
   { name: "فريق المبيعات", members: ["فهد العتيبي", "نورة السبيعي", "خالد القحطاني"] },
@@ -198,6 +228,7 @@ const STATUS_CONFIG: Record<TaskStatus, { label: string; accent: string; badgeBg
 };
 
 const PRIORITY_CONFIG: Record<TaskPriority, { label: string; bg: string; text: string; flag: string }> = {
+  emergency: { label: "طارئة",   bg: "bg-rose-100",   text: "text-rose-600",   flag: "text-rose-500" },
   urgent: { label: "عاجلة",   bg: "bg-red-100",    text: "text-red-600",    flag: "text-red-500" },
   high:   { label: "عالية",   bg: "bg-amber-100",  text: "text-amber-600",  flag: "text-amber-500" },
   medium: { label: "متوسطة",  bg: "bg-blue-100",   text: "text-blue-600",   flag: "text-blue-500" },
@@ -222,11 +253,6 @@ function exportAssigneeLabel(t: Task): string {
   if (t.assignMode && t.assignMode !== "me" && t.assignTarget) return t.assignTarget;
   if (t.assignMembers && t.assignMembers.length > 0) return t.assignMembers.join("، ");
   return t.assignee || "";
-}
-function taskOwnerName(task: Partial<Task>): string {
-  const members = (task.assignMembers || []).filter(Boolean);
-  if (task.taskOwner && members.includes(task.taskOwner)) return task.taskOwner;
-  return "";
 }
 function exportRow(t: Task): string[] {
   return [t.id, t.title, richTextToPlainText(t.description || ""), exportAssigneeLabel(t), t.projectName || "", t.taskSource || "غير محدد", PRIORITY_CONFIG[t.priority].label, STATUS_CONFIG[t.status].label, t.createdAt || "", t.startDate || "", t.dueDate || "", `${t.progress}%`];
@@ -317,6 +343,8 @@ const COLS = [
   { key: "status",      label: "الحالة" },
   { key: "action",      label: "إجراء" },
 ] as const;
+
+const SIMPLE_HIDDEN_COLS = new Set<string>(["assignedBy", "createdAt", "projectName", "source"]);
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
@@ -561,7 +589,7 @@ function RichTextEditor({
         className={cn("task-rich-text", className)}
       />
       {!hasRichTextContent(value) && (
-        <span className={cn("pointer-events-none absolute inset-x-0 top-0 text-neutral-400 dark:text-[#8696a0]", placeholderClassName)}>
+        <span className={cn("pointer-events-none absolute inset-x-0 top-0 px-3 py-2 text-sm text-neutral-400 dark:text-[#8696a0]", placeholderClassName)}>
           {placeholder}
         </span>
       )}
@@ -641,7 +669,8 @@ function FloatingTextFormatter({
           data-text-format-toolbar="true"
           dir="ltr"
           className={cn(
-            "absolute z-[70] flex h-10 max-w-[calc(100vw-32px)] items-center gap-0.5 overflow-visible max-sm:overflow-x-auto max-sm:overflow-y-hidden scrollbar-hide rounded-lg border border-[#e1e4e7] bg-white px-1 shadow-[0_3px_12px_rgba(15,23,42,0.16)] dark:border-neutral-600 dark:bg-[#233138]",
+            "absolute z-[70] flex h-10 max-w-[calc(100vw-32px)] items-center gap-0.5 overflow-visible rounded-lg border border-[#e1e4e7] bg-white px-1 shadow-[0_3px_12px_rgba(15,23,42,0.16)] dark:border-neutral-600 dark:bg-[#233138]",
+            "max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-2 max-sm:max-w-none max-sm:overflow-x-auto max-sm:overflow-y-hidden scrollbar-hide",
             className
           )}
         >
@@ -891,16 +920,27 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
   const [form, setForm] = useState<Partial<Task>>({ status: "todo", progress: 0 });
-  const [activeTab, setActiveTab] = useState<"tasks" | "campaigns" | "teams" | "visits" | "team_schedule" | "team_attendance">("tasks");
+  const [activeTab, setActiveTab] = useState<"tasks" | "campaigns" | "teams">("tasks");
   const [detailMobileTab, setDetailMobileTab] = useState<"details" | "activity">("details");
   const [detailDropdown, setDetailDropdown] = useState<"status" | "assignee" | "priority" | "dueDate" | "source" | "project" | "tags" | null>(null);
-  const [formDropdown, setFormDropdown] = useState<"status" | "assignee" | "dueDate" | "priority" | "tags" | "source" | "project" | "recurrence" | null>(null);
-  const formDropdownRef = useRef<HTMLDivElement>(null);
+  const [formDropdown, setFormDropdown] = useState<"status" | "assignee" | "supervisor" | "dueDate" | "priority" | "tags" | "source" | "project" | "recurrence" | null>(null);
+  const formDropdownRefs = useRef<HTMLDivElement[]>([]);
+  const setFormDropdownRef = (el: HTMLDivElement | null) => {
+    if (el && !formDropdownRefs.current.includes(el)) formDropdownRefs.current.push(el);
+    if (!el) formDropdownRefs.current = formDropdownRefs.current.filter(e => e.isConnected);
+  };
   const [assignStep, setAssignStep] = useState<"mode" | "list" | "members">("mode");
   const assignDropdownRef = useRef<HTMLDivElement>(null);
+  const [supervisorSearch, setSupervisorSearch] = useState("");
+  const supervisorDropdownRef = useRef<HTMLDivElement>(null);
   const [assignSearch, setAssignSearch] = useState("");
   const [projectSearch, setProjectSearch] = useState("");
   const [projectsList, setProjectsList] = useState<string[]>(PROJECTS);
+  const [tagSearch, setTagSearch] = useState("");
+  const [newTag, setNewTag] = useState("");
+  const [newTagColor, setNewTagColor] = useState(TAG_COLOR_PRESETS[0].name);
+  const [showAddTag, setShowAddTag] = useState(false);
+  const [allTagsList, setAllTagsList] = useState<string[]>(DEFAULT_TAGS);
   const [assigneesList, setAssigneesList] = useState<string[]>(ASSIGNEES);
   const [tableDropdown, setTableDropdown] = useState<{
     id: string;
@@ -950,7 +990,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
   const [formEditingSubtaskDropdown, setFormEditingSubtaskDropdown] = useState<"status" | "priority" | "assignee" | "dueDate" | null>(null);
   const [formPanelCollapsed, setFormPanelCollapsed] = useState(false);
   const [formAttachmentsCollapsed, setFormAttachmentsCollapsed] = useState(true);
+  const [formSubtasksCollapsed, setFormSubtasksCollapsed] = useState(true);
+  const [formExtraDetailsCollapsed, setFormExtraDetailsCollapsed] = useState(true);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
+  const [tableDensity, setTableDensity] = useState<"simple" | "full">("full");
+  const isColVisible = (key: string) => !hiddenCols.has(key) && (tableDensity === "full" || !SIMPLE_HIDDEN_COLS.has(key));
+  const visibleCols = COLS.filter(col => isColVisible(col.key));
   const [formMobileTab, setFormMobileTab] = useState<"details" | "activity">("details");
   const [formComment, setFormComment] = useState("");
   const [formEditingComment, setFormEditingComment] = useState<{ id: string; text: string } | null>(null);
@@ -960,92 +1006,10 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
   const [formAttachmentMenuOpen, setFormAttachmentMenuOpen] = useState(false);
   const [formAttachmentDragging, setFormAttachmentDragging] = useState(false);
   const [textFormatSelection, setTextFormatSelection] = useState<TextFormatTarget | null>(null);
-  const [progressModeHelp, setProgressModeHelp] = useState<"individual" | "collective" | null>(null);
   const [formErrors, setFormErrors] = useState<{ title?: string }>({});
   const [saveNotice, setSaveNotice] = useState<{ message: string; taskId: string } | null>(null);
   const [detailSavePhase, setDetailSavePhase] = useState<SavePhase>("idle");
   const [videoRecorderTarget, setVideoRecorderTarget] = useState<'detail' | 'form' | null>(null);
-
-  // Team schedule showroom state
-  const [tsShowroom, setTsShowroom] = useState<string>("");
-  const [tsShowroomOpen, setTsShowroomOpen] = useState(false);
-  const [tsShowroomSearch, setTsShowroomSearch] = useState("");
-  const tsShowroomRef = useRef<HTMLDivElement>(null);
-  const TS_SHOWROOMS = [
-    "معرض الرياض - العليا",
-    "معرض جدة - التحلية",
-    "معرض الدمام - الشاطئ",
-    "معرض مكة - العزيزية",
-    "معرض المدينة - قباء",
-    "معرض أبها - الخالدية",
-    "معرض تبوك - المروج",
-    "معرض حائل - السمراء",
-  ];
-
-  // Team attendance filters state
-  const [taRegions, setTaRegions] = useState<string[]>([]);
-  const [taShowroom, setTaShowroom] = useState<string>("");
-  const [taSeller, setTaSeller] = useState<string>("");
-  const [taDropdown, setTaDropdown] = useState<"region" | "showroom" | "seller" | null>(null);
-  const taFilterRef = useRef<HTMLDivElement>(null);
-  const taShowrooms = taRegions.flatMap(r => TA_SHOWROOMS_BY_REGION[r] || []);
-
-  const toggleTaRegion = (r: string) => {
-    setTaRegions(prev => {
-      const next = prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r];
-      const validShowrooms = next.flatMap(x => TA_SHOWROOMS_BY_REGION[x] || []);
-      if (taShowroom && !validShowrooms.includes(taShowroom)) { setTaShowroom(""); setTaSeller(""); }
-      return next;
-    });
-  };
-  const toggleTaAllRegions = () => {
-    setTaRegions(prev => {
-      if (prev.length === TA_REGIONS.length) { setTaShowroom(""); setTaSeller(""); return []; }
-      return [...TA_REGIONS];
-    });
-  };
-  const taRegionLabel = taRegions.length === 0 ? "" : taRegions.length === TA_REGIONS.length ? "الكل" : taRegions.length === 1 ? taRegions[0] : `${taRegions.length} أقاليم`;
-
-  // Direct search/pick without cascading selection
-  const [taSearch, setTaSearch] = useState("");
-  const TA_ALL_SHOWROOMS = Object.values(TA_SHOWROOMS_BY_REGION).flat();
-  const showroomRegion = (sr: string) => TA_REGIONS.find(r => (TA_SHOWROOMS_BY_REGION[r] || []).includes(sr)) || "";
-  const taQ = taSearch.trim().toLowerCase();
-  const taShowroomPool = (taRegions.length > 0 ? taShowrooms : TA_ALL_SHOWROOMS).filter(s => !taQ || s.toLowerCase().includes(taQ));
-  const taSellerPool = (taShowroom
-    ? (TA_SELLERS_BY_SHOWROOM[taShowroom] || []).map(n => ({ name: n, showroom: taShowroom }))
-    : (taRegions.length > 0 ? taShowrooms : TA_ALL_SHOWROOMS).flatMap(sr => (TA_SELLERS_BY_SHOWROOM[sr] || []).map(n => ({ name: n, showroom: sr })))
-  ).filter(s => !taQ || s.name.toLowerCase().includes(taQ) || s.showroom.toLowerCase().includes(taQ));
-
-  const pickTaShowroom = (sr: string) => {
-    setTaShowroom(sr); setTaSeller("");
-    const reg = showroomRegion(sr);
-    if (reg) setTaRegions(prev => (prev.includes(reg) ? prev : [...prev, reg]));
-  };
-  const pickTaSeller = (name: string, sr: string) => {
-    setTaSeller(name);
-    if (taShowroom !== sr) {
-      setTaShowroom(sr);
-      const reg = showroomRegion(sr);
-      if (reg) setTaRegions(prev => (prev.includes(reg) ? prev : [...prev, reg]));
-    }
-  };
-
-  // Visits supervisor state
-  const [svSupervisor, setSvSupervisor] = useState<string>("");
-  const [svSupervisorOpen, setSvSupervisorOpen] = useState(false);
-  const [svSupervisorSearch, setSvSupervisorSearch] = useState("");
-  const svSupervisorRef = useRef<HTMLDivElement>(null);
-  const SV_SUPERVISORS = [
-    { id: "s1", name: "محمد القحطاني" },
-    { id: "s2", name: "خالد الشمري" },
-    { id: "s3", name: "فهد العنزي" },
-    { id: "s4", name: "عبدالرحمن الدوسري" },
-    { id: "s5", name: "سعد الحربي" },
-    { id: "s6", name: "طلال الراشد" },
-    { id: "s7", name: "سلطان العتيبي" },
-    { id: "s8", name: "نواف المطيري" },
-  ];
 
   const detailFileInputRef = useRef<HTMLInputElement>(null);
   const detailMediaInputRef = useRef<HTMLInputElement>(null);
@@ -1137,42 +1101,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (tsShowroomRef.current && !tsShowroomRef.current.contains(e.target as Node)) setTsShowroomOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (svSupervisorRef.current && !svSupervisorRef.current.contains(e.target as Node)) setSvSupervisorOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (taFilterRef.current && !taFilterRef.current.contains(e.target as Node)) setTaDropdown(null);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const tsFilteredShowrooms = useMemo(() => {
-    const q = tsShowroomSearch.trim();
-    if (!q) return TS_SHOWROOMS;
-    return TS_SHOWROOMS.filter(s => s.includes(q));
-  }, [tsShowroomSearch]);
-
-  const svFilteredSupervisors = useMemo(() => {
-    const q = svSupervisorSearch.trim();
-    if (!q) return SV_SUPERVISORS;
-    return SV_SUPERVISORS.filter(s => s.name.includes(q));
-  }, [svSupervisorSearch]);
-
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }, [tasks]);
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -1180,8 +1108,10 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
       if (tableDropdownRef.current && !tableDropdownRef.current.contains(e.target as Node)) setTableDropdown(null);
       if (assignDropdownRef.current && assignDropdownRef.current.contains(e.target as Node)) {
         // keep assign dropdown open
+      } else if (supervisorDropdownRef.current && supervisorDropdownRef.current.contains(e.target as Node)) {
+        // keep supervisor dropdown open
       } else {
-        if (formDropdownRef.current && !formDropdownRef.current.contains(e.target as Node)) setFormDropdown(null);
+        if (formDropdownRefs.current.length > 0 && !formDropdownRefs.current.some(ref => ref.contains(e.target as Node))) setFormDropdown(null);
         setAssignStep("mode");
       }
     };
@@ -1221,7 +1151,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
     if (filterAssignee !== "all") res = res.filter(t => t.assignee === filterAssignee);
     if (filterProject !== "all") res = res.filter(t => t.projectName === filterProject);
     if (sortField) {
-      const priorityOrder: Record<TaskPriority, number> = { urgent: 4, high: 3, medium: 2, low: 1 };
+      const priorityOrder: Record<TaskPriority, number> = { emergency: 5, urgent: 4, high: 3, medium: 2, low: 1 };
       res = [...res].sort((a, b) => {
         let cmp = 0;
         if (sortField === "priority") cmp = priorityOrder[a.priority] - priorityOrder[b.priority];
@@ -1259,7 +1189,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
     setFormAttachmentDragging(false);
     setFormPanelCollapsed(false);
     setTextFormatSelection(null);
-    setProgressModeHelp(null);
     setFormShowSubtaskForm(false);
     setFormSubtaskForm({});
     setFormSubtaskDropdown(null);
@@ -1604,14 +1533,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
       return;
     }
     const assignedMembers = (form.assignMembers || []).filter(Boolean);
-    const taskOwner = assignedMembers.length > 0 ? taskOwnerName(form) : "";
     const normalizedForm: Partial<Task> = {
       ...form,
       status: form.status || "todo",
       priority: form.priority || "medium",
-      assignee: taskOwner || form.assignee || "",
-      taskOwner,
+      assignee: form.assignee || "",
       assignedBy: form.assignedBy || "أنت",
+      supervisor: form.supervisor || "",
       progressMode: assignedMembers.length > 1 ? (form.progressMode || "individual") : form.progressMode,
       dueDate: form.dueDate || "",
       projectName: form.projectName || "",
@@ -1647,15 +1575,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
     setTasks(prev => prev.map(t => {
       if (t.id !== id) return t;
       const next = { ...t, ...changes };
-      if (changes.assignMembers) {
-        const members = changes.assignMembers.filter(Boolean);
-        const owner = members.includes(next.taskOwner || "") ? next.taskOwner || "" : "";
-        next.taskOwner = owner;
-        if (owner) next.assignee = owner;
-      }
-      if (changes.taskOwner && (next.assignMembers || []).includes(changes.taskOwner)) {
-        next.assignee = changes.taskOwner;
-      }
       return next;
     }));
   };
@@ -1674,16 +1593,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
   };
 
   return (
-    <div className="min-h-screen font-sans" dir="rtl">
+    <div className="min-h-screen font-sans" dir="rtl" style={{ ["--page-max-w" as string]: "calc(92% + 20px)" }}>
       {/* Top bar: Tabs + Toolbar */}
       <PageHeader
         tabs={[
           ["tasks", "المهام", CheckSquare],
           ["campaigns", "الحملات", Megaphone],
           ["teams", "الفرق", Users],
-          ["visits", "الزيارات", MapPin],
-          ["team_schedule", "دوام الفريق", Clock],
-          ["team_attendance", "حضور الفريق", CheckSquare],
         ]}
         active={activeTab}
         onChange={(key) => setActiveTab(key as typeof activeTab)}
@@ -1702,13 +1618,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
             className="overflow-visible"
           >
           {/* Toolbar row + Add button */}
-          <div className="px-2 sm:px-6 py-2 sm:py-[14px] flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <div className="px-2 sm:px-6 py-2 sm:py-[14px] flex items-center gap-2 overflow-x-auto scrollbar-hide sm:overflow-visible sm:flex-nowrap">
             <div className="flex-1 min-w-0">
               <div>
-              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide sm:overflow-visible sm:flex-nowrap">
           {activeTab === "tasks" && (
             <>
-              <div className="relative flex-1 max-w-[140px] sm:max-w-xs">
+              <div className="relative flex-1 min-w-0 sm:max-w-xs">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input value={search} onChange={e => setSearch(e.target.value)} placeholder="بحث..."
                   className="w-full pr-9 pl-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400/40 text-right" />
@@ -1752,7 +1668,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
               )}
 
               <div className="relative" ref={filterRef}>
-                <button onClick={() => setFilterOpen(v => !v)} className={cn("flex items-center gap-1.5 px-2.5 sm:px-5 py-2 text-sm border rounded-xl transition-all duration-200 relative", filterOpen || activeFilterCount > 0 ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white shadow-sm" : "text-gray-600 dark:text-gray-300 border-gray-200 dark:border-neutral-600 hover:bg-gray-50 dark:hover:bg-neutral-700")}>
+                <button onClick={() => setFilterOpen(v => !v)} className={cn("flex items-center gap-1.5 px-2.5 sm:px-5 py-2 text-sm border rounded-xl transition-all duration-200 relative shrink-0", filterOpen || activeFilterCount > 0 ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white shadow-sm" : "text-gray-600 dark:text-gray-300 border-gray-200 dark:border-neutral-600 hover:bg-gray-50 dark:hover:bg-neutral-700")}>
                   <SlidersHorizontal className="w-4 h-4" />
                   <span className="hidden sm:inline">تصفية</span>
                   {activeFilterCount > 0 && (
@@ -1765,7 +1681,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                 onClick={() => setGroupByStatus(v => !v)}
                 title={groupByStatus ? "إلغاء التجميع" : "تجميع حسب الحالة"}
                 aria-pressed={groupByStatus}
-                className={cn("group flex items-center gap-1.5 px-2.5 sm:px-6 py-2 text-sm border rounded-xl transition-all duration-200", groupByStatus ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white shadow-sm" : "text-gray-600 dark:text-gray-300 border-gray-200 dark:border-neutral-600 hover:bg-gray-50 dark:hover:bg-neutral-700")}
+                className={cn("group flex items-center gap-1.5 px-2.5 sm:px-6 py-2 text-sm border rounded-xl transition-all duration-200 shrink-0", groupByStatus ? "bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white shadow-sm" : "text-gray-600 dark:text-gray-300 border-gray-200 dark:border-neutral-600 hover:bg-gray-50 dark:hover:bg-neutral-700")}
               >
                 <motion.span
                   key={groupByStatus ? "grouped" : "ungrouped"}
@@ -1886,6 +1802,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                           <div className="grid grid-cols-2 gap-1.5">
                             {([
                               { k: "all" as const, l: "الكل", dot: "" },
+                              { k: "emergency" as const, l: "طارئة", dot: "bg-rose-500" },
                               { k: "urgent" as const, l: "عاجلة", dot: "bg-red-500" },
                               { k: "high" as const, l: "عالية", dot: "bg-amber-500" },
                               { k: "medium" as const, l: "متوسطة", dot: "bg-blue-400" },
@@ -1947,6 +1864,35 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                           </div>
                         </div>
 
+                        {/* Column visibility & density — only in list view */}
+                        {viewMode === "list" && (
+                        <div className="pt-1 border-t border-neutral-100 dark:border-neutral-800">
+                          <p className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mb-2.5 mt-3 flex items-center gap-1.5">
+                            <SlidersHorizontal className="w-3 h-3" /> الأعمدة
+                          </p>
+                          <div className="space-y-1">
+                            {COLS.filter(col => col.key !== "title" && col.key !== "action").map(col => (
+                              <button key={col.key}
+                                onClick={() => setHiddenCols(prev => { const next = new Set(prev); next.has(col.key) ? next.delete(col.key) : next.add(col.key); return next; })}
+                                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[12px] font-semibold transition-all border bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100">
+                                <div className={cn("w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors",
+                                  isColVisible(col.key) ? "bg-teal-500 border-teal-500" : "border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800")}>
+                                  {isColVisible(col.key) && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                                </div>
+                                <span className="text-xs text-neutral-700 dark:text-neutral-300">{col.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-1 bg-neutral-50 dark:bg-neutral-700 rounded-xl p-1 mt-3">
+                            {([["simple","بسيط"],["full","كامل"]] as ["simple" | "full", string][]).map(([v, label]) => (
+                              <button key={v} onClick={() => setTableDensity(v)} className={cn("flex-1 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all duration-200", tableDensity === v ? "bg-neutral-900 text-white shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600")}>
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        )}
+
                         {/* Export */}
                         <div className="pt-1 border-t border-neutral-100 dark:border-neutral-800">
                           <p className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mb-2.5 mt-3 flex items-center gap-1.5">
@@ -1985,7 +1931,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   </>
                 )}
               </AnimatePresence>
-              <div className="mr-auto flex items-center gap-1 bg-neutral-50 dark:bg-neutral-700 rounded-xl p-1">
+              <div className="mr-auto" />
+              <div className="flex items-center gap-1 bg-neutral-50 dark:bg-neutral-700 rounded-xl p-1 shrink-0">
                 {([["list","قائمة",List],["kanban","كانبان",LayoutGrid],["calendar","تقويم",CalendarIcon]] as [ViewMode, string, React.ElementType][]).map(([v, label, Icon]) => (
                   <button key={v} onClick={() => setViewMode(v)} className={cn("flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-200", viewMode === v ? "bg-neutral-900 text-white shadow-sm" : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-600")}>
                     <Icon className="w-3.5 h-3.5" /><span className="hidden sm:inline">{label}</span>
@@ -2011,7 +1958,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   </button>
                 ))}
               </div>
-              <div className="relative flex-1 max-w-[140px] sm:max-w-xs">
+              <div className="relative flex-1 min-w-0 sm:max-w-xs">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input value={teamsSearch} onChange={e => setTeamsSearch(e.target.value)} placeholder="بحث..."
                   className="w-full pr-9 pl-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400/40 text-right" />
@@ -2027,195 +1974,14 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
           )}
 
           {activeTab === "campaigns" && (
-            <div className="relative flex-1 max-w-[140px] sm:max-w-xs">
+            <div className="relative flex-1 min-w-0 sm:max-w-xs">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input value={campaignsSearch} onChange={e => setCampaignsSearch(e.target.value)} placeholder="بحث في الحملات..."
                 className="w-full pr-9 pl-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400/40 text-right" />
             </div>
           )}
 
-          {activeTab === "team_schedule" && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-                  <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <span className="text-sm font-bold text-neutral-800 dark:text-white">دوام الفريق</span>
-              </div>
-              <div className="relative flex-1 min-w-0 max-w-[280px]" ref={tsShowroomRef}>
-                <button onClick={() => setTsShowroomOpen(v => !v)} className={cn("w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all text-right", tsShowroomOpen ? "border-indigo-400 ring-2 ring-indigo-400/20" : "border-neutral-200 dark:border-neutral-600 hover:border-neutral-300")}>
-                  <Store className="w-4 h-4 text-neutral-400 shrink-0" />
-                  <span className={cn("truncate flex-1", tsShowroom ? "text-neutral-800 dark:text-white" : "text-neutral-400")}>{tsShowroom || "اختر المعرض"}</span>
-                  <ChevronLeft className={cn("w-3.5 h-3.5 text-neutral-400 transition-transform shrink-0", tsShowroomOpen && "-rotate-90")} />
-                </button>
-                <AnimatePresence>
-                  {tsShowroomOpen && (
-                    <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute top-full left-0 right-0 mt-2 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden">
-                      <div className="p-2 border-b border-neutral-100 dark:border-neutral-700">
-                        <div className="relative">
-                          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
-                          <input value={tsShowroomSearch} onChange={e => setTsShowroomSearch(e.target.value)} placeholder="بحث..." className="w-full pr-9 pl-3 py-2 text-sm rounded-lg border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 text-right" />
-                        </div>
-                      </div>
-                      <div className="max-h-[200px] overflow-y-auto py-1">
-                        {tsFilteredShowrooms.map(s => (
-                          <button key={s} onClick={() => { setTsShowroom(s); setTsShowroomOpen(false); setTsShowroomSearch(""); }} className={cn("w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-right", tsShowroom === s ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-bold" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
-                            <Store className="w-4 h-4 text-neutral-400 shrink-0" /><span>{s}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "team_attendance" && (
-            <div className="flex items-center gap-2 flex-wrap" ref={taFilterRef}>
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <span className="text-sm font-bold text-neutral-800 dark:text-white hidden sm:inline">حضور الفريق</span>
-              </div>
-              {([
-                { key: "region" as const, icon: MapPin, value: taRegionLabel, placeholder: "المنطقة — الكل", disabled: false },
-                { key: "showroom" as const, icon: Store, value: taShowroom, placeholder: "المعرض — الكل", disabled: false },
-                { key: "seller" as const, icon: UserCircle, value: taSeller, placeholder: "البائع — الكل", disabled: false },
-              ]).map(f => {
-                const FIcon = f.icon;
-                const open = taDropdown === f.key;
-                return (
-                  <div key={f.key} className="relative flex-1 min-w-[110px] max-w-[220px]">
-                    <button
-                      onClick={() => { if (!f.disabled) { setTaDropdown(open ? null : f.key); setTaSearch(""); } }}
-                      disabled={f.disabled}
-                      className={cn("w-full flex items-center gap-1.5 px-2.5 py-2.5 rounded-xl border text-[13px] font-semibold transition-all text-right",
-                        f.disabled ? "border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-300 dark:text-neutral-600 cursor-not-allowed" :
-                        open ? "border-indigo-400 ring-2 ring-indigo-400/20" : "border-neutral-200 dark:border-neutral-600 hover:border-neutral-300")}
-                    >
-                      <FIcon className="w-4 h-4 text-neutral-400 shrink-0" />
-                      <span className={cn("truncate flex-1", f.value ? "text-neutral-800 dark:text-white" : "text-neutral-400")}>{f.value || f.placeholder}</span>
-                      <ChevronLeft className={cn("w-3.5 h-3.5 text-neutral-400 transition-transform shrink-0", open && "-rotate-90")} />
-                    </button>
-                    <AnimatePresence>
-                      {open && (
-                        <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute top-full right-0 min-w-full w-max max-w-[260px] mt-2 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden">
-                          <div className="max-h-[220px] overflow-y-auto py-1">
-                            {f.key === "region" ? (
-                              <>
-                                <button onClick={toggleTaAllRegions}
-                                  className={cn("w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-right",
-                                    taRegions.length === TA_REGIONS.length ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-bold" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
-                                  <span className={cn("w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors",
-                                    taRegions.length === TA_REGIONS.length ? "bg-indigo-600 border-indigo-600" : "border-neutral-300 dark:border-neutral-500")}>
-                                    {taRegions.length === TA_REGIONS.length && (
-                                      <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                    )}
-                                  </span>
-                                  <span>الكل</span>
-                                </button>
-                                <div className="h-px bg-neutral-100 dark:bg-neutral-700 mx-2 my-1" />
-                                {TA_REGIONS.map(opt => {
-                                  const checked = taRegions.includes(opt);
-                                  return (
-                                    <button key={opt} onClick={() => toggleTaRegion(opt)}
-                                      className={cn("w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-right",
-                                        checked ? "bg-indigo-50/60 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-bold" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
-                                      <span className={cn("w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors",
-                                        checked ? "bg-indigo-600 border-indigo-600" : "border-neutral-300 dark:border-neutral-500")}>
-                                        {checked && (
-                                          <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                        )}
-                                      </span>
-                                      <span className="truncate">{opt}</span>
-                                    </button>
-                                  );
-                                })}
-                              </>
-                            ) : (
-                              <>
-                                <div className="p-2 border-b border-neutral-100 dark:border-neutral-700 sticky top-0 bg-white dark:bg-neutral-800">
-                                  <div className="relative">
-                                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
-                                    <input value={taSearch} onChange={e => setTaSearch(e.target.value)} placeholder={f.key === "showroom" ? "ابحث عن معرض..." : "ابحث عن موظف..."} autoFocus
-                                      className="w-full pr-9 pl-3 py-2 text-sm rounded-lg border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 text-right" />
-                                  </div>
-                                </div>
-                                <button onClick={() => { if (f.key === "showroom") { setTaShowroom(""); setTaSeller(""); } else setTaSeller(""); setTaDropdown(null); }}
-                                  className={cn("w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-right", !f.value ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-bold" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
-                                  <FIcon className="w-4 h-4 text-neutral-400 shrink-0" /><span>الكل</span>
-                                </button>
-                                {f.key === "showroom" && taShowroomPool.map(opt => (
-                                  <button key={opt} onClick={() => { pickTaShowroom(opt); setTaDropdown(null); }}
-                                    className={cn("w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-right", taShowroom === opt ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-bold" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
-                                    <Store className="w-4 h-4 text-neutral-400 shrink-0" />
-                                    <span className="truncate flex-1">{opt}</span>
-                                    <span className="text-[10px] text-neutral-400 dark:text-neutral-500 shrink-0">{showroomRegion(opt).replace("إقليم ", "")}</span>
-                                  </button>
-                                ))}
-                                {f.key === "seller" && taSellerPool.map(s => (
-                                  <button key={`${s.showroom}-${s.name}`} onClick={() => { pickTaSeller(s.name, s.showroom); setTaDropdown(null); }}
-                                    className={cn("w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-right", taSeller === s.name && taShowroom === s.showroom ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-bold" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
-                                    <UserCircle className="w-4 h-4 text-neutral-400 shrink-0" />
-                                    <span className="truncate flex-1">{s.name}</span>
-                                    <span className="text-[10px] text-neutral-400 dark:text-neutral-500 shrink-0 truncate max-w-[90px]">{s.showroom.replace("معرض ", "")}</span>
-                                  </button>
-                                ))}
-                                {((f.key === "showroom" && taShowroomPool.length === 0) || (f.key === "seller" && taSellerPool.length === 0)) && (
-                                  <p className="px-3 py-4 text-center text-xs text-neutral-400 dark:text-neutral-500 font-bold">لا توجد نتائج</p>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {activeTab === "visits" && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                  <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <span className="text-sm font-bold text-neutral-800 dark:text-white">خط سير الزيارات</span>
-              </div>
-              <div className="relative flex-1 min-w-0 max-w-[280px]" ref={svSupervisorRef}>
-                <button onClick={() => setSvSupervisorOpen(v => !v)} className={cn("w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-semibold transition-all text-right", svSupervisorOpen ? "border-emerald-400 ring-2 ring-emerald-400/20" : "border-neutral-200 dark:border-neutral-600 hover:border-neutral-300")}>
-                  <UserCircle className="w-4 h-4 text-neutral-400 shrink-0" />
-                  <span className={cn("truncate flex-1", svSupervisor ? "text-neutral-800 dark:text-white" : "text-neutral-400")}>{SV_SUPERVISORS.find(s => s.id === svSupervisor)?.name || "اختر المشرف"}</span>
-                  <ChevronLeft className={cn("w-3.5 h-3.5 text-neutral-400 transition-transform shrink-0", svSupervisorOpen && "-rotate-90")} />
-                </button>
-                <AnimatePresence>
-                  {svSupervisorOpen && (
-                    <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="absolute top-full left-0 right-0 mt-2 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden">
-                      <div className="p-2 border-b border-neutral-100 dark:border-neutral-700">
-                        <div className="relative">
-                          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
-                          <input value={svSupervisorSearch} onChange={e => setSvSupervisorSearch(e.target.value)} placeholder="بحث..." className="w-full pr-9 pl-3 py-2 text-sm rounded-lg border border-neutral-200 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 text-right" />
-                        </div>
-                      </div>
-                      <div className="max-h-[200px] overflow-y-auto py-1">
-                        {svFilteredSupervisors.map(s => (
-                          <button key={s.id} onClick={() => { setSvSupervisor(s.id); setSvSupervisorOpen(false); setSvSupervisorSearch(""); }} className={cn("w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-right", svSupervisor === s.id ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700")}>
-                            <UserCircle className="w-4 h-4 text-neutral-400 shrink-0" /><span>{s.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          )}
-
-          {activeTab !== "tasks" && activeTab !== "teams" && activeTab !== "campaigns" && activeTab !== "visits" && activeTab !== "team_schedule" && activeTab !== "team_attendance" && <div className="flex-1" />}
+          {activeTab !== "tasks" && activeTab !== "teams" && activeTab !== "campaigns" && <div className="flex-1" />}
             </div>
             </div>
             </div>
@@ -2300,8 +2066,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="border-b border-gray-100 dark:border-neutral-700">
-                              {COLS.map((col, idx) => (
-                                <th key={col.key} className={cn("px-2 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap", col.key === "action" ? "text-center" : "", idx === 0 ? "pr-4" : "", idx === COLS.length - 1 ? "pl-4" : "")}>
+                              {visibleCols.map((col, idx) => (
+                                <th key={col.key} className={cn("px-2 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 whitespace-nowrap", col.key === "action" ? "text-center" : "", idx === 0 ? "pr-4" : "", idx === visibleCols.length - 1 ? "pl-4" : "")}>
                                   {col.key !== "action" ? (
                                     <button
                                       onClick={() => { const key = col.key as SortKey; if (sortField === key) setSortDir(d => d === "asc" ? "desc" : "asc"); else { setSortField(key); setSortDir(TEXT_SORT_KEYS.includes(key) ? "asc" : "desc"); } }}
@@ -2321,7 +2087,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                             {items.map(task => (
                               <Fragment key={task.id}>
                                 <tr className="border-b border-gray-50 dark:border-neutral-700/50 hover:bg-gray-50/60 dark:hover:bg-neutral-700/20 transition-colors">
-                                <td className="px-2 py-3 min-w-[170px] pr-4">
+                                {isColVisible("title") && <td className="px-2 py-3 min-w-[170px] pr-4">
                                   <div className="flex items-center gap-2">
                                     {(task.subtasks || []).length > 0 && (
                                       <button
@@ -2341,8 +2107,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                       <span className="block text-sm text-gray-700 dark:text-gray-200 line-clamp-2">{task.title}</span>
                                     </button>
                                   </div>
-                                </td>
-                                <td className="px-2 py-3 whitespace-nowrap">
+                                </td>}
+                                {isColVisible("assignee") && <td className="px-2 py-3 whitespace-nowrap">
                                   {task.assignMode === "team" && (
                                     <div className="flex items-center gap-2">
                                       <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center shrink-0"><Users className="w-4 h-4 text-blue-500" /></div>
@@ -2390,8 +2156,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                       <ChevronDown className="w-3 h-3 text-gray-400" />
                                     </button>
                                   )}
-                                </td>
-                                <td className="px-2 py-3 whitespace-nowrap">
+                                </td>}
+                                {isColVisible("assignedBy") && <td className="px-2 py-3 whitespace-nowrap">
                                   {task.assignedBy ? (
                                     <div className="flex items-center gap-1.5">
                                       <img src={avatarUrl(task.assignedBy)} alt={task.assignedBy} title={task.assignedBy} className="w-6 h-6 rounded-full border-2 border-white dark:border-neutral-800 object-cover shrink-0" />
@@ -2400,11 +2166,11 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                   ) : (
                                     <span className="text-xs text-gray-400 dark:text-neutral-500">—</span>
                                   )}
-                                </td>
-                                <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
+                                </td>}
+                                {isColVisible("createdAt") && <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
                                   {task.createdAt ? fmtDate(task.createdAt) : "—"}
-                                </td>
-                                <td className="px-2 py-3 whitespace-nowrap">
+                                </td>}
+                                {isColVisible("progress") && <td className="px-2 py-3 whitespace-nowrap">
                                   <button
                                     type="button"
                                     onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "progress" ? null : { id: task.id, field: "progress", top: r.bottom, right: window.innerWidth - r.right }); }}
@@ -2416,8 +2182,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     <span className="text-[11px] font-medium text-gray-600 dark:text-gray-300">{task.progress}%</span>
                                     <ChevronDown className="w-3 h-3 text-gray-400" />
                                   </button>
-                                </td>
-                                <td className="px-2 py-3 whitespace-nowrap">
+                                </td>}
+                                {isColVisible("dueDate") && <td className="px-2 py-3 whitespace-nowrap">
                                   <button
                                     type="button"
                                     onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "dueDate" ? null : { id: task.id, field: "dueDate", top: r.bottom, right: window.innerWidth - r.right }); }}
@@ -2437,8 +2203,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     </div>
                                     <ChevronDown className="w-3 h-3 opacity-60" />
                                   </button>
-                                </td>
-                                <td className="px-2 py-3">
+                                </td>}
+                                {isColVisible("priority") && <td className="px-2 py-3">
                                   <button
                                     type="button"
                                     onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "priority" ? null : { id: task.id, field: "priority", top: r.bottom, right: window.innerWidth - r.right }); }}
@@ -2450,8 +2216,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     </span>
                                     <ChevronDown className="w-3 h-3 opacity-60" />
                                   </button>
-                                </td>
-                                <td className="px-2 py-3 whitespace-nowrap">
+                                </td>}
+                                {isColVisible("projectName") && <td className="px-2 py-3 whitespace-nowrap">
                                   <button
                                     type="button"
                                     onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setProjectSearch(""); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "project" ? null : { id: task.id, field: "project", top: r.bottom, right: window.innerWidth - r.right }); }}
@@ -2460,8 +2226,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     <span className="truncate max-w-[90px]">{task.projectName}</span>
                                     <ChevronDown className="w-3 h-3 opacity-60" />
                                   </button>
-                                </td>
-                                <td className="px-2 py-3 whitespace-nowrap">
+                                </td>}
+                                {isColVisible("source") && <td className="px-2 py-3 whitespace-nowrap">
                                   <button
                                     type="button"
                                     onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "source" ? null : { id: task.id, field: "source", top: r.bottom, right: window.innerWidth - r.right }); }}
@@ -2470,9 +2236,9 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     <span className="truncate max-w-[80px]">{task.taskSource || "غير محدد"}</span>
                                     <ChevronDown className="w-3 h-3 opacity-60" />
                                   </button>
-                                </td>
+                                </td>}
                                 {/* Status */}
-                                <td className="px-2 py-3 whitespace-nowrap">
+                                {isColVisible("status") && <td className="px-2 py-3 whitespace-nowrap">
                                   <button
                                     type="button"
                                     onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setTableDropdown(prev => prev && prev.id === task.id && prev.field === "status" ? null : { id: task.id, field: "status", top: r.bottom, right: window.innerWidth - r.right }); }}
@@ -2484,8 +2250,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     </span>
                                     <ChevronDown className="w-3 h-3 opacity-60" />
                                   </button>
-                                </td>
-                                <td className="px-2 py-3 text-center relative pl-4">
+                                </td>}
+                                {isColVisible("action") && <td className="px-2 py-3 text-center relative pl-4">
                                   <button
                                     onClick={(e) => {
                                       const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -2499,53 +2265,53 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                   >
                                     <MoreHorizontal className="w-4 h-4" />
                                   </button>
-                                </td>
+                                </td>}
                               </tr>
                               {/* Subtask rows */}
                               {expandedRows.has(task.id) && (task.subtasks || []).map(st => (
                                 <tr key={st.id} className="border-b border-gray-50 dark:border-neutral-700/50 bg-gray-50/40 dark:bg-neutral-800/40">
-                                  <td className="px-3 py-2 min-w-[200px] pr-5">
+                                  {isColVisible("title") && <td className="px-3 py-2 min-w-[200px] pr-5">
                                     <div className="flex items-center gap-2 mr-6">
                                       <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
                                       <span className="text-sm text-gray-600 dark:text-gray-300 truncate text-right">{st.title}</span>
                                     </div>
-                                  </td>
-                                  <td className="px-3 py-2 whitespace-nowrap">
+                                  </td>}
+                                  {isColVisible("assignee") && <td className="px-3 py-2 whitespace-nowrap">
                                     <div className="flex items-center gap-1.5">
                                       <img src={avatarUrl(st.assignee)} alt={st.assignee} className="w-5 h-5 rounded-full object-cover shrink-0" />
                                       <span className="text-xs text-gray-500 dark:text-gray-400">{st.assignee}</span>
                                     </div>
-                                  </td>
-                                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-gray-500">—</td>
-                                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-gray-500">{st.projectName}</td>
-                                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-gray-500">—</td>
-                                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-gray-500">—</td>
-                                  <td className="px-3 py-2 whitespace-nowrap">
+                                  </td>}
+                                  {isColVisible("assignedBy") && <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-gray-500">—</td>}
+                                  {isColVisible("createdAt") && <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-gray-500">—</td>}
+                                  {isColVisible("progress") && <td className="px-3 py-2 whitespace-nowrap">
                                     <div className="flex items-center gap-1.5">
                                       <div className="w-12 h-1 rounded-full bg-gray-200 dark:bg-neutral-700 overflow-hidden">
                                         <div className="h-full rounded-full bg-teal-400" style={{ width: `${st.progress || 0}%` }} />
                                       </div>
                                       <span className="text-[10px] text-gray-500 dark:text-neutral-400">{st.progress || 0}%</span>
                                     </div>
-                                  </td>
-                                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
+                                  </td>}
+                                  {isColVisible("dueDate") && <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
                                     <span className={cn(st.dueDate < today && st.status !== "completed" ? "text-red-400" : "")}>{fmtDate(st.dueDate)}</span>
-                                  </td>
-                                  <td className="px-3 py-2 whitespace-nowrap">
+                                  </td>}
+                                  {isColVisible("priority") && <td className="px-3 py-2 whitespace-nowrap">
                                     <Flag className={cn("w-3 h-3", PRIORITY_CONFIG[st.priority]?.flag || "text-gray-400")} />
-                                  </td>
-                                  <td className="px-3 py-2 whitespace-nowrap">
+                                  </td>}
+                                  {isColVisible("projectName") && <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-gray-500">{st.projectName}</td>}
+                                  {isColVisible("source") && <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-gray-500">—</td>}
+                                  {isColVisible("status") && <td className="px-3 py-2 whitespace-nowrap">
                                     <span className={cn("inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full", STATUS_CONFIG[st.status]?.badgeBg || "bg-gray-100", STATUS_CONFIG[st.status]?.badgeText || "text-gray-500")}>
                                       <span className={cn("w-1.5 h-1.5 rounded-full", STATUS_CONFIG[st.status]?.headerDot || "bg-gray-300")} />
                                       {STATUS_CONFIG[st.status]?.label || st.status}
                                     </span>
-                                  </td>
-                                  <td className="px-3 py-2 text-center relative pl-5">
+                                  </td>}
+                                  {isColVisible("action") && <td className="px-3 py-2 text-center relative pl-5">
                                     <div className="flex items-center gap-1.5">
                                       <button onClick={() => openEditSubtask(task, st)} className="text-gray-300 hover:text-teal-500 transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
                                       <button onClick={() => { const next = (task.subtasks || []).filter(s => s.id !== st.id); setTasks(p => p.map(x => x.id === task.id ? { ...x, subtasks: next } : x)); }} className="text-gray-300 hover:text-red-400 transition-colors"><X className="w-3.5 h-3.5" /></button>
                                     </div>
-                                  </td>
+                                  </td>}
                                 </tr>
                               ))}
                               </Fragment>
@@ -2787,12 +2553,6 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
       {activeTab === "teams" && <TeamsPage filter={teamsFilter} search={teamsSearch} view={teamsView} />}
 
-      {activeTab === "visits" && <VisitsPage selectedSupervisor={svSupervisor} />}
-
-      {activeTab === "team_schedule" && <TeamSchedulePage selectedShowroom={tsShowroom} />}
-
-      {activeTab === "team_attendance" && <TeamAttendancePage region={taRegions[0] || ""} regions={taRegions} showroom={taShowroom} seller={taSeller} allMode={taRegions.length > 0 && !taShowroom} onEmployeeClick={(name, sr) => { pickTaSeller(name, sr); window.scrollTo({ top: 0, behavior: "smooth" }); }} />}
-
       {/* ── Task Detail Drawer ── */}
       <AnimatePresence>
         {detailOpen && detailTask && (
@@ -2811,12 +2571,12 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.92, opacity: 0 }}
               transition={{ type: "spring", stiffness: 380, damping: 30 }}
-              className="fixed inset-4 sm:inset-8 lg:inset-12 z-[70] bg-[#FAFCFF] dark:bg-neutral-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden max-w-[1320px] mx-auto"
+              className="fixed inset-0 sm:inset-8 lg:inset-12 z-[70] bg-[#FAFCFF] dark:bg-neutral-900 sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden max-w-[1320px] mx-auto"
               dir="rtl"
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-100 dark:border-neutral-800 bg-[#FAFCFF] dark:bg-neutral-900 shrink-0">
+              <div className="flex items-center justify-between px-3 sm:px-5 py-3 border-b border-neutral-100 dark:border-neutral-800 bg-[#FAFCFF] dark:bg-neutral-900 shrink-0">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <span className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5 shrink-0">
                     <span className="px-2 py-0.5 rounded-md border border-neutral-200 dark:border-neutral-700 text-[11px] font-medium bg-neutral-50 dark:bg-neutral-800">المهام</span>
@@ -2835,11 +2595,11 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                     </div>
                   )}
                   <span className="text-xs text-neutral-500 dark:text-neutral-400 mr-1 hidden sm:inline">تم الإنشاء {detailTask.createdAt || today}</span>
-                  <button className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 transition-colors" title="طباعة"><Printer className="w-4 h-4" /></button>
-                  <button className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 transition-colors" title="تصدير كملف"><FileDown className="w-4 h-4" /></button>
-                  <button className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 transition-colors" title="مشاركة"><Send className="w-4 h-4" /></button>
-                  <button className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 transition-colors" title="مفضلة"><Star className="w-4 h-4" /></button>
-                  <button className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 transition-colors" title="متابعة"><Bell className="w-4 h-4" /></button>
+                  <button className="hidden sm:flex p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 transition-colors" title="طباعة"><Printer className="w-4 h-4" /></button>
+                  <button className="hidden sm:flex p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 transition-colors" title="تصدير كملف"><FileDown className="w-4 h-4" /></button>
+                  <button className="hidden sm:flex p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 transition-colors" title="مشاركة"><Send className="w-4 h-4" /></button>
+                  <button className="hidden sm:flex p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 transition-colors" title="مفضلة"><Star className="w-4 h-4" /></button>
+                  <button className="hidden sm:flex p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 transition-colors" title="متابعة"><Bell className="w-4 h-4" /></button>
                   <button onClick={closeDetail} className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-neutral-400 hover:text-red-500 transition-colors" aria-label="إغلاق تفاصيل المهمة">
                     <X className="w-4 h-4" />
                   </button>
@@ -2873,7 +2633,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   detailPanelCollapsed ? "sm:!hidden" : "sm:w-[45%]"
                 )}>
                   {/* Title row */}
-                  <div className="px-5 pt-4 pb-2 bg-white dark:bg-neutral-900 shrink-0">
+                  <div className="px-3 sm:px-5 pt-4 pb-2 bg-white dark:bg-neutral-900 shrink-0">
                     <div className="flex items-center gap-2 mb-2">
                       <span className={cn("w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-offset-1 ring-offset-white dark:ring-offset-neutral-900", STATUS_CONFIG[detailTask.status].accent)} />
                       <span className="text-sm font-medium text-neutral-400">مهمة</span>
@@ -2889,7 +2649,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   </div>
 
                   {/* Description area */}
-                  <div className="relative px-5 sm:px-6 pb-3 bg-white dark:bg-neutral-900">
+                  <div className="relative px-3 sm:px-5 sm:px-6 pb-3 bg-white dark:bg-neutral-900">
                     <FloatingTextFormatter
                       visible={textFormatSelection === "detail-description"}
                       onFormat={applyTextFormat}
@@ -2978,7 +2738,9 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                       return { assignee: next[0], assignMembers: next, assignMode: "me" as const, assignTarget: undefined };
                                     });
                                   }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center justify-between rounded-lg transition-colors", (detailTask.assignMembers || [detailTask.assignee]).includes(name) ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
-                                    <span>{name}</span>
+                                    <span className="flex items-center gap-2">
+                                      {name}
+                                    </span>
                                     {(detailTask.assignMembers || [detailTask.assignee]).includes(name) && <CheckSquare className="w-3.5 h-3.5" />}
                                   </button>
                                 ))}
@@ -2991,6 +2753,15 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         )}
                       </div>
 
+                      {/* Supervisor Pill */}
+                      {detailTask.supervisor && (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700">
+                          <img src={avatarUrl(detailTask.supervisor)} alt={detailTask.supervisor} title={detailTask.supervisor} className="w-5 h-5 rounded-full border border-white dark:border-neutral-800 object-cover shrink-0" />
+                          <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الإشراف:</span>
+                          <span className="truncate max-w-[120px] text-neutral-700 dark:text-neutral-200">{detailTask.supervisor}</span>
+                        </div>
+                      )}
+
                       {/* Priority Pill */}
                       <div className="relative">
                         <button onClick={() => setDetailDropdown(d => d === "priority" ? null : "priority")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", detailDropdown === "priority" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
@@ -3002,7 +2773,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                           <>
                             <div className="fixed inset-0 z-10" onClick={() => setDetailDropdown(null)} />
                             <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px]">
-                              {(["low","medium","high","urgent"] as TaskPriority[]).map(p => (
+                              {(["low","medium","high","urgent","emergency"] as TaskPriority[]).map(p => (
                                 <button key={p} onClick={() => { updateDetailFields({ priority: p }); setDetailDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center justify-between rounded-lg transition-colors", detailTask.priority === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
                             <span>{PRIORITY_CONFIG[p].label}</span>
                             <Flag className={cn("w-4 h-4", PRIORITY_CONFIG[p].flag)} />
@@ -3061,7 +2832,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                           max={100}
                           value={detailTask.progress ?? 0}
                           onChange={e => { const progress = Number(e.target.value); updateDetailFields(task => ({ progress, status: progress === 100 ? "completed" : task.status === "completed" ? "in-progress" : task.status })); }}
-                          className="w-16 h-1.5 accent-teal-500 cursor-pointer"
+                          className="progress-slider w-16 cursor-pointer"
                         />
                       </div>
 
@@ -3091,7 +2862,10 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         <button onClick={() => setDetailDropdown(d => d === "tags" ? null : "tags")} className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors", detailDropdown === "tags" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                           <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الوسوم:</span>
                           <div className="flex items-center gap-1 flex-wrap max-w-[120px]">
-                            {(detailTask.tags || []).length > 0 ? (detailTask.tags || []).slice(0, 2).map(tag => <span key={tag} className="text-neutral-700 dark:text-neutral-200 truncate">{tag}</span>) : <span className="text-neutral-400 truncate">فارغ</span>}
+                            {(detailTask.tags || []).length > 0 ? (detailTask.tags || []).slice(0, 2).map(tag => {
+                              const tc = getTagColor(tag, detailTask.tagColors);
+                              return <span key={tag} className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-medium truncate", tc.light)}>{tag}</span>;
+                            }) : <span className="text-neutral-400 truncate">فارغ</span>}
                             {(detailTask.tags || []).length > 2 && <span className="text-neutral-400">+{(detailTask.tags || []).length - 2}</span>}
                           </div>
                           <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", detailDropdown === "tags" ? "rotate-180" : "")} />
@@ -3103,11 +2877,16 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                               <div className="px-3 py-2 border-b border-neutral-100 dark:border-neutral-700/60">
                                 <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1.5">الوسوم المتاحة</p>
                                 <div className="flex flex-wrap gap-1.5">
-                                  {["تصميم","تطوير","تسويق","مراجعة","عاجل","مبيعات"].map(tag => (
-                                    <button key={tag} onClick={() => updateDetailFields(task => { const current = task.tags || []; return { tags: current.includes(tag) ? current.filter(item => item !== tag) : [...current, tag] }; })} className={cn("px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors", (detailTask.tags || []).includes(tag) ? "bg-teal-500 text-white" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600")}>
-                                      {tag}
-                                    </button>
-                                  ))}
+                                  {allTagsList.map(tag => {
+                                    const tc = getTagColor(tag, detailTask.tagColors);
+                                    const selected = (detailTask.tags || []).includes(tag);
+                                    return (
+                                      <button key={tag} onClick={() => updateDetailFields(task => { const current = task.tags || []; return { tags: current.includes(tag) ? current.filter(item => item !== tag) : [...current, tag] }; })} className={cn("px-2.5 py-1 rounded-full text-[11px] font-medium transition-all flex items-center gap-1.5", selected ? cn(tc.bg, tc.text, "shadow-sm") : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600")}>
+                                        <span className={cn("w-1.5 h-1.5 rounded-full", selected ? "bg-white/70" : tc.dot)} />
+                                        {tag}
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             </div>
@@ -3159,7 +2938,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     </button>
                                     {detailEditingSubtaskDropdown === "priority" && (
                                       <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[140px]">
-                                        {(["low","medium","high","urgent"] as TaskPriority[]).map(p => (
+                                        {(["low","medium","high","urgent","emergency"] as TaskPriority[]).map(p => (
                                           <button key={p} onClick={() => { setDetailEditingSubtaskForm(f => ({ ...f, priority: p })); setDetailEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right flex items-center justify-between rounded-lg transition-colors", (detailEditingSubtaskForm.priority || "medium") === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
                                     <span>{PRIORITY_CONFIG[p].label}</span>
                                     <Flag className={cn("w-4 h-4", PRIORITY_CONFIG[p].flag)} />
@@ -3255,7 +3034,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                             </button>
                             {detailSubtaskDropdown === "priority" && (
                               <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[140px]">
-                                {(["low","medium","high","urgent"] as TaskPriority[]).map(p => (
+                                {(["low","medium","high","urgent","emergency"] as TaskPriority[]).map(p => (
                                   <button key={p} onClick={() => { setDetailSubtaskForm(f => ({ ...f, priority: p })); setDetailSubtaskDropdown(null); }} className={cn("w-full px-3 py-1.5 text-xs text-right flex items-center justify-between rounded-lg transition-colors", (detailSubtaskForm.priority || "medium") === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
                                     <span>{PRIORITY_CONFIG[p].label}</span>
                                     <Flag className={cn("w-4 h-4", PRIORITY_CONFIG[p].flag)} />
@@ -3657,12 +3436,12 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.92, opacity: 0 }}
               transition={{ type: "spring", stiffness: 380, damping: 30 }}
-              className="fixed inset-4 sm:inset-8 lg:inset-12 z-[70] bg-[#FAFCFF] dark:bg-neutral-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden max-w-[1320px] mx-auto"
+              className="fixed inset-0 sm:inset-8 lg:inset-12 z-[70] bg-[#FAFCFF] dark:bg-neutral-900 sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden max-w-[1320px] mx-auto"
               dir="rtl"
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-100 dark:border-neutral-800 bg-[#FAFCFF] dark:bg-neutral-900 shrink-0">
+              <div className="flex items-center justify-between px-3 sm:px-5 py-3 border-b border-neutral-100 dark:border-neutral-800 bg-[#FAFCFF] dark:bg-neutral-900 shrink-0">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <span className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5 shrink-0">
                     <span className="px-2 py-0.5 rounded-md border border-neutral-200 dark:border-neutral-700 text-[11px] font-medium bg-white dark:bg-neutral-800">{editing ? "تعديل المهمة" : "مهمة جديدة"}</span>
@@ -3687,6 +3466,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
               {/* Body - task details on the right / activity on the left */}
               <div className="relative flex-1 overflow-hidden flex flex-col sm:flex-row">
+                {/* Mobile dropdown backdrop */}
+                {formDropdown && (
+                  <div
+                    className="sm:hidden fixed inset-0 z-[75] bg-black/30 backdrop-blur-[1px]"
+                    onClick={() => setFormDropdown(null)}
+                  />
+                )}
                 <button
                   type="button"
                   onClick={() => setFormPanelCollapsed(value => !value)}
@@ -3701,11 +3487,12 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                 </button>
                 {/* Main content - right 45% */}
                 <div className={cn(
-                  "min-w-0 flex-1 sm:flex-none overflow-y-auto bg-white dark:bg-neutral-900 transition-[width] duration-300",
+                  "min-w-0 flex-1 sm:flex-none bg-[#F9FBFF] dark:bg-neutral-900 transition-[width] duration-300",
+                  formDropdown ? "overflow-visible max-sm:overflow-y-auto" : "overflow-y-auto",
                   formMobileTab === "activity" ? "hidden sm:block" : "",
                   formPanelCollapsed ? "sm:!hidden" : "sm:w-[45%]"
                 )}>
-                  <div className="p-5 space-y-5" dir="rtl">
+                  <div className="p-3 sm:p-5 space-y-4 sm:space-y-5" dir="rtl">
                     {/* Title */}
                     <div>
                       <label htmlFor="task-form-title" className="block text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">عنوان المهمة <span className="text-red-500">*</span></label>
@@ -3713,7 +3500,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         id="task-form-title"
                         value={form.title || ""}
                         onChange={e => { setForm(current => ({ ...current, title: e.target.value })); if (formErrors.title) setFormErrors({}); }}
-                        className={cn("w-full text-xl font-bold text-neutral-900 dark:text-white bg-transparent border-b pb-2 focus:outline-none text-right placeholder:text-neutral-300 transition-colors", formErrors.title ? "border-red-400" : "border-transparent focus:border-teal-400")}
+                        className={cn("w-full text-base font-bold text-neutral-900 dark:text-white bg-white dark:bg-neutral-800 focus:outline-none text-right placeholder:text-neutral-400 placeholder:font-bold placeholder:text-sm transition-all rounded-lg px-3 py-2.5 border", formErrors.title ? "border-red-400 ring-2 ring-red-100" : "border-neutral-200 dark:border-neutral-700 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 dark:focus:ring-teal-900/30")}
                         placeholder="اكتب عنوانًا واضحًا للمهمة"
                         autoFocus
                         aria-invalid={Boolean(formErrors.title)}
@@ -3737,16 +3524,16 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         onChange={html => setForm(f => ({ ...f, description: html }))}
                         onSelectionChange={editor => captureTextSelection("task-description", editor)}
                         onBlur={nextFocus => handleTextFormattingBlur("task-description", nextFocus)}
-                        className="w-full min-h-[60px] text-sm leading-6 text-neutral-600 dark:text-neutral-300 bg-transparent focus:outline-none text-right whitespace-pre-wrap"
+                        className="w-full min-h-[60px] text-sm leading-6 text-neutral-600 dark:text-neutral-300 bg-white dark:bg-neutral-800 focus:outline-none text-right whitespace-pre-wrap rounded-lg px-3 py-2.5 border border-neutral-200 dark:border-neutral-700"
                         placeholder="اشرح المطلوب والنتيجة المتوقعة..."
                       />
                     </div>
 
                     {/* Quick action pills */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" ref={formDropdownRef}>
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 overflow-visible" ref={setFormDropdownRef}>
                   {/* Status Pill */}
                   {editing && (
-                  <div className="relative">
+                  <div className="relative overflow-visible">
                     <button onClick={() => setFormDropdown(d => d === "status" ? null : "status")} className={cn("flex h-9 w-full items-center justify-between gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "status" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <span className={cn("w-2 h-2 rounded-full shrink-0", STATUS_CONFIG[form.status || "todo"].headerDot)} />
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الحالة:</span>
@@ -3754,7 +3541,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "status" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "status" && (
-                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px]">
+                      <div className="absolute right-0 top-full mt-1 z-[60] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
                         <p className="text-xs font-semibold text-neutral-400 px-3 py-1.5">الحالة</p>
                         {(["todo","in-progress","in-review","completed","overdue"] as TaskStatus[]).map(s => (
                           <button key={s} onClick={() => { setForm(f => ({ ...f, status: s })); setFormTouched(t => new Set([...t, "status"])); setFormDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center gap-2 rounded-lg transition-colors", (form.status || "todo") === s ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
@@ -3768,23 +3555,40 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   )}
 
                   {/* Assignee Pill */}
-                  <div className="relative min-w-0" ref={assignDropdownRef}>
-                    <button onClick={() => { setFormDropdown(d => d === "assignee" ? null : "assignee"); setAssignStep("mode"); setAssignSearch(""); }} className={cn("flex h-9 w-full items-center justify-between gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "assignee" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                      <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الإسناد:</span>
-                      <span className="min-w-0 flex-1 truncate text-neutral-700 dark:text-neutral-200">
-                        {form.assignMode === "team" ? (form.assignTarget || "فريق غير محدد") :
-                          form.assignMode === "department" ? (form.assignTarget || "قسم غير محدد") :
-                          form.assignMode === "committee" ? (form.assignTarget || "لجنة غير محددة") :
-                          (form.assignMembers && form.assignMembers.length > 0
-                            ? form.assignMembers.length > 1
-                              ? `${taskOwnerName(form) || form.assignMembers[0]} و${form.assignMembers.length - 1} ${form.assignMembers.length - 1 === 1 ? "موظف" : "موظفين"}`
-                              : form.assignMembers[0]
-                            : (form.assignee || "اختر موظف"))}
-                      </span>
-                      <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "assignee" ? "rotate-180" : "")} />
-                    </button>
+                  <div className="relative min-w-0 overflow-visible" ref={assignDropdownRef}>
+                    <div className="flex h-9 w-full items-center justify-between gap-2 px-3 rounded-lg border text-sm font-medium transition-colors bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60">
+                      <button onClick={() => { setFormDropdown(d => d === "assignee" ? null : "assignee"); setAssignStep("mode"); setAssignSearch(""); }} className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                        <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الإسناد:</span>
+                        <span className="min-w-0 flex-1 truncate text-neutral-700 dark:text-neutral-200">
+                          {form.assignMode === "team" ? (form.assignTarget || "فريق غير محدد") :
+                            form.assignMode === "department" ? (form.assignTarget || "قسم غير محدد") :
+                            form.assignMode === "committee" ? (form.assignTarget || "لجنة غير محددة") :
+                            (form.assignMembers && form.assignMembers.length > 0
+                              ? form.assignMembers.length > 1
+                                ? `${form.assignMembers[0]} و${form.assignMembers.length - 1} ${form.assignMembers.length - 1 === 1 ? "موظف" : "موظفين"}`
+                                : form.assignMembers[0]
+                              : (form.assignee || "اختر موظف"))}
+                        </span>
+                        <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "assignee" ? "rotate-180" : "")} />
+                      </button>
+                      {((form.assignMembers && form.assignMembers.length > 0) || form.assignee || form.assignTarget) && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setForm(f => ({ ...f, assignMode: undefined, assignee: "", assignTarget: undefined, assignMembers: [] }));
+                            setFormTouched(t => new Set([...t, "assignee"]));
+                            setFormDropdown(null);
+                          }}
+                          className="shrink-0 rounded-full p-0.5 text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors"
+                          title="إزالة الإسناد"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                     {formDropdown === "assignee" && (
-                      <div className="absolute right-0 top-full mt-2 z-50 flex min-w-[300px] max-h-[420px] flex-col overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.14)] dark:border-neutral-600 dark:bg-neutral-800">
+                      <div className="absolute right-0 top-full mt-2 z-[60] flex min-w-[300px] max-h-[420px] flex-col overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.14)] dark:border-neutral-600 dark:bg-neutral-800 max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
                         {/* Search header for lists */}
                         {(assignStep === "list" || assignStep === "members") && (
                           <div className="p-2.5 border-b border-gray-100 dark:border-neutral-700">
@@ -3812,17 +3616,43 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         {/* Step 1: Choose mode */}
                         {assignStep === "mode" && (
                           <div className="p-2">
-                            <p className="text-xs font-semibold text-neutral-400 px-3 py-2">الاسناد إلى</p>
-                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "me", assignee: undefined, assignTarget: undefined, assignMembers: [], taskOwner: "" })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("members"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "me" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
+                            <div className="flex items-center justify-between px-3 py-2">
+                              <p className="text-xs font-semibold text-neutral-400">الاسناد إلى</p>
+                              {((form.assignMembers && form.assignMembers.length > 0) || form.assignee || form.assignTarget) && (
+                                <button
+                                  onClick={() => { setForm(f => ({ ...f, assignMode: undefined, assignee: "", assignTarget: undefined, assignMembers: [] })); setFormTouched(t => new Set([...t, "assignee"])); setFormDropdown(null); }}
+                                  className="text-xs text-red-500 hover:text-red-600 dark:text-red-400 font-medium transition-colors flex items-center gap-1"
+                                >
+                                  <X className="w-3 h-3" />
+                                  إزالة الإسناد
+                                </button>
+                              )}
+                            </div>
+                            {((form.assignMembers && form.assignMembers.length > 0) || form.assignee) && (
+                              <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2">
+                                <span className="text-[10px] font-semibold text-neutral-400 shrink-0">المسند لهم:</span>
+                                {(form.assignMembers && form.assignMembers.length > 0 ? form.assignMembers : form.assignee ? [form.assignee] : []).map(m => (
+                                  <span key={m} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 text-[10px] font-medium text-indigo-700 dark:text-indigo-300">
+                                    <img src={avatarUrl(m)} alt={m} className="h-3.5 w-3.5 rounded-full object-cover" />
+                                    {m}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "me", assignee: CURRENT_USER_NAME, assignTarget: undefined, assignMembers: [CURRENT_USER_NAME] })); setFormTouched(t => new Set([...t, "assignee"])); setFormDropdown(null); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors flex items-center gap-2", form.assignMode === "me" && form.assignMembers?.includes(CURRENT_USER_NAME) ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
+                              <img src={avatarUrl(CURRENT_USER_NAME)} alt={CURRENT_USER_NAME} className="h-6 w-6 rounded-full object-cover" />
+                              إسناد المهمة لي
+                            </button>
+                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "me", assignee: undefined, assignTarget: undefined })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("members"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "me" && !form.assignMembers?.includes(CURRENT_USER_NAME) ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
                               إسناد المهمة لموظف
                             </button>
-                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "team", assignee: "فريق", assignTarget: undefined, assignMembers: [], taskOwner: "" })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "team" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
+                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "team", assignee: "فريق", assignTarget: undefined })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "team" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
                               إسناد المهمة لفريق
                             </button>
-                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "department", assignee: "قسم", assignTarget: undefined, assignMembers: [], taskOwner: "" })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "department" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
+                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "department", assignee: "قسم", assignTarget: undefined })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "department" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
                               إسناد المهمة لقسم
                             </button>
-                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "committee", assignee: "لجنة", assignTarget: undefined, assignMembers: [], taskOwner: "" })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "committee" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
+                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "committee", assignee: "لجنة", assignTarget: undefined })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "committee" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
                               إسناد المهمة للجنة
                             </button>
                           </div>
@@ -3835,7 +3665,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                             {(form.assignMode === "team" ? TEAMS : form.assignMode === "department" ? DEPARTMENTS : COMMITTEES)
                               .filter(item => item.name.toLowerCase().includes(assignSearch.toLowerCase()))
                               .map(item => (
-                              <button key={item.name} onClick={() => { setForm(f => ({ ...f, assignTarget: item.name, assignMembers: [], taskOwner: "" })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("members"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignTarget === item.name ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
+                              <button key={item.name} onClick={() => { setForm(f => ({ ...f, assignTarget: item.name })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("members"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignTarget === item.name ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
                                 {item.name}
                               </button>
                             ))}
@@ -3847,7 +3677,10 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                             <button onClick={() => { if (form.assignMode === "me") setAssignStep("mode"); else setAssignStep("list"); setAssignSearch(""); }} className="text-xs text-gray-500 dark:text-neutral-400 hover:text-gray-600 px-3 py-1 mb-1 flex items-center gap-1">← رجوع</button>
                             {form.assignMode !== "me" && form.assignTarget && (
                               <>
-                                <p className="text-xs font-semibold text-gray-400 px-3 py-1">{form.assignTarget}</p>
+                                <div className="flex items-center justify-between px-3 py-2">
+                                  <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">{form.assignTarget}</p>
+                                  <span className="text-[10px] text-neutral-400">{(form.assignMembers || []).length} محدد</span>
+                                </div>
                                 {/* Head */}
                                 {(() => {
                                   const list = form.assignMode === "team" ? TEAMS : form.assignMode === "department" ? DEPARTMENTS : COMMITTEES;
@@ -3856,8 +3689,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                   const head = (item as any).head;
                                   if (assignSearch && !head.toLowerCase().includes(assignSearch.toLowerCase())) return null;
                                   return (
-                                    <div className="px-3 py-1">
-                                      <p className="text-[10px] font-semibold text-gray-400 mb-1">القائد</p>
+                                    <div className="px-1 pb-1">
+                                      <p className="text-[10px] font-semibold text-neutral-400 px-2 py-1">القائد</p>
                                       <button 
                                         onClick={() => { 
                                           setForm(f => {
@@ -3866,15 +3699,17 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                             return { ...f, assignMembers: next };
                                           }); 
                                         }} 
-                                        className={cn("w-full px-3 py-2 text-sm text-right flex items-center justify-between hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", (form.assignMembers || []).includes(head) ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}
+                                        className={cn("group flex min-h-9 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-right transition-colors", (form.assignMembers || []).includes(head) ? "bg-indigo-50 text-neutral-800 font-medium dark:bg-indigo-900/20 dark:text-neutral-100" : "text-neutral-700 hover:bg-indigo-50/70 dark:text-neutral-200 dark:hover:bg-neutral-700")}
                                       >
-                                        <span>{head}</span>
-                                        {(form.assignMembers || []).includes(head) && <CheckSquare className="w-3.5 h-3.5" />}
+                                        <span className="min-w-0 flex-1 truncate">{head}</span>
+                                        <span className={cn("relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors", (form.assignMembers || []).includes(head) ? "border-indigo-500 bg-indigo-500" : "border-indigo-400 bg-white dark:bg-neutral-800")}>
+                                          {(form.assignMembers || []).includes(head) && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+                                        </span>
                                       </button>
                                     </div>
                                   );
                                 })()}
-                                <p className="text-[10px] font-semibold text-gray-400 px-3 py-1 mt-1">الأعضاء</p>
+                                <p className="text-[10px] font-semibold text-neutral-400 px-3 py-1 mt-1">الأعضاء</p>
                                 {(() => {
                                   const list = form.assignMode === "team" ? TEAMS : form.assignMode === "department" ? DEPARTMENTS : COMMITTEES;
                                   const item = list.find(i => i.name === form.assignTarget);
@@ -3891,15 +3726,17 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                           return { ...f, assignMembers: next };
                                         }); 
                                       }} 
-                                      className={cn("w-full px-3 py-2 text-sm text-right flex items-center justify-between hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", (form.assignMembers || []).includes(m) ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}
+                                      className={cn("group flex min-h-9 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-right transition-colors", (form.assignMembers || []).includes(m) ? "bg-indigo-50 text-neutral-800 font-medium dark:bg-indigo-900/20 dark:text-neutral-100" : "text-neutral-700 hover:bg-indigo-50/70 dark:text-neutral-200 dark:hover:bg-neutral-700")}
                                     >
-                                      <span>{m}</span>
-                                      {(form.assignMembers || []).includes(m) && <CheckSquare className="w-3.5 h-3.5" />}
+                                      <span className="min-w-0 flex-1 truncate">{m}</span>
+                                      <span className={cn("relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors", (form.assignMembers || []).includes(m) ? "border-indigo-500 bg-indigo-500" : "border-indigo-400 bg-white dark:bg-neutral-800")}>
+                                        {(form.assignMembers || []).includes(m) && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+                                      </span>
                                     </button>
                                   ));
                                 })()}
-                                <div className="px-3 pt-2 pb-1 sticky bottom-0 bg-white dark:bg-neutral-800 border-t border-gray-100 dark:border-neutral-700 mt-2">
-                                  <button onClick={() => { setFormDropdown(null); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("mode"); }} className="w-full py-2 text-xs font-semibold text-white bg-teal-500 hover:bg-teal-600 rounded-lg transition-colors">تم</button>
+                                <div className="px-2 pt-2 pb-1 sticky bottom-0 bg-white dark:bg-neutral-800 border-t border-gray-100 dark:border-neutral-700 mt-2">
+                                  <button onClick={() => { setFormDropdown(null); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("mode"); }} className="w-full rounded-lg bg-black py-2 text-xs font-semibold text-white transition-colors hover:bg-neutral-800">تم</button>
                                 </div>
                               </>
                             )}
@@ -3909,6 +3746,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                   <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">اختر الموظفين</p>
                                   <span className="text-[10px] text-neutral-400">{(form.assignMembers || []).length} محدد</span>
                                 </div>
+                                <p className="text-[10px] font-semibold text-neutral-400 px-3 py-1">الأعضاء</p>
                                 {assigneesList
                                   .filter(a => a.toLowerCase().includes(assignSearch.toLowerCase()))
                                   .map(a => (
@@ -3921,9 +3759,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                         return { ...f, assignMembers: next, assignee: next.length > 0 ? next[0] : undefined };
                                       }); 
                                     }} 
-                                    className={cn("group mx-1 flex min-h-10 w-[calc(100%-0.5rem)] items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-right transition-colors", (form.assignMembers || []).includes(a) ? "bg-indigo-50 text-neutral-800 font-medium dark:bg-indigo-900/20 dark:text-neutral-100" : "text-neutral-700 hover:bg-indigo-50/70 dark:text-neutral-200 dark:hover:bg-neutral-700")}
+                                    className={cn("group flex min-h-9 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-right transition-colors", (form.assignMembers || []).includes(a) ? "bg-indigo-50 text-neutral-800 font-medium dark:bg-indigo-900/20 dark:text-neutral-100" : "text-neutral-700 hover:bg-indigo-50/70 dark:text-neutral-200 dark:hover:bg-neutral-700")}
                                   >
-                                    <Star className={cn("h-4 w-4 shrink-0 transition-colors", (form.assignMembers || []).includes(a) ? "text-indigo-500" : "text-neutral-300 group-hover:text-indigo-400 dark:text-neutral-600")} />
                                     <span className="min-w-0 flex-1 truncate">{a}</span>
                                     <span className={cn("relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors", (form.assignMembers || []).includes(a) ? "border-indigo-500 bg-indigo-500" : "border-indigo-400 bg-white dark:bg-neutral-800")}>
                                       {(form.assignMembers || []).includes(a) && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
@@ -3944,7 +3781,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     <span className="truncate">إضافة الموظف "{assignSearch.trim()}"</span>
                                   </button>
                                 )}
-                                <div className="px-3 pt-2 pb-1 sticky bottom-0 bg-white dark:bg-neutral-800 border-t border-gray-100 dark:border-neutral-700 mt-2">
+                                <div className="px-2 pt-2 pb-1 sticky bottom-0 bg-white dark:bg-neutral-800 border-t border-gray-100 dark:border-neutral-700 mt-2">
                                   <button onClick={() => { setFormDropdown(null); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("mode"); }} className="w-full rounded-lg bg-black py-2 text-xs font-semibold text-white transition-colors hover:bg-neutral-800">تم</button>
                                 </div>
                               </>
@@ -3956,8 +3793,68 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                     )}
                   </div>
 
+                  {/* Supervisor Pill */}
+                  <div className="relative min-w-0 overflow-visible" ref={supervisorDropdownRef}>
+                    <button onClick={() => { setFormDropdown(d => d === "supervisor" ? null : "supervisor"); setSupervisorSearch(""); }} className={cn("flex h-9 w-full items-center justify-between gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "supervisor" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                      <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الإشراف:</span>
+                      <span className="min-w-0 flex-1 truncate text-neutral-700 dark:text-neutral-200">
+                        {form.supervisor || "اختر مشرفًا"}
+                      </span>
+                      <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "supervisor" ? "rotate-180" : "")} />
+                    </button>
+                    {formDropdown === "supervisor" && (
+                      <div className="absolute right-0 top-full mt-2 z-[60] flex min-w-[260px] max-h-[360px] flex-col overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.14)] dark:border-neutral-600 dark:bg-neutral-800 max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
+                        <div className="p-2.5 border-b border-gray-100 dark:border-neutral-700">
+                          <div className="relative">
+                            <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                            <input
+                              autoFocus
+                              value={supervisorSearch}
+                              onChange={(e) => setSupervisorSearch(e.target.value)}
+                              placeholder="ابحث عن موظف..."
+                              className="h-9 w-full rounded-lg border border-neutral-200 bg-white py-1.5 ps-3 pe-8 text-xs outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-neutral-600 dark:bg-neutral-900 dark:focus:ring-indigo-900/30"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-2">
+                          {assigneesList
+                            .filter(a => a.toLowerCase().includes(supervisorSearch.toLowerCase()))
+                            .map(a => (
+                              <button
+                                key={a}
+                                onClick={() => {
+                                  setForm(f => ({ ...f, supervisor: a }));
+                                  setFormTouched(t => new Set([...t, "supervisor"]));
+                                  setFormDropdown(null);
+                                }}
+                                className={cn("group flex min-h-9 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-right transition-colors", form.supervisor === a ? "bg-indigo-50 text-neutral-800 font-medium dark:bg-indigo-900/20 dark:text-neutral-100" : "text-neutral-700 hover:bg-indigo-50/70 dark:text-neutral-200 dark:hover:bg-neutral-700")}
+                              >
+                                <img src={avatarUrl(a)} alt={a} className="h-6 w-6 rounded-full object-cover shrink-0" />
+                                <span className="min-w-0 flex-1 truncate">{a}</span>
+                                {form.supervisor === a && <Check className="w-3.5 h-3.5 text-indigo-500 shrink-0" strokeWidth={3} />}
+                              </button>
+                            ))
+                          }
+                          {form.supervisor && (
+                            <button
+                              onClick={() => {
+                                setForm(f => ({ ...f, supervisor: "" }));
+                                setFormTouched(t => new Set([...t, "supervisor"]));
+                                setFormDropdown(null);
+                              }}
+                              className="w-full px-3 py-2 mt-1 text-sm text-right rounded-lg transition-colors text-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 flex items-center gap-2"
+                            >
+                              <X className="w-3.5 h-3.5 shrink-0" />
+                              <span>إزالة المشرف</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Delivery date */}
-                  <div className="relative min-w-0">
+                  <div className="relative min-w-0 overflow-visible">
                     <button onClick={() => setFormDropdown(d => d === "dueDate" ? null : "dueDate")} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "dueDate" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <CalendarIcon className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الموعد:</span>
@@ -3967,12 +3864,12 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       <ChevronDown className={cn("w-3 h-3 ms-auto transition-transform shrink-0 text-neutral-400", formDropdown === "dueDate" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "dueDate" && (
-                      <div className="absolute right-0 top-full mt-1.5 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-3 min-w-[300px]">
+                      <div className="absolute right-0 top-full mt-1.5 z-[60] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-3 min-w-[300px] max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
                         <p className="text-xs font-semibold text-neutral-400 px-1 pb-2">تحديد موعد التسليم</p>
 
                         <div className="space-y-3">
                           <div>
-                            <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-1 px-1">اختر تاريخ التسليم</p>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1.5 px-1">اختر تاريخ التسليم</p>
                             <input 
                               type="date" 
                               value={form.dueDate || ""}
@@ -4000,7 +3897,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                   setForm(f => ({ ...f, dueDate: q.val }));
                                   setFormTouched(t => new Set([...t, "dueDate"])); 
                                 }} 
-                                className="text-right px-3 py-2.5 text-[11px] font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 rounded-lg transition-colors border border-transparent hover:border-neutral-200 dark:hover:border-neutral-600"
+                                className="text-right px-3 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700/50 rounded-lg transition-colors border border-transparent hover:border-neutral-200 dark:hover:border-neutral-600"
                               >
                                 {q.label}
                               </button>
@@ -4020,7 +3917,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   </div>
 
                   {/* Priority Pill */}
-                  <div className="relative">
+                  <div className="relative overflow-visible">
                     <button onClick={() => setFormDropdown(d => d === "priority" ? null : "priority")} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "priority" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <Flag className={cn("w-4 h-4", form.priority ? PRIORITY_CONFIG[form.priority].flag : "text-neutral-400")} />
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الأولوية:</span>
@@ -4028,9 +3925,9 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       <ChevronDown className={cn("w-3 h-3 ms-auto transition-transform shrink-0 text-neutral-400", formDropdown === "priority" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "priority" && (
-                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px]">
+                      <div className="absolute right-0 top-full mt-1 z-[60] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
                         <p className="text-xs font-semibold text-neutral-400 px-3 py-1.5">الأولوية</p>
-                        {(["urgent","high","medium","low"] as TaskPriority[]).map(p => (
+                        {(["emergency","urgent","high","medium","low"] as TaskPriority[]).map(p => (
                           <button key={p} onClick={() => { setForm(f => ({ ...f, priority: p })); setFormTouched(t => new Set([...t, "priority"])); setFormDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center justify-between rounded-lg transition-colors", form.priority === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
                             <span>{PRIORITY_CONFIG[p].label}</span>
                             <Flag className={cn("w-4 h-4", PRIORITY_CONFIG[p].flag)} />
@@ -4040,34 +3937,293 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                     )}
                   </div>
 
+                </div>
+
+                {/* Progress Pill */}
+                {((form.assignMembers && form.assignMembers.length > 1) || (form.supervisor && !(form.assignMembers || []).includes(form.supervisor))) ? (
+                  <div className="space-y-3 rounded-xl border border-neutral-200 bg-white p-3.5 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200">
+                            <Users className="h-4 w-4" />
+                          </span>
+                          <div>
+                            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">فريق المهمة</p>
+                            <p className="text-xs text-neutral-400">{(() => {
+                              const members = form.assignMembers || [];
+                              const sup = form.supervisor && !members.includes(form.supervisor) ? 1 : 0;
+                              const count = members.length + sup;
+                              return `${count} ${count === 1 ? "موظف" : "موظفين"}`;
+                            })()}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 border-t border-neutral-100 pt-3 sm:grid-cols-2 md:grid-cols-3 dark:border-neutral-700">
+                      {(() => {
+                        const members = form.assignMembers || [];
+                        const sup = form.supervisor && !members.includes(form.supervisor) ? [form.supervisor] : [];
+                        const allMembers = [...members, ...sup];
+                        return allMembers.map(m => {
+                        const mp = (form.memberProgress || {})[m] ?? 0;
+                        const isAssignee = members.includes(m);
+                        const isSupervisor = form.supervisor === m;
+                        return (
+                          <div key={m} className={cn("min-w-0 space-y-2 rounded-xl border p-2.5 transition-colors", "border-neutral-100 bg-neutral-50/60 dark:border-neutral-700 dark:bg-neutral-900/40")}>
+                            <div className="flex min-w-0 items-center gap-2">
+                              <img src={avatarUrl(m)} alt={m} className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-white dark:ring-neutral-700" />
+                              <div className="min-w-0 flex-1">
+                                <span className="block truncate text-sm font-semibold text-neutral-800 dark:text-neutral-100">{m}</span>
+                                <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                                  {isAssignee && (
+                                    <span className="inline-block rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-bold text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                                      معني
+                                    </span>
+                                  )}
+                                  {isSupervisor && (
+                                    <span className="inline-block rounded-full bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                                      مشرف
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setForm(f => {
+                                    if (isSupervisor && !isAssignee) {
+                                      return { ...f, supervisor: "" };
+                                    }
+                                    const current = f.assignMembers || [];
+                                    const next = current.filter(x => x !== m);
+                                    const nextMp = { ...(f.memberProgress || {}) };
+                                    delete nextMp[m];
+                                    const supervisorCleared = f.supervisor === m ? "" : f.supervisor;
+                                    return { ...f, assignMembers: next, assignee: next[0] || "", memberProgress: nextMp, progress: next.length > 0 ? Math.round(Object.values(nextMp).reduce((s, v) => s + v, 0) / next.length) : 0, supervisor: supervisorCleared };
+                                  });
+                                  setFormTouched(t => new Set([...t, "assignee"]));
+                                }}
+                                className="shrink-0 rounded-full p-1 text-neutral-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
+                                title="إزالة من الفريق"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            {editing && (form.progressMode || "individual") === "individual" && <div className="flex min-w-0 items-center gap-2">
+                              <input
+                                type="range" min={0} max={100} value={mp}
+                                onChange={e => {
+                                  const val = parseInt(e.target.value);
+                                  setForm(f => {
+                                    const nextMp = { ...(f.memberProgress || {}), [m]: val };
+                                    const members = f.assignMembers || [];
+                                    const avg = members.length > 0 ? Math.round(members.reduce((s, x) => s + (nextMp[x] ?? 0), 0) / members.length) : val;
+                                    return { ...f, memberProgress: nextMp, progress: avg };
+                                  });
+                                }}
+                                className="progress-slider flex-1 min-w-0 cursor-pointer"
+                              />
+                              <span className="shrink-0 rounded-md bg-teal-50 px-2 py-0.5 text-[10px] font-bold tabular-nums text-teal-600 dark:bg-teal-900/20 dark:text-teal-400">{mp}%</span>
+                            </div>}
+                          </div>
+                        );
+                      });
+                      })()
+                    }
+                    </div>
+                  </div>
+                ) : editing ? (
+                  <div className="rounded-xl border border-neutral-200 bg-white px-3 py-2.5 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-900/20 dark:text-teal-400">
+                          <SlidersHorizontal className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">نسبة الإنجاز</span>
+                      </div>
+                      <span className="min-w-[46px] rounded-full bg-teal-50 px-2.5 py-1 text-center text-xs font-bold tabular-nums text-teal-700 dark:bg-teal-900/20 dark:text-teal-300">{form.progress ?? 0}%</span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2" dir="ltr">
+                      <span className="w-7 text-center text-[10px] tabular-nums text-neutral-400">0%</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={form.progress || 0}
+                        onChange={e => setForm(f => ({ ...f, progress: parseInt(e.target.value) }))}
+                        className="progress-slider min-w-0 flex-1 cursor-pointer"
+                        aria-label="نسبة الإنجاز"
+                      />
+                      <span className="w-8 text-center text-[10px] tabular-nums text-neutral-400">100%</span>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Additional Details — collapsible like subtasks and attachments */}
+                <section className="space-y-3" aria-labelledby="task-extra-details-heading">
+                  <div className="flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormExtraDetailsCollapsed(c => !c)}
+                      className="flex items-center gap-2 group"
+                      aria-expanded={!formExtraDetailsCollapsed}
+                    >
+                      <Layers className="w-4 h-4 text-neutral-400" />
+                      <h3 id="task-extra-details-heading" className="text-sm font-semibold text-neutral-800 dark:text-neutral-100 group-hover:text-[#5267ff] transition-colors">تفاصيل إضافية</h3>
+                      <ChevronDown className={cn("w-3.5 h-3.5 text-neutral-400 transition-transform", formExtraDetailsCollapsed && "-rotate-90")} />
+                    </button>
+                    {((form.tags && form.tags.length > 0) || form.taskSource || form.projectName || (form.recurrence && form.recurrence.frequency !== "none")) && (
+                      <span className="text-xs text-neutral-400">
+                        {[
+                          form.tags && form.tags.length > 0 && `${form.tags.length} وسوم`,
+                          form.taskSource,
+                          form.projectName,
+                          form.recurrence && form.recurrence.frequency !== "none" && RECURRENCE_LABELS[form.recurrence.frequency],
+                        ].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
+                  </div>
+
+                  {!formExtraDetailsCollapsed && (
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 overflow-visible" ref={setFormDropdownRef}>
+
                   {/* Tags Pill */}
-                  <div className="relative">
-                    <button onClick={() => setFormDropdown(d => d === "tags" ? null : "tags")} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "tags" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                  <div className="relative overflow-visible">
+                    <button onClick={() => { setFormDropdown(d => d === "tags" ? null : "tags"); setTagSearch(""); setNewTag(""); setShowAddTag(false); }} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "tags" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الوسم:</span>
-                      <span className="truncate max-w-[120px] text-neutral-700 dark:text-neutral-200">{(form.tags && form.tags.length > 0) ? (form.tags.length > 1 ? `${form.tags.length} وسوم` : form.tags[0]) : "اختر الوسم"}</span>
+                      {(form.tags && form.tags.length > 0) ? (
+                        <div className="flex items-center gap-1 min-w-0">
+                          {form.tags.slice(0, 2).map(tag => {
+                            const tc = getTagColor(tag, form.tagColors);
+                            return <span key={tag} className={cn("px-1.5 py-0.5 rounded-full text-[10px] font-medium truncate", tc.light)}>{tag}</span>;
+                          })}
+                          {form.tags.length > 2 && <span className="text-neutral-400 text-xs">+{form.tags.length - 2}</span>}
+                        </div>
+                      ) : <span className="truncate max-w-[120px] text-neutral-400">اختر الوسم</span>}
                       <ChevronDown className={cn("w-3 h-3 ms-auto transition-transform shrink-0 text-neutral-400", formDropdown === "tags" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "tags" && (
-                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-3 min-w-[220px]">
-                        <p className="text-xs font-semibold text-neutral-400 mb-2">وسم</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {["تصميم","تطوير","تسويق","مراجعة","عاجل","مبيعات"].map(tag => (
-                            <button key={tag} onClick={() => { const cur = form.tags || []; const next = cur.includes(tag) ? cur.filter(t => t !== tag) : [...cur, tag]; setForm(f => ({ ...f, tags: next })); setFormTouched(t => new Set([...t, "tags"])); }} className={cn("px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors", (form.tags || []).includes(tag) ? "bg-teal-500 text-white" : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600")}>{tag}</button>
-                          ))}
+                      <div className="absolute right-0 top-full mt-1 z-[60] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-3 min-w-[280px] max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
+                        <p className="text-xs font-semibold text-neutral-400 mb-2">الوسوم</p>
+                        {/* Search */}
+                        <div className="relative mb-2.5">
+                          <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                          <input
+                            autoFocus
+                            value={tagSearch}
+                            onChange={(e) => setTagSearch(e.target.value)}
+                            placeholder="ابحث عن وسم..."
+                            className="h-8 w-full rounded-lg border border-neutral-200 bg-white py-1.5 ps-3 pe-8 text-xs outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-neutral-600 dark:bg-neutral-900 dark:focus:ring-indigo-900/30"
+                          />
+                        </div>
+                        {/* Tags list */}
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {allTagsList
+                            .filter(t => !tagSearch || t.includes(tagSearch))
+                            .map(tag => {
+                              const tc = getTagColor(tag, form.tagColors);
+                              const selected = (form.tags || []).includes(tag);
+                              return (
+                                <button
+                                  key={tag}
+                                  onClick={() => {
+                                    const cur = form.tags || [];
+                                    const next = cur.includes(tag) ? cur.filter(t => t !== tag) : [...cur, tag];
+                                    setForm(f => ({ ...f, tags: next }));
+                                    setFormTouched(t => new Set([...t, "tags"]));
+                                  }}
+                                  className={cn("px-2.5 py-1 rounded-full text-[11px] font-medium transition-all flex items-center gap-1.5", selected ? cn(tc.bg, tc.text, "shadow-sm") : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600")}
+                                >
+                                  <span className={cn("w-1.5 h-1.5 rounded-full", selected ? "bg-white/70" : tc.dot)} />
+                                  {tag}
+                                </button>
+                              );
+                            })}
+                          {allTagsList.filter(t => !tagSearch || t.includes(tagSearch)).length === 0 && (
+                            <p className="text-xs text-neutral-400 py-1">لا توجد وسوم مطابقة</p>
+                          )}
+                        </div>
+                        {/* Add new tag toggle */}
+                        <div className="border-t border-neutral-100 dark:border-neutral-700 pt-2.5">
+                          <button
+                            onClick={() => setShowAddTag(s => !s)}
+                            className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition-colors"
+                          >
+                            <Plus className={cn("w-3.5 h-3.5 transition-transform", showAddTag && "rotate-45")} />
+                            وسم جديد
+                          </button>
+                          {showAddTag && (
+                            <div className="mt-2">
+                              {/* Color picker */}
+                              <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                                {TAG_COLOR_PRESETS.map(c => (
+                                  <button
+                                    key={c.name}
+                                    onClick={() => setNewTagColor(c.name)}
+                                    className={cn("w-5 h-5 rounded-full transition-all", c.bg, newTagColor === c.name ? "ring-2 ring-offset-1 ring-neutral-400 dark:ring-offset-neutral-800 scale-110" : "hover:scale-110")}
+                                    title={c.name}
+                                  />
+                                ))}
+                              </div>
+                              {/* Input + add button */}
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  value={newTag}
+                                  onChange={(e) => setNewTag(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && newTag.trim()) {
+                                      const tag = newTag.trim();
+                                      if (!allTagsList.includes(tag)) setAllTagsList(l => [...l, tag]);
+                                      setForm(f => ({
+                                        ...f,
+                                        tags: [...(f.tags || []), tag],
+                                        tagColors: { ...(f.tagColors || {}), [tag]: newTagColor },
+                                      }));
+                                      setFormTouched(t => new Set([...t, "tags"]));
+                                      setNewTag("");
+                                      setShowAddTag(false);
+                                    }
+                                  }}
+                                  placeholder="اكتب اسم الوسم..."
+                                  className="h-8 flex-1 rounded-lg border border-neutral-200 bg-white py-1.5 px-3 text-xs outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-neutral-600 dark:bg-neutral-900 dark:focus:ring-indigo-900/30"
+                                />
+                                <button
+                                  onClick={() => {
+                                    if (!newTag.trim()) return;
+                                    const tag = newTag.trim();
+                                    if (!allTagsList.includes(tag)) setAllTagsList(l => [...l, tag]);
+                                    setForm(f => ({
+                                      ...f,
+                                      tags: [...(f.tags || []), tag],
+                                      tagColors: { ...(f.tagColors || {}), [tag]: newTagColor },
+                                    }));
+                                    setFormTouched(t => new Set([...t, "tags"]));
+                                    setNewTag("");
+                                    setShowAddTag(false);
+                                  }}
+                                  className="h-8 px-3 rounded-lg bg-indigo-500 text-white text-xs font-medium hover:bg-indigo-600 transition-colors shrink-0"
+                                >
+                                  إضافة
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
                   </div>
 
                   {/* Source Pill */}
-                  <div className="relative">
+                  <div className="relative overflow-visible">
                     <button onClick={() => setFormDropdown(d => d === "source" ? null : "source")} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "source" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">المصدر:</span>
                       <span className="truncate max-w-[120px] text-neutral-700 dark:text-neutral-200">{form.taskSource || "اختر المصدر"}</span>
                       <ChevronDown className={cn("w-3 h-3 ms-auto transition-transform shrink-0 text-neutral-400", formDropdown === "source" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "source" && (
-                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px]">
+                      <div className="absolute right-0 top-full mt-1 z-[60] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
                         <p className="text-xs font-semibold text-neutral-400 px-3 py-1.5">المصدر</p>
                         {SOURCES.map(s => (
                           <button key={s} onClick={() => { setForm(f => ({ ...f, taskSource: s })); setFormTouched(t => new Set([...t, "source"])); setFormDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right rounded-lg transition-colors", form.taskSource === s ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
@@ -4079,17 +4235,17 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   </div>
 
                   {/* Project Pill */}
-                  <div className="relative">
+                  <div className="relative overflow-visible">
                     <button onClick={() => { setFormDropdown(d => d === "project" ? null : "project"); setProjectSearch(""); }} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "project" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">المشروع:</span>
                       <span className="truncate max-w-[150px] text-neutral-700 dark:text-neutral-200">{form.projectName || "حدد المشروع"}</span>
                       <ChevronDown className={cn("w-3 h-3 ms-auto transition-transform shrink-0 text-neutral-400", formDropdown === "project" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "project" && (
-                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg min-w-[240px] max-h-[320px] flex flex-col overflow-hidden">
-                        <div className="p-2 border-b border-neutral-100 dark:border-neutral-700">
+                      <div className="absolute right-0 top-full mt-2 z-[60] flex min-w-[300px] max-h-[420px] flex-col overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.14)] dark:border-neutral-600 dark:bg-neutral-800 max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
+                        <div className="p-2.5 border-b border-gray-100 dark:border-neutral-700">
                           <div className="relative">
-                            <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                            <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                             <input
                               autoFocus
                               value={projectSearch}
@@ -4105,17 +4261,20 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                 }
                               }}
                               placeholder="ابحث أو اكتب اسم مشروع جديد..."
-                              className="w-full bg-neutral-50 dark:bg-neutral-900 border-none rounded-lg py-1.5 ps-3 pe-8 text-xs focus:ring-1 focus:ring-teal-500 outline-none"
+                              className="h-9 w-full rounded-lg border border-neutral-200 bg-white py-1.5 ps-3 pe-8 text-xs outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-neutral-600 dark:bg-neutral-900 dark:focus:ring-indigo-900/30"
                             />
                           </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-1.5">
+                        <div className="flex-1 overflow-y-auto p-2">
                           <p className="text-xs font-semibold text-neutral-400 px-3 py-1.5">المشروع</p>
                           {projectsList
                             .filter(p => p.toLowerCase().includes(projectSearch.toLowerCase()))
                             .map(p => (
-                            <button key={p} onClick={() => { setForm(f => ({ ...f, projectName: p })); setFormTouched(t => new Set([...t, "project"])); setFormDropdown(null); setProjectSearch(""); }} className={cn("w-full px-4 py-2 text-sm text-right rounded-lg transition-colors", form.projectName === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
-                              {p}
+                            <button key={p} onClick={() => { setForm(f => ({ ...f, projectName: p })); setFormTouched(t => new Set([...t, "project"])); setFormDropdown(null); setProjectSearch(""); }} className={cn("group flex min-h-9 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-right transition-colors", form.projectName === p ? "bg-indigo-50 text-neutral-800 font-medium dark:bg-indigo-900/20 dark:text-neutral-100" : "text-neutral-700 hover:bg-indigo-50/70 dark:text-neutral-200 dark:hover:bg-neutral-700")}>
+                              <span className="min-w-0 flex-1 truncate">{p}</span>
+                              <span className={cn("relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors", form.projectName === p ? "border-indigo-500 bg-indigo-500" : "border-indigo-400 bg-white dark:bg-neutral-800")}>
+                                {form.projectName === p && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+                              </span>
                             </button>
                           ))}
                           {projectSearch.trim() && !projectsList.some(p => p.toLowerCase() === projectSearch.trim().toLowerCase()) && (
@@ -4128,7 +4287,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                 setFormDropdown(null);
                                 setProjectSearch("");
                               }}
-                              className="w-full px-4 py-2 text-sm text-right rounded-lg transition-colors flex items-center gap-2 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 font-medium"
+                              className="w-full px-3 py-2 text-sm text-right rounded-lg transition-colors flex items-center gap-2 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 font-medium"
                             >
                               <Plus className="w-3.5 h-3.5 shrink-0" />
                               <span className="truncate">إنشاء مشروع "{projectSearch.trim()}"</span>
@@ -4143,7 +4302,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   </div>
 
                   {/* Recurrence Pill */}
-                  <div className="relative">
+                  <div className="relative overflow-visible">
                     <button onClick={() => setFormDropdown(d => d === "recurrence" ? null : "recurrence")} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "recurrence" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <Repeat className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">التكرار:</span>
@@ -4187,7 +4346,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         });
                       };
                       return (
-                      <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-2.5 min-w-[240px]">
+                      <div className="absolute right-0 top-full mt-1 z-[60] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-2.5 min-w-[240px] max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
                         <p className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 text-center mb-1.5">{RECURRENCE_MONTHS_AR[rMonth]} {rYear}</p>
                         {/* Day names */}
                         <div className="grid grid-cols-7 gap-0.5 mb-1">
@@ -4304,386 +4463,10 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       );
                     })()}
                   </div>
-                </div>
 
-                {/* Progress Pill */}
-                {(form.assignMembers && form.assignMembers.length > 1) ? (
-                  <div className="space-y-3 rounded-xl border border-neutral-200 bg-white p-3.5 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200">
-                            <Users className="h-4 w-4" />
-                          </span>
-                          <div>
-                            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">فريق المهمة</p>
-                            <p className="text-xs text-neutral-400">{form.assignMembers.length} موظفين</p>
-                          </div>
-                        </div>
-                      </div>
-                      <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700 dark:bg-teal-900/20 dark:text-teal-300">بإمكانك تعيين مالك للمهمة</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-2 border-t border-neutral-100 pt-3 sm:grid-cols-2 md:grid-cols-3 dark:border-neutral-700">
-                      {form.assignMembers.map(m => {
-                        const mp = (form.memberProgress || {})[m] ?? 0;
-                        const isTaskOwner = taskOwnerName(form) === m;
-                        return (
-                          <div key={m} className={cn("min-w-0 space-y-2 rounded-xl border p-2.5 transition-colors", isTaskOwner ? "border-teal-200 bg-teal-50/40 dark:border-teal-800 dark:bg-teal-900/10" : "border-neutral-100 bg-neutral-50/60 dark:border-neutral-700 dark:bg-neutral-900/40")}>
-                            <div className="flex min-w-0 items-center gap-2">
-                              <img src={avatarUrl(m)} alt={m} className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-white dark:ring-neutral-700" />
-                              <div className="min-w-0 flex-1">
-                                <span className="block truncate text-sm font-semibold text-neutral-800 dark:text-neutral-100">{m}</span>
-                              </div>
-                              {isTaskOwner && <span className="shrink-0 rounded-full bg-teal-100 px-1.5 py-0.5 text-[8px] font-bold text-teal-700 dark:bg-teal-900/30 dark:text-teal-300">المالك</span>}
-                              <label className="relative ms-auto flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center" title={isTaskOwner ? "إزالة ملكية المهمة" : "تعيين كمالك المهمة"}>
-                                <input
-                                  type="checkbox"
-                                  checked={isTaskOwner}
-                                  onChange={() => {
-                                    setForm(f => ({ ...f, taskOwner: isTaskOwner ? "" : m, ...(isTaskOwner ? {} : { assignee: m }) }));
-                                    setFormTouched(t => new Set([...t, "assignee"]));
-                                  }}
-                                  className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-black bg-white transition-colors checked:bg-black focus:outline-none focus:ring-2 focus:ring-black/20 dark:border-white dark:bg-neutral-900 dark:checked:bg-black"
-                                  aria-label={isTaskOwner ? `إزالة ${m} من ملكية المهمة` : `تعيين ${m} مالكًا للمهمة`}
-                                />
-                                <Check className="pointer-events-none absolute h-3.5 w-3.5 scale-75 text-white opacity-0 transition-all peer-checked:scale-100 peer-checked:opacity-100" strokeWidth={3} />
-                              </label>
-                            </div>
-                            {editing && (form.progressMode || "individual") === "individual" && <div className="flex min-w-0 items-center gap-2">
-                              <input
-                                type="range" min={0} max={100} value={mp}
-                                onChange={e => {
-                                  const val = parseInt(e.target.value);
-                                  setForm(f => {
-                                    const nextMp = { ...(f.memberProgress || {}), [m]: val };
-                                    const members = f.assignMembers || [];
-                                    const avg = members.length > 0 ? Math.round(members.reduce((s, x) => s + (nextMp[x] ?? 0), 0) / members.length) : val;
-                                    return { ...f, memberProgress: nextMp, progress: avg };
-                                  });
-                                }}
-                                className="flex-1 min-w-0 h-1.5 text-[#d1d1d1] accent-teal-500 cursor-pointer"
-                              />
-                              <span className="shrink-0 rounded bg-white px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-neutral-600 shadow-sm dark:bg-neutral-800 dark:text-neutral-300">{mp}%</span>
-                            </div>}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <fieldset className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-neutral-100 pt-3 dark:border-neutral-700">
-                      <legend className="sr-only">طريقة احتساب الإنجاز</legend>
-                      <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">طريقة الإنجاز:</span>
-                      <div className="flex items-center gap-1">
-                        <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200">
-                          <input
-                            type="radio"
-                            name="task-progress-mode"
-                            value="individual"
-                            checked={(form.progressMode || "individual") === "individual"}
-                            onChange={() => {
-                              setForm(f => ({ ...f, progressMode: "individual" }));
-                              setFormTouched(t => new Set([...t, "progress"]));
-                            }}
-                            className="h-4 w-4 cursor-pointer accent-black"
-                          />
-                          <span>إنجاز فردي</span>
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => setProgressModeHelp(current => current === "individual" ? null : "individual")}
-                          className={cn("rounded-full p-1 transition-colors", progressModeHelp === "individual" ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-200")}
-                          aria-label="تفاصيل الإنجاز الفردي"
-                          aria-expanded={progressModeHelp === "individual"}
-                        >
-                          <HelpCircle className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200">
-                          <input
-                            type="radio"
-                            name="task-progress-mode"
-                            value="collective"
-                            checked={form.progressMode === "collective"}
-                            onChange={() => {
-                              setForm(f => ({ ...f, progressMode: "collective" }));
-                              setFormTouched(t => new Set([...t, "progress"]));
-                            }}
-                            className="h-4 w-4 cursor-pointer accent-black"
-                          />
-                          <span>إنجاز جماعي</span>
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => setProgressModeHelp(current => current === "collective" ? null : "collective")}
-                          className={cn("rounded-full p-1 transition-colors", progressModeHelp === "collective" ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-700 dark:hover:text-neutral-200")}
-                          aria-label="تفاصيل الإنجاز الجماعي"
-                          aria-expanded={progressModeHelp === "collective"}
-                        >
-                          <HelpCircle className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </fieldset>
-
-                    <AnimatePresence initial={false} mode="wait">
-                      {progressModeHelp && (
-                        <motion.div
-                          key={progressModeHelp}
-                          initial={{ opacity: 0, height: 0, y: -4 }}
-                          animate={{ opacity: 1, height: "auto", y: 0 }}
-                          exit={{ opacity: 0, height: 0, y: -4 }}
-                          transition={{ duration: 0.16 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="flex items-start gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-xs leading-5 text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900/50 dark:text-neutral-300">
-                            <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-neutral-500" />
-                            <div>
-                              <p className="font-semibold text-neutral-800 dark:text-neutral-100">
-                                {progressModeHelp === "individual" ? "الإنجاز الفردي" : "الإنجاز الجماعي"}
-                              </p>
-                              <p>
-                                {progressModeHelp === "individual"
-                                  ? "لكل موظف نسبة إنجاز مستقلة لا تتأثر بإنجاز بقية الموظفين، وتُحسب نسبة المهمة من متوسط إنجاز أعضاء الفريق."
-                                  : "يشترك جميع الموظفين في نسبة إنجاز واحدة للمهمة؛ أي تحديث للنسبة ينعكس على الفريق والمهمة كاملة."}
-                              </p>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {editing && form.progressMode === "collective" && (
-                      <div className="rounded-xl border border-neutral-100 bg-neutral-50/70 p-3 dark:border-neutral-700 dark:bg-neutral-900/40">
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="flex items-center gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
-                            <SlidersHorizontal className="h-3.5 w-3.5" />
-                            الإنجاز الجماعي
-                          </span>
-                          <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-bold tabular-nums text-teal-700 dark:bg-teal-900/20 dark:text-teal-300">{form.progress ?? 0}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          value={form.progress || 0}
-                          onChange={e => setForm(f => ({ ...f, progress: parseInt(e.target.value) }))}
-                          className="h-2 w-full cursor-pointer accent-teal-500"
-                          aria-label="نسبة الإنجاز الجماعي"
-                        />
-                      </div>
-                    )}
                   </div>
-                ) : editing ? (
-                  <div className="rounded-xl border border-neutral-200 bg-white px-3 py-2.5 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-900/20 dark:text-teal-400">
-                          <SlidersHorizontal className="h-3.5 w-3.5" />
-                        </span>
-                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">نسبة الإنجاز</span>
-                      </div>
-                      <span className="min-w-[46px] rounded-full bg-teal-50 px-2.5 py-1 text-center text-xs font-bold tabular-nums text-teal-700 dark:bg-teal-900/20 dark:text-teal-300">{form.progress ?? 0}%</span>
-                    </div>
-                    <div className="mt-2 flex items-center gap-2" dir="ltr">
-                      <span className="w-7 text-center text-[10px] tabular-nums text-neutral-400">0%</span>
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={form.progress || 0}
-                        onChange={e => setForm(f => ({ ...f, progress: parseInt(e.target.value) }))}
-                        className="h-2 min-w-0 flex-1 cursor-pointer accent-teal-500"
-                        aria-label="نسبة الإنجاز"
-                      />
-                      <span className="w-8 text-center text-[10px] tabular-nums text-neutral-400">100%</span>
-                    </div>
-                  </div>
-                ) : null}
-
-                {/* Subtasks */}
-                <div className="space-y-2">
-                  {(form.subtasks || []).map((st) => (
-                    <div key={st.id}>
-                      {formEditingSubtaskId === st.id ? (
-                        /* Inline edit form */
-                        <div className="space-y-3 rounded-xl border border-neutral-200 bg-white p-3.5 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
-                          <label className="block text-sm font-medium text-neutral-500 dark:text-neutral-400">عنوان المهمة الفرعية <span className="text-red-500">*</span></label>
-                          <input
-                            value={formEditingSubtaskForm.title || ""}
-                            onChange={e => setFormEditingSubtaskForm(f => ({ ...f, title: e.target.value }))}
-                            placeholder="اكتب عنوانًا واضحًا للمهمة الفرعية"
-                            className="w-full border-b border-neutral-200 bg-transparent px-1 pb-2 text-base font-semibold text-neutral-900 outline-none placeholder:font-normal placeholder:text-neutral-300 focus:border-neutral-500 dark:border-neutral-700 dark:text-white"
-                          />
-                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                            {/* Status picker */}
-                            <div className="relative">
-                              <button onClick={() => setFormEditingSubtaskDropdown(d => d === "status" ? null : "status")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formEditingSubtaskDropdown === "status" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                                <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[formEditingSubtaskForm.status || "todo"].accent)} />
-                                <span className="text-neutral-400">الحالة:</span>
-                                <span>{STATUS_CONFIG[formEditingSubtaskForm.status || "todo"].label}</span>
-                                <ChevronDown className={cn("ms-auto w-3 h-3 transition-transform", formEditingSubtaskDropdown === "status" ? "rotate-180" : "")} />
-                              </button>
-                              {formEditingSubtaskDropdown === "status" && (
-                                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[140px]">
-                                  {(["todo","in-progress","in-review","completed","overdue"] as TaskStatus[]).map(s => (
-                                    <button key={s} onClick={() => { setFormEditingSubtaskForm(f => ({ ...f, status: s })); setFormEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-2 text-sm text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", (formEditingSubtaskForm.status || "todo") === s ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                      <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[s].accent)} />
-                                      {STATUS_CONFIG[s].label}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            {/* Priority picker */}
-                            <div className="relative">
-                              <button onClick={() => setFormEditingSubtaskDropdown(d => d === "priority" ? null : "priority")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formEditingSubtaskDropdown === "priority" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                                <Flag className={cn("w-3 h-3", PRIORITY_CONFIG[formEditingSubtaskForm.priority || "medium"].flag)} />
-                                <span className="text-neutral-400">الأولوية:</span>
-                                <span>{PRIORITY_CONFIG[formEditingSubtaskForm.priority || "medium"].label}</span>
-                                <ChevronDown className={cn("ms-auto w-3 h-3 transition-transform", formEditingSubtaskDropdown === "priority" ? "rotate-180" : "")} />
-                              </button>
-                              {formEditingSubtaskDropdown === "priority" && (
-                                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[140px]">
-                                  {(["low","medium","high","urgent"] as TaskPriority[]).map(p => (
-                                    <button key={p} onClick={() => { setFormEditingSubtaskForm(f => ({ ...f, priority: p })); setFormEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-2 text-sm text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", (formEditingSubtaskForm.priority || "medium") === p ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                      <Flag className={cn("w-3 h-3", PRIORITY_CONFIG[p].flag)} />
-                                      {PRIORITY_CONFIG[p].label}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            {/* Assignee picker */}
-                            <div className="relative">
-                              <button onClick={() => setFormEditingSubtaskDropdown(d => d === "assignee" ? null : "assignee")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formEditingSubtaskDropdown === "assignee" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                                <span className="text-neutral-400">الإسناد:</span>
-                                <span className="min-w-0 flex-1 truncate">{formEditingSubtaskForm.assignee || "اختر موظف"}</span>
-                                <ChevronDown className={cn("w-3 h-3 transition-transform", formEditingSubtaskDropdown === "assignee" ? "rotate-180" : "")} />
-                              </button>
-                              {formEditingSubtaskDropdown === "assignee" && (
-                                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-h-[200px] overflow-y-auto">
-                                  {ASSIGNEES.map(name => (
-                                    <button key={name} onClick={() => { setFormEditingSubtaskForm(f => ({ ...f, assignee: name })); setFormEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-2 text-sm text-right rounded-lg transition-colors", formEditingSubtaskForm.assignee === name ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
-                                      {name}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            {/* Due Date picker */}
-                            <div className="relative">
-                              <button onClick={() => setFormEditingSubtaskDropdown(d => d === "dueDate" ? null : "dueDate")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formEditingSubtaskDropdown === "dueDate" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                                <CalendarIcon className="w-3 h-3 text-neutral-400" />
-                                <span className="text-neutral-400">الموعد:</span>
-                                <span>{formEditingSubtaskForm.dueDate ? fmtDate(formEditingSubtaskForm.dueDate) : "حدد موعد"}</span>
-                                <ChevronDown className={cn("ms-auto w-3 h-3 transition-transform", formEditingSubtaskDropdown === "dueDate" ? "rotate-180" : "")} />
-                              </button>
-                              {formEditingSubtaskDropdown === "dueDate" && (
-                                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-2 min-w-[200px]">
-                                  <input type="date" value={formEditingSubtaskForm.dueDate || ""} onChange={e => { setFormEditingSubtaskForm(f => ({ ...f, dueDate: e.target.value })); setFormEditingSubtaskDropdown(null); }} className="w-full rounded-md border border-neutral-300 bg-white px-2 py-2 text-right text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:border-neutral-600 dark:bg-neutral-800" dir="ltr" />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-end gap-2 border-t border-neutral-100 pt-3 dark:border-neutral-700">
-                            <button onClick={() => { setFormEditingSubtaskId(null); setFormEditingSubtaskForm({}); setFormEditingSubtaskDropdown(null); }} className="rounded-lg px-3 py-2 text-xs font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors">إلغاء</button>
-                            <button onClick={() => { if (!formEditingSubtaskForm.title?.trim()) return; const next = (form.subtasks || []).map(s => s.id === st.id ? { ...s, ...formEditingSubtaskForm, title: formEditingSubtaskForm.title!.trim() } as Task : s); setForm(f => ({ ...f, subtasks: next })); setFormEditingSubtaskId(null); setFormEditingSubtaskForm({}); setFormEditingSubtaskDropdown(null); }} className="rounded-lg bg-black px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800 transition-colors">حفظ التعديلات</button>
-                          </div>
-                        </div>
-                      ) : (
-                        /* Summary card */
-                        <div className="flex items-center gap-2 p-2 rounded-lg border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800">
-                          <span className={cn("w-2 h-2 rounded-full shrink-0", STATUS_CONFIG[st.status]?.accent || "bg-gray-300")} />
-                          <span className="flex-1 text-sm text-neutral-700 dark:text-neutral-200 truncate text-right">{st.title}</span>
-                          <div className="flex items-center gap-1.5">
-                            <img src={avatarUrl(st.assignee)} alt={st.assignee} className="w-5 h-5 rounded-full object-cover" />
-                            <Flag className={cn("w-3.5 h-3.5", PRIORITY_CONFIG[st.priority]?.flag || "text-gray-400")} />
-                            <span className="text-[10px] text-neutral-500 dark:text-neutral-400">{st.dueDate}</span>
-                          </div>
-                          <button onClick={() => { setFormEditingSubtaskId(st.id); setFormEditingSubtaskForm({ ...st }); setFormEditingSubtaskDropdown(null); }} className="text-neutral-400 hover:text-teal-500"><Pencil className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => { const next = (form.subtasks || []).filter(s => s.id !== st.id); setForm(f => ({ ...f, subtasks: next })); }} className="text-neutral-400 hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  {/* Inline subtask form */}
-                  {formShowSubtaskForm && (
-                    <div className="space-y-3 rounded-xl border border-neutral-200 bg-white p-3.5 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
-                      <label className="block text-sm font-medium text-neutral-500 dark:text-neutral-400">عنوان المهمة الفرعية <span className="text-red-500">*</span></label>
-                      <input
-                        value={formSubtaskForm.title || ""}
-                        onChange={e => setFormSubtaskForm(f => ({ ...f, title: e.target.value }))}
-                        placeholder="اكتب عنوانًا واضحًا للمهمة الفرعية"
-                        className="w-full border-b border-neutral-200 bg-transparent px-1 pb-2 text-base font-semibold text-neutral-900 outline-none placeholder:font-normal placeholder:text-neutral-300 focus:border-neutral-500 dark:border-neutral-700 dark:text-white"
-                      />
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {/* Priority picker */}
-                        <div className="relative">
-                          <button onClick={() => setFormSubtaskDropdown(d => d === "priority" ? null : "priority")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formSubtaskDropdown === "priority" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                            <Flag className={cn("w-3 h-3", formSubtaskForm.priority ? PRIORITY_CONFIG[formSubtaskForm.priority].flag : "text-neutral-400")} />
-                            <span className="text-neutral-400">الأولوية:</span>
-                            <span>{formSubtaskForm.priority ? PRIORITY_CONFIG[formSubtaskForm.priority].label : "اختر"}</span>
-                            <ChevronDown className={cn("ms-auto w-3 h-3 transition-transform", formSubtaskDropdown === "priority" ? "rotate-180" : "")} />
-                          </button>
-                          {formSubtaskDropdown === "priority" && (
-                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[140px]">
-                              {(["low","medium","high","urgent"] as TaskPriority[]).map(p => (
-                                <button key={p} onClick={() => { setFormSubtaskForm(f => ({ ...f, priority: p })); setFormSubtaskDropdown(null); }} className={cn("w-full px-3 py-2 text-sm text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", formSubtaskForm.priority === p ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                  <Flag className={cn("w-3 h-3", PRIORITY_CONFIG[p].flag)} />
-                                  {PRIORITY_CONFIG[p].label}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        {/* Assignee picker */}
-                        <div className="relative">
-                          <button onClick={() => setFormSubtaskDropdown(d => d === "assignee" ? null : "assignee")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formSubtaskDropdown === "assignee" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                            {formSubtaskForm.assignee && <img src={avatarUrl(formSubtaskForm.assignee)} alt={formSubtaskForm.assignee} className="w-4 h-4 rounded-full object-cover" />}
-                            <span className="text-neutral-400">الإسناد:</span>
-                            <span className="min-w-0 flex-1 truncate">{formSubtaskForm.assignee || "اختر موظف"}</span>
-                            <ChevronDown className={cn("w-3 h-3 transition-transform", formSubtaskDropdown === "assignee" ? "rotate-180" : "")} />
-                          </button>
-                          {formSubtaskDropdown === "assignee" && (
-                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[160px] max-h-[200px] overflow-y-auto">
-                              {ASSIGNEES.map(name => (
-                                <button key={name} onClick={() => { setFormSubtaskForm(f => ({ ...f, assignee: name })); setFormSubtaskDropdown(null); }} className={cn("w-full px-3 py-2 text-sm text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", formSubtaskForm.assignee === name ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
-                                  <img src={avatarUrl(name)} alt={name} className="w-4 h-4 rounded-full object-cover" />
-                                  {name}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        {/* Due Date picker */}
-                        <div className="relative">
-                          <button onClick={() => setFormSubtaskDropdown(d => d === "dueDate" ? null : "dueDate")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formSubtaskDropdown === "dueDate" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
-                            <CalendarIcon className="w-3 h-3 text-neutral-400" />
-                            <span className="text-neutral-400">الموعد:</span>
-                            <span>{formSubtaskForm.dueDate ? fmtDate(formSubtaskForm.dueDate) : "حدد موعد"}</span>
-                            <ChevronDown className={cn("ms-auto w-3 h-3 transition-transform", formSubtaskDropdown === "dueDate" ? "rotate-180" : "")} />
-                          </button>
-                          {formSubtaskDropdown === "dueDate" && (
-                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-2 min-w-[200px]">
-                              <input type="date" value={formSubtaskForm.dueDate || ""} onChange={e => { setFormSubtaskForm(f => ({ ...f, dueDate: e.target.value })); setFormSubtaskDropdown(null); }} className="w-full rounded-md border border-neutral-300 bg-white px-2 py-2 text-right text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:border-neutral-600 dark:bg-neutral-800" dir="ltr" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-end gap-2 border-t border-neutral-100 pt-3 dark:border-neutral-700">
-                        <button onClick={() => { setFormShowSubtaskForm(false); setFormSubtaskDropdown(null); setFormSubtaskForm({}); }} className="rounded-lg px-3 py-2 text-xs font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors">إلغاء</button>
-                        <button onClick={() => { if (!formSubtaskForm.title?.trim()) return; const newSubtask: Task = { id: String(Date.now()), title: formSubtaskForm.title!.trim(), description: "", status: "todo", priority: formSubtaskForm.priority || "medium", dueDate: formSubtaskForm.dueDate || "", assignee: formSubtaskForm.assignee || "", progress: 0, projectName: form.projectName || "" }; const next = [...(form.subtasks || []), newSubtask]; setForm(f => ({ ...f, subtasks: next })); setFormShowSubtaskForm(false); setFormSubtaskDropdown(null); setFormSubtaskForm({}); }} className="rounded-lg bg-black px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800 transition-colors">إضافة المهمة</button>
-                      </div>
-                    </div>
                   )}
-
-                  <button onClick={() => setFormShowSubtaskForm(true)} className="flex items-center gap-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors">
-                    <div className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center"><CheckSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /></div>
-                    إضافة مهمة فرعية
-                  </button>
-                </div>
+                </section>
 
                 {/* Task attachments — shared by create and edit */}
                 <section className="space-y-3" aria-labelledby="task-attachments-heading">
@@ -4782,10 +4565,219 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   )}
                   </>
                   )}
+
                 </section>
 
+                {/* Subtasks — collapsible like attachments */}
+                <section className="space-y-3" aria-labelledby="task-subtasks-heading">
+                  <div className="flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormSubtasksCollapsed(c => !c)}
+                      className="flex items-center gap-2 group"
+                      aria-expanded={!formSubtasksCollapsed}
+                    >
+                      <ListChecks className="w-4 h-4 text-neutral-400" />
+                      <h3 id="task-subtasks-heading" className="text-sm font-semibold text-neutral-800 dark:text-neutral-100 group-hover:text-[#5267ff] transition-colors">المهام الفرعية</h3>
+                      <ChevronDown className={cn("w-3.5 h-3.5 text-neutral-400 transition-transform", formSubtasksCollapsed && "-rotate-90")} />
+                    </button>
+                    {(form.subtasks || []).length > 0 && (
+                      <span className="text-xs text-neutral-400">{(form.subtasks || []).length} مهمة</span>
+                    )}
                   </div>
+
+                  {!formSubtasksCollapsed && (
+                  <>
+                  <div className="space-y-2">
+                  {(form.subtasks || []).map((st) => (
+                    <div key={st.id}>
+                      {formEditingSubtaskId === st.id ? (
+                        /* Inline edit form */
+                        <div className="space-y-3 rounded-xl border border-neutral-200 bg-white p-3.5 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
+                          <label className="block text-sm font-medium text-neutral-500 dark:text-neutral-400">عنوان المهمة الفرعية <span className="text-red-500">*</span></label>
+                          <input
+                            value={formEditingSubtaskForm.title || ""}
+                            onChange={e => setFormEditingSubtaskForm(f => ({ ...f, title: e.target.value }))}
+                            placeholder="اكتب عنوانًا واضحًا للمهمة الفرعية"
+                            className="w-full border-b border-neutral-200 bg-transparent px-1 pb-2 text-base font-semibold text-neutral-900 outline-none placeholder:font-normal placeholder:text-neutral-300 focus:border-neutral-500 dark:border-neutral-700 dark:text-white"
+                          />
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                            {/* Status picker */}
+                            <div className="relative">
+                              <button onClick={() => setFormEditingSubtaskDropdown(d => d === "status" ? null : "status")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formEditingSubtaskDropdown === "status" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                                <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[formEditingSubtaskForm.status || "todo"].accent)} />
+                                <span className="text-neutral-400">الحالة:</span>
+                                <span>{STATUS_CONFIG[formEditingSubtaskForm.status || "todo"].label}</span>
+                                <ChevronDown className={cn("ms-auto w-3 h-3 transition-transform", formEditingSubtaskDropdown === "status" ? "rotate-180" : "")} />
+                              </button>
+                              {formEditingSubtaskDropdown === "status" && (
+                                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[140px]">
+                                  {(["todo","in-progress","in-review","completed","overdue"] as TaskStatus[]).map(s => (
+                                    <button key={s} onClick={() => { setFormEditingSubtaskForm(f => ({ ...f, status: s })); setFormEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-2 text-sm text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", (formEditingSubtaskForm.status || "todo") === s ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
+                                      <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[s].accent)} />
+                                      {STATUS_CONFIG[s].label}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            {/* Priority picker */}
+                            <div className="relative">
+                              <button onClick={() => setFormEditingSubtaskDropdown(d => d === "priority" ? null : "priority")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formEditingSubtaskDropdown === "priority" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                                <Flag className={cn("w-3 h-3", PRIORITY_CONFIG[formEditingSubtaskForm.priority || "medium"].flag)} />
+                                <span className="text-neutral-400">الأولوية:</span>
+                                <span>{PRIORITY_CONFIG[formEditingSubtaskForm.priority || "medium"].label}</span>
+                                <ChevronDown className={cn("ms-auto w-3 h-3 transition-transform", formEditingSubtaskDropdown === "priority" ? "rotate-180" : "")} />
+                              </button>
+                              {formEditingSubtaskDropdown === "priority" && (
+                                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[140px]">
+                                  {(["low","medium","high","urgent","emergency"] as TaskPriority[]).map(p => (
+                                    <button key={p} onClick={() => { setFormEditingSubtaskForm(f => ({ ...f, priority: p })); setFormEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-2 text-sm text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", (formEditingSubtaskForm.priority || "medium") === p ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
+                                      <Flag className={cn("w-3 h-3", PRIORITY_CONFIG[p].flag)} />
+                                      {PRIORITY_CONFIG[p].label}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            {/* Assignee picker */}
+                            <div className="relative">
+                              <button onClick={() => setFormEditingSubtaskDropdown(d => d === "assignee" ? null : "assignee")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formEditingSubtaskDropdown === "assignee" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                                <span className="text-neutral-400">الإسناد:</span>
+                                <span className="min-w-0 flex-1 truncate">{formEditingSubtaskForm.assignee || "اختر موظف"}</span>
+                                <ChevronDown className={cn("w-3 h-3 transition-transform", formEditingSubtaskDropdown === "assignee" ? "rotate-180" : "")} />
+                              </button>
+                              {formEditingSubtaskDropdown === "assignee" && (
+                                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-h-[200px] overflow-y-auto">
+                                  {ASSIGNEES.map(name => (
+                                    <button key={name} onClick={() => { setFormEditingSubtaskForm(f => ({ ...f, assignee: name })); setFormEditingSubtaskDropdown(null); }} className={cn("w-full px-3 py-2 text-sm text-right rounded-lg transition-colors", formEditingSubtaskForm.assignee === name ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
+                                      {name}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            {/* Due Date picker */}
+                            <div className="relative">
+                              <button onClick={() => setFormEditingSubtaskDropdown(d => d === "dueDate" ? null : "dueDate")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formEditingSubtaskDropdown === "dueDate" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                                <CalendarIcon className="w-3 h-3 text-neutral-400" />
+                                <span className="text-neutral-400">الموعد:</span>
+                                <span>{formEditingSubtaskForm.dueDate ? fmtDate(formEditingSubtaskForm.dueDate) : "حدد موعد"}</span>
+                                <ChevronDown className={cn("ms-auto w-3 h-3 transition-transform", formEditingSubtaskDropdown === "dueDate" ? "rotate-180" : "")} />
+                              </button>
+                              {formEditingSubtaskDropdown === "dueDate" && (
+                                <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-2 min-w-[200px]">
+                                  <input type="date" value={formEditingSubtaskForm.dueDate || ""} onChange={e => { setFormEditingSubtaskForm(f => ({ ...f, dueDate: e.target.value })); setFormEditingSubtaskDropdown(null); }} className="w-full rounded-md border border-neutral-300 bg-white px-2 py-2 text-right text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:border-neutral-600 dark:bg-neutral-800" dir="ltr" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-end gap-2 border-t border-neutral-100 pt-3 dark:border-neutral-700">
+                            <button onClick={() => { setFormEditingSubtaskId(null); setFormEditingSubtaskForm({}); setFormEditingSubtaskDropdown(null); }} className="rounded-lg px-3 py-2 text-xs font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors">إلغاء</button>
+                            <button onClick={() => { if (!formEditingSubtaskForm.title?.trim()) return; const next = (form.subtasks || []).map(s => s.id === st.id ? { ...s, ...formEditingSubtaskForm, title: formEditingSubtaskForm.title!.trim() } as Task : s); setForm(f => ({ ...f, subtasks: next })); setFormEditingSubtaskId(null); setFormEditingSubtaskForm({}); setFormEditingSubtaskDropdown(null); }} className="rounded-lg bg-black px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800 transition-colors">حفظ التعديلات</button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Summary card */
+                        <div className="flex items-center gap-2 p-2 rounded-lg border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+                          <span className={cn("w-2 h-2 rounded-full shrink-0", STATUS_CONFIG[st.status]?.accent || "bg-gray-300")} />
+                          <span className="flex-1 text-sm text-neutral-700 dark:text-neutral-200 truncate text-right">{st.title}</span>
+                          <div className="flex items-center gap-1.5">
+                            <img src={avatarUrl(st.assignee)} alt={st.assignee} className="w-5 h-5 rounded-full object-cover" />
+                            <Flag className={cn("w-3.5 h-3.5", PRIORITY_CONFIG[st.priority]?.flag || "text-gray-400")} />
+                            <span className="text-[10px] text-neutral-500 dark:text-neutral-400">{st.dueDate}</span>
+                          </div>
+                          <button onClick={() => { setFormEditingSubtaskId(st.id); setFormEditingSubtaskForm({ ...st }); setFormEditingSubtaskDropdown(null); }} className="text-neutral-400 hover:text-teal-500"><Pencil className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => { const next = (form.subtasks || []).filter(s => s.id !== st.id); setForm(f => ({ ...f, subtasks: next })); }} className="text-neutral-400 hover:text-red-500"><X className="w-3.5 h-3.5" /></button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Inline subtask form */}
+                  {formShowSubtaskForm && (
+                    <div className="space-y-3 rounded-xl border border-neutral-200 bg-white p-3.5 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
+                      <label className="block text-sm font-medium text-neutral-500 dark:text-neutral-400">عنوان المهمة الفرعية <span className="text-red-500">*</span></label>
+                      <input
+                        value={formSubtaskForm.title || ""}
+                        onChange={e => setFormSubtaskForm(f => ({ ...f, title: e.target.value }))}
+                        placeholder="اكتب عنوانًا واضحًا للمهمة الفرعية"
+                        className="w-full border-b border-neutral-200 bg-transparent px-1 pb-2 text-base font-semibold text-neutral-900 outline-none placeholder:font-normal placeholder:text-neutral-300 focus:border-neutral-500 dark:border-neutral-700 dark:text-white"
+                      />
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                        {/* Priority picker */}
+                        <div className="relative">
+                          <button onClick={() => setFormSubtaskDropdown(d => d === "priority" ? null : "priority")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formSubtaskDropdown === "priority" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                            <Flag className={cn("w-3 h-3", formSubtaskForm.priority ? PRIORITY_CONFIG[formSubtaskForm.priority].flag : "text-neutral-400")} />
+                            <span className="text-neutral-400">الأولوية:</span>
+                            <span>{formSubtaskForm.priority ? PRIORITY_CONFIG[formSubtaskForm.priority].label : "اختر"}</span>
+                            <ChevronDown className={cn("ms-auto w-3 h-3 transition-transform", formSubtaskDropdown === "priority" ? "rotate-180" : "")} />
+                          </button>
+                          {formSubtaskDropdown === "priority" && (
+                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[140px]">
+                              {(["low","medium","high","urgent","emergency"] as TaskPriority[]).map(p => (
+                                <button key={p} onClick={() => { setFormSubtaskForm(f => ({ ...f, priority: p })); setFormSubtaskDropdown(null); }} className={cn("w-full px-3 py-2 text-sm text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", formSubtaskForm.priority === p ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
+                                  <Flag className={cn("w-3 h-3", PRIORITY_CONFIG[p].flag)} />
+                                  {PRIORITY_CONFIG[p].label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {/* Assignee picker */}
+                        <div className="relative">
+                          <button onClick={() => setFormSubtaskDropdown(d => d === "assignee" ? null : "assignee")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formSubtaskDropdown === "assignee" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                            {formSubtaskForm.assignee && <img src={avatarUrl(formSubtaskForm.assignee)} alt={formSubtaskForm.assignee} className="w-4 h-4 rounded-full object-cover" />}
+                            <span className="text-neutral-400">الإسناد:</span>
+                            <span className="min-w-0 flex-1 truncate">{formSubtaskForm.assignee || "اختر موظف"}</span>
+                            <ChevronDown className={cn("w-3 h-3 transition-transform", formSubtaskDropdown === "assignee" ? "rotate-180" : "")} />
+                          </button>
+                          {formSubtaskDropdown === "assignee" && (
+                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg py-1.5 min-w-[160px] max-h-[200px] overflow-y-auto">
+                              {ASSIGNEES.map(name => (
+                                <button key={name} onClick={() => { setFormSubtaskForm(f => ({ ...f, assignee: name })); setFormSubtaskDropdown(null); }} className={cn("w-full px-3 py-2 text-sm text-right flex items-center gap-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors", formSubtaskForm.assignee === name ? "text-teal-600 font-semibold" : "text-neutral-700 dark:text-neutral-200")}>
+                                  <img src={avatarUrl(name)} alt={name} className="w-4 h-4 rounded-full object-cover" />
+                                  {name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {/* Due Date picker */}
+                        <div className="relative">
+                          <button onClick={() => setFormSubtaskDropdown(d => d === "dueDate" ? null : "dueDate")} className={cn("flex h-9 w-full items-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors", formSubtaskDropdown === "dueDate" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                            <CalendarIcon className="w-3 h-3 text-neutral-400" />
+                            <span className="text-neutral-400">الموعد:</span>
+                            <span>{formSubtaskForm.dueDate ? fmtDate(formSubtaskForm.dueDate) : "حدد موعد"}</span>
+                            <ChevronDown className={cn("ms-auto w-3 h-3 transition-transform", formSubtaskDropdown === "dueDate" ? "rotate-180" : "")} />
+                          </button>
+                          {formSubtaskDropdown === "dueDate" && (
+                            <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-2 min-w-[200px]">
+                              <input type="date" value={formSubtaskForm.dueDate || ""} onChange={e => { setFormSubtaskForm(f => ({ ...f, dueDate: e.target.value })); setFormSubtaskDropdown(null); }} className="w-full rounded-md border border-neutral-300 bg-white px-2 py-2 text-right text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 dark:border-neutral-600 dark:bg-neutral-800" dir="ltr" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-end gap-2 border-t border-neutral-100 pt-3 dark:border-neutral-700">
+                        <button onClick={() => { setFormShowSubtaskForm(false); setFormSubtaskDropdown(null); setFormSubtaskForm({}); }} className="rounded-lg px-3 py-2 text-xs font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors">إلغاء</button>
+                        <button onClick={() => { if (!formSubtaskForm.title?.trim()) return; const newSubtask: Task = { id: String(Date.now()), title: formSubtaskForm.title!.trim(), description: "", status: "todo", priority: formSubtaskForm.priority || "medium", dueDate: formSubtaskForm.dueDate || "", assignee: formSubtaskForm.assignee || "", progress: 0, projectName: form.projectName || "" }; const next = [...(form.subtasks || []), newSubtask]; setForm(f => ({ ...f, subtasks: next })); setFormShowSubtaskForm(false); setFormSubtaskDropdown(null); setFormSubtaskForm({}); }} className="rounded-lg bg-black px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800 transition-colors">إضافة المهمة</button>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
+
+                  {/* Add subtask button — matching attachments style */}
+                  <button onClick={() => setFormShowSubtaskForm(true)} className="flex items-center gap-2 group">
+                    <Plus className="w-4 h-4 text-neutral-400 group-hover:text-[#5267ff] transition-colors" />
+                    <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400 group-hover:text-[#5267ff] transition-colors">إضافة مهمة فرعية</span>
+                  </button>
+                  </>
+                  )}
+                </section>
+
+                </div>
+              </div>
 
                 {/* Activity sidebar - left 55% */}
                 <div className={cn(
@@ -5038,9 +5030,9 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
               </div>
 
               {/* Shared draft action bar — always available on details and activity tabs */}
-              <div className="shrink-0 min-h-[58px] px-3 sm:px-5 py-2.5 border-t border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex items-center justify-between gap-3">
+              <div className="shrink-0 min-h-[50px] px-2 sm:px-5 py-2 sm:py-2.5 border-t border-neutral-100 dark:border-neutral-800 bg-[#f9fbff] dark:bg-neutral-900 flex items-center justify-between gap-2 sm:gap-3">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className={cn("flex items-center gap-1.5 text-xs truncate", formIsDirty ? "text-amber-600" : "text-neutral-400")}>
+                  <span className={cn("hidden sm:flex items-center gap-1.5 text-xs truncate", formIsDirty ? "text-amber-600" : "text-neutral-400")}>
                     <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", formIsDirty ? "bg-amber-500" : "bg-teal-500")} />
                     {formIsDirty ? "تغييرات غير محفوظة" : editing ? "لا توجد تغييرات" : "المهمة جاهزة للإنشاء"}
                   </span>
@@ -5226,11 +5218,12 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   <div className="space-y-2 pt-1.5 border-t border-neutral-100 dark:border-neutral-700">
                     {dt.assignMembers.map(m => {
                       const mp = (dt.memberProgress || {})[m] ?? 0;
-                      const isTaskOwner = taskOwnerName(dt) === m;
                       return (
                         <div key={m} className="flex items-center gap-2">
                           <img src={avatarUrl(m)} alt={m} className="w-5 h-5 rounded-full object-cover shrink-0" />
-                          <span className="w-20 shrink-0 truncate text-xs font-medium text-neutral-700 dark:text-neutral-200" title={m}>{m}</span>
+                          <div className="flex min-w-0 flex-col">
+                            <span className="w-20 shrink-0 truncate text-xs font-medium text-neutral-700 dark:text-neutral-200" title={m}>{m}</span>
+                          </div>
                           {(dt.progressMode || "individual") === "individual" && <input
                             type="range" min={0} max={100} value={mp}
                             onChange={e => {
@@ -5240,20 +5233,10 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                               const avg = members.length > 0 ? Math.round(members.reduce((s, x) => s + (nextMp[x] ?? 0), 0) / members.length) : val;
                               updateTask(dt.id, { memberProgress: nextMp, progress: avg });
                             }}
-                            className="flex-1 h-1.5 text-[#d1d1d1] accent-teal-500 cursor-pointer"
+                            className="progress-slider flex-1 cursor-pointer"
                           />}
                           {(dt.progressMode || "individual") === "individual" && <span className="text-[10px] font-bold text-neutral-600 dark:text-neutral-300 w-8 text-left tabular-nums shrink-0">{mp}%</span>}
                           {dt.progressMode === "collective" && <span className="min-w-0 flex-1 truncate text-[9px] text-neutral-400">مشترك في {dt.progress}%</span>}
-                          <label className="relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center" title={isTaskOwner ? "إزالة ملكية المهمة" : "تعيين كمالك المهمة"}>
-                            <input
-                              type="checkbox"
-                              checked={isTaskOwner}
-                              onChange={() => updateTask(dt.id, { taskOwner: isTaskOwner ? "" : m })}
-                              className="peer h-5 w-5 cursor-pointer appearance-none rounded border-2 border-black bg-white transition-colors checked:bg-black focus:outline-none focus:ring-2 focus:ring-black/20 dark:border-white dark:bg-neutral-900 dark:checked:bg-black"
-                              aria-label={isTaskOwner ? `إزالة ${m} من ملكية المهمة` : `تعيين ${m} مالكًا للمهمة`}
-                            />
-                            <Check className="pointer-events-none absolute h-3.5 w-3.5 scale-75 text-white opacity-0 transition-all peer-checked:scale-100 peer-checked:opacity-100" strokeWidth={3} />
-                          </label>
                         </div>
                       );
                     })}
@@ -5275,7 +5258,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         <span className="text-neutral-500 dark:text-neutral-400">النسبة المشتركة</span>
                         <span className="font-bold tabular-nums text-teal-700 dark:text-teal-300">{dt.progress}%</span>
                       </div>
-                      <input type="range" min={0} max={100} value={dt.progress} onChange={e => updateTask(dt.id, { progress: parseInt(e.target.value || "0", 10) || 0 })} className="h-1.5 w-full cursor-pointer accent-teal-500" />
+                      <input type="range" min={0} max={100} value={dt.progress} onChange={e => updateTask(dt.id, { progress: parseInt(e.target.value || "0", 10) || 0 })} className="progress-slider w-full cursor-pointer" />
                     </div>
                   )}
                 </div>
@@ -5284,7 +5267,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   <label className="block text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-1.5">نسبة الإنجاز: {dt.progress}%</label>
                   <input type="range" min={0} max={100} value={dt.progress}
                     onChange={e => updateTask(dt.id, { progress: parseInt(e.target.value || "0", 10) || 0 })}
-                    className="w-full accent-teal-500" />
+                    className="progress-slider w-full cursor-pointer" />
                 </div>
               )
             )}

@@ -250,7 +250,7 @@ export default function AttendanceDashboard() {
   }, [rows, totals]);
 
   return (
-    <div dir="rtl" className="min-h-screen">
+    <div dir="rtl" className="min-h-screen" style={{ ["--page-max-w" as string]: "calc(92% + 20px)" }}>
       <div className="mx-auto max-w-[var(--page-max-w)] px-1 sm:px-2 py-3 sm:py-6 space-y-4 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:gap-4">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>

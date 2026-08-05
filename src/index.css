@@ -67,6 +67,14 @@
   background-color: #0b141a;
   background-image: none;
 }
+.wa-message-out {
+  overflow: visible;
+  border-top-right-radius: 0 !important;
+}
+.wa-message-in {
+  overflow: visible;
+  border-top-left-radius: 0 !important;
+}
 .wa-message-out::before,
 .wa-message-in::before {
   content: "";
@@ -90,6 +98,50 @@
 }
 .dark .wa-message-in::before {
   background-color: #202c33;
+}
+
+/* Progress range slider — gray track, teal thumb */
+input[type="range"].progress-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+input[type="range"].progress-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: #e5e5e5;
+}
+input[type="range"].progress-slider::-moz-range-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: #e5e5e5;
+}
+input[type="range"].progress-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -4px;
+  border-radius: 9999px;
+  background: #14b8a6;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  cursor: pointer;
+}
+input[type="range"].progress-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: #14b8a6;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  cursor: pointer;
+}
+.dark input[type="range"].progress-slider::-webkit-slider-runnable-track {
+  background: #404040;
+}
+.dark input[type="range"].progress-slider::-moz-range-track {
+  background: #404040;
 }
 
 /* Prevent zoom on iOS for dropdown menus */

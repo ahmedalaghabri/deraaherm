@@ -284,6 +284,7 @@ const InboxPage: React.FC<InboxPageProps> = ({ onViewDetails, transactions: prop
     <div
       dir="rtl"
       className="min-h-screen"
+      style={{ ["--page-max-w" as string]: "calc(92% + 20px)" }}
     >
       <div className="mx-auto max-w-[var(--page-max-w)] px-1 sm:px-2 py-3 sm:py-6 space-y-4 sm:space-y-6">
         <motion.div

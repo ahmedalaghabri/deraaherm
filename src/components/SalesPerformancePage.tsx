@@ -53,14 +53,15 @@ const _FIRST = ["أحمد","محمد","عبدالله","خالد","فهد","سع
 const _LAST  = ["السلمي","الشمري","الدوسري","العمري","الحربي","النجار","الزهراني","القرني","الغامدي","الحسن","البلوي","المطيري","الرشيدي","القحطاني","العتيبي","الحمدان","الغريب","العجمي","العنزي","الرشيد","الشمراني","الجهني","الشريف","السبيعي","الحكمي","الجبير","الفيفي","الهاجري","الكثيري","البقمي","الصبيحي","الرويلي","الأنصاري","التميمي","القرشي","السهلي","الزيد","البسام","العيسى","العساف","الفضل","النويصر","الدخيل","الشايع","البراهيم","الموسى","الحمود","الصالح","المنصور","الخالدي"];
 const _SFX   = ["العليا","المملكة","النزهة","الروضة","الملقا","الياسمين","الأندلس","السلام","الخليج","المزون","الراشد","النسيم","الوصل","الريان","الفيصلية","العقيق","حراء","النور","الصفاء","الجوهرة","البحر","الكورنيش","الفردوس","الغدير","التلال","الأفنان","البستان","الزيتون","الفلاح","الدانة","الهدى","المشرق","الرفيعة","الأمل","الريف","الواجهة","السحاب","الربوة","القمة","الأفق"];
 
-// ── 13 Regions (10 original + 3 new) ──
+// ── 17 Regions (10 original + 3 international + 4 new Saudi divisions) ──
 const _REGION_META = [
   { n: "الرياض" },{ n: "الغربية" },{ n: "الخليج" },{ n: "الشمال" },{ n: "الجنوب" },
   { n: "الوسط"  },{ n: "الشرق"  },{ n: "تهامة"  },{ n: "نجد"    },{ n: "الحجاز" },
-  { n: "قطر"    },{ n: "الامارات" },{ n: "عمان" },
+  { n: "قطر - درعه قطر" },{ n: "الإمارات - درعه الامارات" },{ n: "عمان - درعه عمان" },
+  { n: "السعودية - درعه" },{ n: "السعودية - كيو اند ايه" },{ n: "السعودية - لايونيه" },{ n: "السعودية - لوسوماسا" },
 ];
 
-// ── 25 Areas (2–3 per region) ──
+// ── 37 Areas (2–3 per region) ──
 const _AREA_META: { n: string; ri: number }[] = [
   { n: "وسط الرياض",        ri: 0 },{ n: "شمال الرياض",       ri: 0 },{ n: "جنوب الرياض",      ri: 0 },
   { n: "جدة",               ri: 1 },{ n: "مكة المكرمة",       ri: 1 },{ n: "الطائف",            ri: 1 },
@@ -78,9 +79,26 @@ const _AREA_META: { n: string; ri: number }[] = [
   { n: "دبي",               ri: 11 },{ n: "أبوظبي",            ri: 11 },{ n: "الشارقة",          ri: 11 },
   // عمان (ri: 12)
   { n: "مسقط",              ri: 12 },{ n: "صلالة",             ri: 12 },{ n: "نزوى",             ri: 12 },
+  // السعودية - درعه (ri: 13)
+  { n: "الرياض",            ri: 13 },{ n: "جدة",               ri: 13 },{ n: "الدمام",            ri: 13 },
+  // السعودية - كيو اند ايه (ri: 14)
+  { n: "الرياض",            ri: 14 },{ n: "جدة",               ri: 14 },{ n: "الخبر",             ri: 14 },
+  // السعودية - لايونيه (ri: 15)
+  { n: "الرياض",            ri: 15 },{ n: "مكة المكرمة",       ri: 15 },{ n: "المدينة المنورة",   ri: 15 },
+  // السعودية - لوسوماسا (ri: 16)
+  { n: "الرياض",            ri: 16 },{ n: "جدة",               ri: 16 },{ n: "أبها",              ri: 16 },
 ];
 
 export const REGIONS = _REGION_META.map((r, i) => ({ id: `r${i + 1}`, name: `إقليم ${r.n}` }));
+
+// Region flag emojis
+const REGION_FLAGS: Record<string, string> = {
+  r1: "🇸🇦", r2: "🇸🇦", r3: "🇸🇦", r4: "🇸🇦", r5: "🇸🇦",
+  r6: "🇸🇦", r7: "🇸🇦", r8: "🇸🇦", r9: "🇸🇦", r10: "🇸🇦",
+  r11: "🇶🇦", r12: "🇦🇪", r13: "🇴🇲",
+  r14: "🇸🇦", r15: "🇸🇦", r16: "🇸🇦", r17: "🇸🇦",
+  "saudi-total": "🇸🇦",
+};
 
 export const AREAS = _AREA_META.map((a, i) => ({
   id: `a${i + 1}`,
@@ -88,7 +106,7 @@ export const AREAS = _AREA_META.map((a, i) => ({
   regionId: `r${a.ri + 1}`,
 }));
 
-// 127 supervisors: 100 original (4 per area × 25 areas) + 27 new (3 per area × 9 new areas)
+// 163 supervisors: 100 original (4 per area × 25 areas) + 63 new (3 per area × 21 new areas)
 export const SUPERVISORS = [
   ...Array.from({ length: 100 }, (_, i) => {
     const areaIdx = Math.floor(i / 4);              // area 0-24, 4 supervisors each
@@ -102,9 +120,9 @@ export const SUPERVISORS = [
       regionId: area.regionId,
     };
   }),
-  ...Array.from({ length: 27 }, (_, j) => {
+  ...Array.from({ length: 63 }, (_, j) => {
     const i = j + 100;                              // continue indexing from 100
-    const areaIdx = 25 + Math.floor(j / 3);          // new areas 25-33, 3 supervisors each
+    const areaIdx = 25 + Math.floor(j / 3);          // new areas 25-45, 3 supervisors each
     const area    = AREAS[areaIdx];
     const s1 = _ds(_dsk(i, 1, 31));
     const s2 = _ds(_dsk(i, 2, 43));
@@ -117,7 +135,7 @@ export const SUPERVISORS = [
   }),
 ];
 
-// 581 showrooms: 500 original (20 per area × 25 areas) + 81 new (3 per supervisor × 27 new supervisors)
+// 689 showrooms: 500 original (20 per area × 25 areas) + 189 new (3 per supervisor × 63 new supervisors)
 export const SHOWROOMS = [
   ...Array.from({ length: 500 }, (_, i) => {
     const areaIdx  = Math.floor(i / 20);            // area 0-24
@@ -133,7 +151,7 @@ export const SHOWROOMS = [
       supervisorId: `sup${supIdx + 1}`,
     };
   }),
-  ...Array.from({ length: 81 }, (_, j) => {
+  ...Array.from({ length: 189 }, (_, j) => {
     const i = j + 500;                              // continue indexing from 500
     const newSupIdx = Math.floor(j / 3);             // 0-26, which new supervisor
     const areaIdx   = 25 + Math.floor(newSupIdx / 3); // new area 25-33
@@ -150,7 +168,7 @@ export const SHOWROOMS = [
   }),
 ];
 
-// 743 sellers: 500 original (1 per showroom) + 243 new (3 per showroom × 81 new showrooms)
+// 1067 sellers: 500 original (1 per showroom) + 567 new (3 per showroom × 189 new showrooms)
 export const SELLERS = [
   ...Array.from({ length: 500 }, (_, i) => {
     const showroom   = SHOWROOMS[i];
@@ -180,7 +198,7 @@ export const SELLERS = [
       customers:    _rng(12, 130, _ds(_dsk(i, 99))),
     };
   }),
-  ...Array.from({ length: 243 }, (_, j) => {
+  ...Array.from({ length: 567 }, (_, j) => {
     const i = j + 500;                              // continue indexing from 500
     const showroomIdx = 500 + Math.floor(j / 3);     // 3 sellers per new showroom
     const showroom    = SHOWROOMS[showroomIdx];
@@ -213,12 +231,12 @@ export const SELLERS = [
 ];
 
 const CATEGORIES = [
-  { name: "الهدايا", pct: 90, color: "#00C9A7" },
-  { name: "العطور", pct: 80, color: "#00B4D8" },
-  { name: "العناية", pct: 78, color: "#F9A825" },
-  { name: "التجميل", pct: 64, color: "#4D8AFF" },
-  { name: "العود", pct: 45, color: "#845EC2" },
-  { name: "الإكسيسوار", pct: 31, color: "#E91E8C" },
+  { name: "الهدايا",    pct: 99.7, share: 7.7,  growth: 299,   color: "#00C9A7" },
+  { name: "العطور",     pct: 66.8, share: 39.1, growth: 128,   color: "#00B4D8" },
+  { name: "العناية",    pct: 46.7, share: 8,    growth: -13.7, color: "#F9A825" },
+  { name: "التجميل",    pct: 55.6, share: 11.7, growth: 38.7,  color: "#4D8AFF" },
+  { name: "العود",      pct: 96.2, share: 19.4, growth: 236,   color: "#845EC2" },
+  { name: "الإكسيسوار", pct: 89.9, share: 14,   growth: 143,   color: "#E91E8C" },
 ];
 
 // ─────────────────────────────────────────
@@ -2009,17 +2027,36 @@ export default function SalesPerformancePage({ onBack }: Props) {
   // View
   const [viewMode, setViewMode] = useState<ViewMode>("analytics");
 
+  // Category card tab
+  const [catTab, setCatTab] = useState<"achievement" | "growth">("achievement");
+
   // Table sorting
   const [sortKey, setSortKey] = useState<string>("sales");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [tablePage, setTablePage] = useState(1);
   const TABLE_PAGE_SIZE = 40;
 
-  // Keep the filters and KPI cards visible while scrolling on every viewport.
-  // Collapsing this area caused the cards to disappear and shifted the page
-  // content unexpectedly, especially on mobile.
-  const headerCollapsed = false;
+  // Scroll-based header behavior:
+  // - Analytics view: tabs stay sticky, filters hide on scroll
+  // - Table view: tabs hide on scroll, filters stay sticky
+  const [scrolledDown, setScrolledDown] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setScrolledDown(el.scrollTop > 40);
+        ticking = false;
+      });
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Calendar
   const daysInMonth = getDaysInMonth(year, month);
@@ -2206,7 +2243,7 @@ export default function SalesPerformancePage({ onBack }: Props) {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen flex flex-col">
+    <div dir="rtl" className="min-h-screen flex flex-col" style={{ ["--page-max-w" as string]: "calc(92% + 20px)" }}>
       {/* ── Fixed Header (filters + tabs) ── */}
       <PageHeader
         tabs={[
@@ -2219,10 +2256,11 @@ export default function SalesPerformancePage({ onBack }: Props) {
         active={filterType}
         onChange={(type) => { setFilterType(type as FilterType); resetTableFilters(); }}
         innerClassName="px-0 sm:px-2 rounded-xl overflow-hidden"
+        hideTabs={viewMode === "table" && scrolledDown}
       >
           {/* Filters and view mode */}
           <AnimatePresence initial={false}>
-          {(!headerCollapsed || viewMode === "table") && (
+          {(!scrolledDown || viewMode === "table") && (
           <motion.div
             key="filters-row"
             variants={{
@@ -2547,7 +2585,7 @@ export default function SalesPerformancePage({ onBack }: Props) {
         {/* ── KPI Cards ── */}
         <div className={cn(
           "transition-all duration-300 overflow-hidden",
-          headerCollapsed
+          (viewMode === "analytics" && scrolledDown)
             ? "opacity-0 max-h-0 !m-0 pointer-events-none"
             : "opacity-100 max-h-[3200px] md:max-h-[1600px]"
         )}>
@@ -2845,7 +2883,7 @@ export default function SalesPerformancePage({ onBack }: Props) {
               className="mt-4 space-y-4 mx-1 sm:mx-0">
 
               {/* Row: bar charts + trend */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1fr)] gap-4">
 
                 {/* Team/Showrooms/Sellers bar chart */}
                 <motion.div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }} whileHover={{ scale: 1.01 }}>
@@ -2860,13 +2898,40 @@ export default function SalesPerformancePage({ onBack }: Props) {
                   <TeamSummary data={barData} />
                 </motion.div>
 
-                {/* Category radial gauge chart */}
+                {/* Category card with tabs: achievement + growth */}
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">تحقيق الفئات</h3>
-                    <span className="text-xs bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 px-2.5 py-0.5 rounded-full font-medium">توزيع المبيعات</span>
+                    <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-700 rounded-lg p-0.5">
+                      <button
+                        onClick={() => setCatTab("achievement")}
+                        className={cn(
+                          "text-xs font-bold px-3 py-1.5 rounded-md transition-colors",
+                          catTab === "achievement"
+                            ? "bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 shadow-sm"
+                            : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
+                        )}
+                      >
+                        تحقيق الفئات
+                      </button>
+                      <button
+                        onClick={() => setCatTab("growth")}
+                        className={cn(
+                          "text-xs font-bold px-3 py-1.5 rounded-md transition-colors",
+                          catTab === "growth"
+                            ? "bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 shadow-sm"
+                            : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
+                        )}
+                      >
+                        نمو الفئات
+                      </button>
+                    </div>
+                    <span className="text-xs bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 px-2.5 py-0.5 rounded-full font-medium">
+                      {catTab === "achievement" ? "توزيع المبيعات" : "نمو المبيعات"}
+                    </span>
                   </div>
-                  {(() => {
+
+                  {catTab === "achievement" ? (
+                    (() => {
                     const activeCats = CATEGORIES.filter(c => c.pct > 0);
                     const size = 200;
                     const cx = size / 2;
@@ -2877,21 +2942,26 @@ export default function SalesPerformancePage({ onBack }: Props) {
                     return (
                       <div className="flex items-center gap-4">
                         {/* Labels on the left */}
-                        <div className="flex flex-col gap-2 flex-1">
+                        <div className="flex flex-col gap-3 flex-1 min-w-0">
                           {activeCats.map((cat, i) => (
-                            <div key={i} className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                                <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200">{cat.name}</span>
+                            <div key={i} className="flex items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                                  <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">{cat.name}</span>
+                                </div>
+                                <p className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium mt-0.5 mr-[18px] tabular-nums">
+                                  من الإجمالي {cat.share}%
+                                </p>
                               </div>
-                              <span className="text-sm font-bold" style={{ color: cat.color }}>{cat.pct}</span>
+                              <span className="text-base font-bold tabular-nums shrink-0" style={{ color: cat.color }}>{cat.pct}%</span>
                             </div>
                           ))}
                         </div>
                         {/* SVG radial gauge */}
-                        <motion.div className="shrink-0 flex flex-col items-center gap-2" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: "easeOut" }} whileHover={{ scale: 1.03 }}>
-                          <div style={{ width: size, height: size }}>
-                            <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="transform -rotate-90">
+                        <motion.div className="shrink-0 w-[45%] min-w-[150px] max-w-[200px] flex flex-col items-center gap-2" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: "easeOut" }} whileHover={{ scale: 1.03 }}>
+                          <div className="w-full">
+                            <svg viewBox={`0 0 ${size} ${size}`} className="transform -rotate-90 w-full h-auto">
                               {activeCats.map((cat, i) => {
                                 const r = maxR - i * (strokeW + gap);
                                 const circ = 2 * Math.PI * r;
@@ -2916,7 +2986,58 @@ export default function SalesPerformancePage({ onBack }: Props) {
                         </motion.div>
                       </div>
                     );
-                  })()}
+                    })()
+                  ) : (
+                    (() => {
+                    const activeCats = CATEGORIES.filter(c => c.pct > 0);
+                    const maxGrowth = Math.max(...activeCats.map(c => Math.abs(c.growth)), 1);
+                    return (
+                      <div className="flex flex-col gap-3">
+                        {activeCats.map((cat, i) => {
+                          const isPositive = cat.growth >= 0;
+                          const barW = Math.min(Math.abs(cat.growth) / maxGrowth * 100, 100);
+                          return (
+                            <motion.div
+                              key={i}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: i * 0.1, duration: 0.4 }}
+                            >
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                                  <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200">{cat.name}</span>
+                                </div>
+                                <span
+                                  className={cn(
+                                    "text-sm font-bold tabular-nums shrink-0",
+                                    isPositive ? "text-emerald-600" : "text-rose-500"
+                                  )}
+                                >
+                                  {isPositive ? "+" : ""}{cat.growth}%
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-2 rounded-full bg-neutral-100 dark:bg-neutral-700 overflow-hidden">
+                                  <motion.div
+                                    className={cn("h-full rounded-full", isPositive ? "bg-emerald-400" : "bg-rose-400")}
+                                    style={{ backgroundColor: isPositive ? undefined : undefined }}
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${barW}%` }}
+                                    transition={{ delay: i * 0.12 + 0.2, duration: 0.7, ease: "easeOut" }}
+                                  />
+                                </div>
+                                <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium tabular-nums shrink-0 w-16 text-left">
+                                  حصة {cat.share}%
+                                </span>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    );
+                    })()
+                  )}
                 </div>
 
                 {/* Sales trend chart */}
@@ -2961,132 +3082,177 @@ export default function SalesPerformancePage({ onBack }: Props) {
               </div>
 
               {/* Target achievement — filter + drill aware mini cards */}
-              <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
-                    {(() => {
-                      if (drillPath.length > 0) {
-                        if (currentDrillLevel === "areas") return "أداء المناطق";
-                        if (currentDrillLevel === "supervisors") return "أداء المشرفين";
-                        if (currentDrillLevel === "showrooms") return "أداء المعارض";
-                        if (currentDrillLevel === "sellers") return "أداء البائعين";
-                        return "تفصيل الأداء";
-                      }
-                      if (filterType === "areas") return selectedAreas.size > 0 ? "أداء المناطق المحددة" : "أداء جميع المناطق";
-                      if (filterType === "supervisors") return selectedSupervisors.size > 0 ? "أداء المشرفين المحددين" : "أداء جميع المشرفين";
-                      if (filterType === "showrooms") return selectedShowrooms.size > 0 ? "أداء المعارض المحددة" : "أداء جميع المعارض";
-                      if (filterType === "sellers") return selectedSellers.size > 0 ? "أداء البائعين المحددين" : "أداء جميع البائعين";
-                      if (selectedSellers.size > 0) return "أداء البائعين المحددين";
-                      if (selectedShowrooms.size > 0) return "أداء بائعي المعارض المحددة";
-                      if (selectedSupervisors.size > 0) return "أداء معارض المشرفين المحددين";
-                      if (selectedAreas.size > 0) return "أداء مشرفي المناطق المحددة";
-                      if (selectedRegions.size > 0) return "أداء مناطق الأقاليم المحددة";
-                      return "أداء الأقاليم";
-                    })()}
-                  </h3>
-                  <span className="text-[12px] text-neutral-400 font-medium">انقر للتفصيل</span>
-                </div>
-                <div className="space-y-2">
-                  {(() => {
-                    // Helper: compute period-aware sales/target for a group of sellers
-                    function miniCard(id: string, name: string, sellers: typeof SELLERS[number][], onDrill?: () => void, noChevron = false) {
-                      const idxs = sellers.map(s => SELLERS.indexOf(s));
-                      const sales  = idxs.reduce((a, si) => a + sellerPeriodSales(si, year, month, period, selectedDay), 0);
-                      const target = idxs.reduce((a, si) => a + sellerPeriodTarget(si, year, month, period), 0);
-                      const pct = target > 0 ? Math.min(Math.round((sales / target) * 100), 130) : 0;
-                      if (sales === 0 && target === 0) return null;
-                      return noChevron ? (
-                        <div key={id} className="flex items-center gap-3 px-2 py-1.5">
-                          <div className="w-24 sm:w-36 shrink-0">
-                            <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200 truncate block">{name}</span>
-                            <span className="text-xs text-neutral-500 dark:text-neutral-400 font-medium tabular-nums">{sales.toLocaleString("en-US")}</span>
-                          </div>
-                          <div className="flex-1 h-2 rounded-full bg-neutral-100 dark:bg-neutral-700 overflow-hidden">
-                            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: pctColor(pct) }} />
-                          </div>
-                          <span className={cn("text-xs font-bold px-2 py-0.5 rounded-lg shrink-0 w-14 text-center", pctBg(pct))}>{pct}%</span>
+              {(() => {
+                // Helper: compute period-aware sales/target for a group of sellers
+                function miniCard(id: string, name: string, sellers: typeof SELLERS[number][], onDrill?: () => void, noChevron = false) {
+                  const idxs = sellers.map(s => SELLERS.indexOf(s));
+                  const sales  = idxs.reduce((a, si) => a + sellerPeriodSales(si, year, month, period, selectedDay), 0);
+                  const target = idxs.reduce((a, si) => a + sellerPeriodTarget(si, year, month, period), 0);
+                  const pct = target > 0 ? Math.min(Math.round((sales / target) * 100), 130) : 0;
+                  if (sales === 0 && target === 0) return null;
+                  return noChevron ? (
+                    <div key={id} className="flex items-center gap-3 px-2 py-1.5">
+                      <div className="w-24 sm:w-36 shrink-0">
+                        <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200 truncate block">{REGION_FLAGS[id] && <span className="ms-0.5 me-1">{REGION_FLAGS[id]}</span>}{name}</span>
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400 font-medium tabular-nums">{sales.toLocaleString("en-US")}</span>
+                      </div>
+                      <div className="flex-1 h-2 rounded-full bg-neutral-100 dark:bg-neutral-700 overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: pctColor(pct) }} />
+                      </div>
+                      <span className={cn("text-xs font-bold px-2 py-0.5 rounded-lg shrink-0 w-14 text-center", pctBg(pct))}>{pct}%</span>
+                    </div>
+                  ) : (
+                    <button key={id} onClick={onDrill}
+                      className="flex items-center gap-3 w-full text-right hover:bg-neutral-50 dark:bg-neutral-700 rounded-xl px-2 py-1.5 transition-colors group">
+                      <div className="w-24 sm:w-36 shrink-0">
+                        <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200 truncate block group-hover:text-[#B21063] transition-colors">{REGION_FLAGS[id] && <span className="ms-0.5 me-1">{REGION_FLAGS[id]}</span>}{name}</span>
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400 font-medium tabular-nums">{sales.toLocaleString("en-US")}</span>
+                      </div>
+                      <div className="flex-1 h-2 rounded-full bg-neutral-100 dark:bg-neutral-700 overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: pctColor(pct) }} />
+                      </div>
+                      <span className={cn("text-xs font-bold px-2 py-0.5 rounded-lg shrink-0 w-14 text-center", pctBg(pct))}>{pct}%</span>
+                      <ChevronLeft className="w-3.5 h-3.5 text-neutral-300 group-hover:text-[#B21063] shrink-0 transition-colors" />
+                    </button>
+                  );
+                }
+
+                // Determine if this is the default "all regions" view (no drill, no filters)
+                const isDefaultRegionsView = drillPath.length === 0 &&
+                  filterType !== "areas" && filterType !== "supervisors" && filterType !== "showrooms" && filterType !== "sellers" &&
+                  selectedSellers.size === 0 && selectedShowrooms.size === 0 && selectedSupervisors.size === 0 &&
+                  selectedAreas.size === 0 && selectedRegions.size === 0;
+
+                // Saudi region IDs (r1–r10 + r14–r17 Saudi divisions) and International region IDs (r11–r13)
+                const SAUDI_REGION_IDS = new Set([...REGIONS.slice(0, 10).map(r => r.id), "r14", "r15", "r16", "r17"]);
+                const INTL_REGION_IDS = new Set(["r11", "r12", "r13"]);
+
+                if (isDefaultRegionsView) {
+                  // Split into two side-by-side cards
+                  const saudiCards = REGIONS.filter(r => SAUDI_REGION_IDS.has(r.id) && filteredSellers.some(s => s.regionId === r.id))
+                    .map(r => miniCard(r.id, r.name, filteredSellers.filter(s => s.regionId === r.id), () => drillInto("regions", r.id, r.name)));
+                  const saudiTotalCard = miniCard("saudi-total", "إجمالي أقاليم السعودية", filteredSellers.filter(s => SAUDI_REGION_IDS.has(s.regionId)), undefined, true);
+                  const intlCards = REGIONS.filter(r => INTL_REGION_IDS.has(r.id) && filteredSellers.some(s => s.regionId === r.id))
+                    .map(r => miniCard(r.id, r.name, filteredSellers.filter(s => s.regionId === r.id), () => drillInto("regions", r.id, r.name)));
+
+                  return (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* Saudi Arabia regions card */}
+                      <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">أداء أقاليم السعودية</h3>
+                          <span className="text-[12px] text-neutral-400 font-medium">انقر للتفصيل</span>
                         </div>
-                      ) : (
-                        <button key={id} onClick={onDrill}
-                          className="flex items-center gap-3 w-full text-right hover:bg-neutral-50 dark:bg-neutral-700 rounded-xl px-2 py-1.5 transition-colors group">
-                          <div className="w-24 sm:w-36 shrink-0">
-                            <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200 truncate block group-hover:text-[#B21063] transition-colors">{name}</span>
-                            <span className="text-xs text-neutral-500 dark:text-neutral-400 font-medium tabular-nums">{sales.toLocaleString("en-US")}</span>
-                          </div>
-                          <div className="flex-1 h-2 rounded-full bg-neutral-100 dark:bg-neutral-700 overflow-hidden">
-                            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: pctColor(pct) }} />
-                          </div>
-                          <span className={cn("text-xs font-bold px-2 py-0.5 rounded-lg shrink-0 w-14 text-center", pctBg(pct))}>{pct}%</span>
-                          <ChevronLeft className="w-3.5 h-3.5 text-neutral-300 group-hover:text-[#B21063] shrink-0 transition-colors" />
-                        </button>
-                      );
-                    }
+                        <div className="space-y-2">{saudiCards}</div>
+                      </div>
+                      {/* International regions card */}
+                      <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">أداء أقاليم الدول</h3>
+                          <span className="text-[12px] text-neutral-400 font-medium">انقر للتفصيل</span>
+                        </div>
+                        <div className="space-y-2">{saudiTotalCard}{intlCards}</div>
+                      </div>
+                    </div>
+                  );
+                }
 
-                    // Drill path takes priority
-                    if (drillPath.length > 0) {
-                      const last = drillPath[drillPath.length - 1];
-                      if (currentDrillLevel === "areas") {
-                        return AREAS.filter(a => a.regionId === last.id && filteredSellers.some(s => s.areaId === a.id))
-                          .map(a => miniCard(a.id, a.name, filteredSellers.filter(s => s.areaId === a.id), () => drillInto("areas", a.id, a.name)));
-                      }
-                      if (currentDrillLevel === "supervisors") {
-                        return SUPERVISORS.filter(sup => sup.areaId === last.id && filteredSellers.some(s => s.supervisorId === sup.id))
-                          .map(sup => miniCard(sup.id, sup.name, filteredSellers.filter(s => s.supervisorId === sup.id), () => drillInto("supervisors", sup.id, sup.name)));
-                      }
-                      if (currentDrillLevel === "showrooms") {
-                        return SHOWROOMS.filter(sh => sh.supervisorId === last.id && filteredSellers.some(s => s.showroomId === sh.id))
-                          .map(sh => miniCard(sh.id, sh.name, filteredSellers.filter(s => s.showroomId === sh.id), () => drillInto("showrooms", sh.id, sh.name)));
-                      }
-                      if (currentDrillLevel === "sellers") {
-                        return filteredSellers.filter(s => s.showroomId === last.id)
-                          .map(s => miniCard(s.id, s.name, [s], () => drillInto("sellers", s.id, s.name)));
-                      }
-                      if (currentDrillLevel === "days") {
-                        return filteredSellers.map(s => miniCard(s.id, s.name, [s], undefined, true));
-                      }
-                    }
+                // Non-default views: single card with dynamic title
+                const cardTitle = (() => {
+                  if (drillPath.length > 0) {
+                    if (currentDrillLevel === "areas") return "أداء المناطق";
+                    if (currentDrillLevel === "supervisors") return "أداء المشرفين";
+                    if (currentDrillLevel === "showrooms") return "أداء المعارض";
+                    if (currentDrillLevel === "sellers") return "أداء البائعين";
+                    return "تفصيل الأداء";
+                  }
+                  if (filterType === "areas") return selectedAreas.size > 0 ? "أداء المناطق المحددة" : "أداء جميع المناطق";
+                  if (filterType === "supervisors") return selectedSupervisors.size > 0 ? "أداء المشرفين المحددين" : "أداء جميع المشرفين";
+                  if (filterType === "showrooms") return selectedShowrooms.size > 0 ? "أداء المعارض المحددة" : "أداء جميع المعارض";
+                  if (filterType === "sellers") return selectedSellers.size > 0 ? "أداء البائعين المحددين" : "أداء جميع البائعين";
+                  if (selectedSellers.size > 0) return "أداء البائعين المحددين";
+                  if (selectedShowrooms.size > 0) return "أداء بائعي المعارض المحددة";
+                  if (selectedSupervisors.size > 0) return "أداء معارض المشرفين المحددين";
+                  if (selectedAreas.size > 0) return "أداء مشرفي المناطق المحددة";
+                  if (selectedRegions.size > 0) return "أداء مناطق الأقاليم المحددة";
+                  return "أداء الأقاليم";
+                })();
 
-                    // No drill path — filterType is primary
-                    if (filterType === "areas") {
-                      return AREAS.filter(a => filteredSellers.some(s => s.areaId === a.id))
+                const cardContent = (() => {
+                  // Drill path takes priority
+                  if (drillPath.length > 0) {
+                    const last = drillPath[drillPath.length - 1];
+                    if (currentDrillLevel === "areas") {
+                      return AREAS.filter(a => a.regionId === last.id && filteredSellers.some(s => s.areaId === a.id))
                         .map(a => miniCard(a.id, a.name, filteredSellers.filter(s => s.areaId === a.id), () => drillInto("areas", a.id, a.name)));
                     }
-                    if (filterType === "supervisors") {
-                      return SUPERVISORS.filter(sup => filteredSellers.some(s => s.supervisorId === sup.id))
+                    if (currentDrillLevel === "supervisors") {
+                      return SUPERVISORS.filter(sup => sup.areaId === last.id && filteredSellers.some(s => s.supervisorId === sup.id))
                         .map(sup => miniCard(sup.id, sup.name, filteredSellers.filter(s => s.supervisorId === sup.id), () => drillInto("supervisors", sup.id, sup.name)));
                     }
-                    if (filterType === "showrooms") {
-                      return SHOWROOMS.filter(sh => filteredSellers.some(s => s.showroomId === sh.id))
+                    if (currentDrillLevel === "showrooms") {
+                      return SHOWROOMS.filter(sh => sh.supervisorId === last.id && filteredSellers.some(s => s.showroomId === sh.id))
                         .map(sh => miniCard(sh.id, sh.name, filteredSellers.filter(s => s.showroomId === sh.id), () => drillInto("showrooms", sh.id, sh.name)));
                     }
-                    if (filterType === "sellers") {
-                      return filteredSellers.map(s => miniCard(s.id, s.name, [s], () => drillInto("sellers", s.id, s.name)));
+                    if (currentDrillLevel === "sellers") {
+                      return filteredSellers.filter(s => s.showroomId === last.id)
+                        .map(s => miniCard(s.id, s.name, [s], () => drillInto("sellers", s.id, s.name)));
                     }
-                    // team tab — drill by most specific active filter
-                    if (selectedSellers.size > 0) {
-                      return filteredSellers.map(s => miniCard(s.id, s.name, [s], () => drillInto("sellers", s.id, s.name)));
+                    if (currentDrillLevel === "days") {
+                      return filteredSellers.map(s => miniCard(s.id, s.name, [s], undefined, true));
                     }
-                    if (selectedShowrooms.size > 0) {
-                      return filteredSellers.map(s => miniCard(s.id, s.name, [s], () => drillInto("sellers", s.id, s.name)));
-                    }
-                    if (selectedSupervisors.size > 0) {
-                      return SHOWROOMS.filter(sh => filteredSellers.some(s => s.showroomId === sh.id))
-                        .map(sh => miniCard(sh.id, sh.name, filteredSellers.filter(s => s.showroomId === sh.id), () => drillInto("showrooms", sh.id, sh.name)));
-                    }
-                    if (selectedAreas.size > 0) {
-                      return SUPERVISORS.filter(sup => filteredSellers.some(s => s.supervisorId === sup.id))
-                        .map(sup => miniCard(sup.id, sup.name, filteredSellers.filter(s => s.supervisorId === sup.id), () => drillInto("supervisors", sup.id, sup.name)));
-                    }
-                    if (selectedRegions.size > 0) {
-                      return AREAS.filter(a => filteredSellers.some(s => s.areaId === a.id))
-                        .map(a => miniCard(a.id, a.name, filteredSellers.filter(s => s.areaId === a.id), () => drillInto("areas", a.id, a.name)));
-                    }
-                    // Default: all regions
-                    return REGIONS.filter(r => filteredSellers.some(s => s.regionId === r.id))
-                      .map(r => miniCard(r.id, r.name, filteredSellers.filter(s => s.regionId === r.id), () => drillInto("regions", r.id, r.name)));
-                  })()}
-                </div>
-              </div>
+                  }
+
+                  // No drill path — filterType is primary
+                  if (filterType === "areas") {
+                    return AREAS.filter(a => filteredSellers.some(s => s.areaId === a.id))
+                      .map(a => miniCard(a.id, a.name, filteredSellers.filter(s => s.areaId === a.id), () => drillInto("areas", a.id, a.name)));
+                  }
+                  if (filterType === "supervisors") {
+                    return SUPERVISORS.filter(sup => filteredSellers.some(s => s.supervisorId === sup.id))
+                      .map(sup => miniCard(sup.id, sup.name, filteredSellers.filter(s => s.supervisorId === sup.id), () => drillInto("supervisors", sup.id, sup.name)));
+                  }
+                  if (filterType === "showrooms") {
+                    return SHOWROOMS.filter(sh => filteredSellers.some(s => s.showroomId === sh.id))
+                      .map(sh => miniCard(sh.id, sh.name, filteredSellers.filter(s => s.showroomId === sh.id), () => drillInto("showrooms", sh.id, sh.name)));
+                  }
+                  if (filterType === "sellers") {
+                    return filteredSellers.map(s => miniCard(s.id, s.name, [s], () => drillInto("sellers", s.id, s.name)));
+                  }
+                  // team tab — drill by most specific active filter
+                  if (selectedSellers.size > 0) {
+                    return filteredSellers.map(s => miniCard(s.id, s.name, [s], () => drillInto("sellers", s.id, s.name)));
+                  }
+                  if (selectedShowrooms.size > 0) {
+                    return filteredSellers.map(s => miniCard(s.id, s.name, [s], () => drillInto("sellers", s.id, s.name)));
+                  }
+                  if (selectedSupervisors.size > 0) {
+                    return SHOWROOMS.filter(sh => filteredSellers.some(s => s.showroomId === sh.id))
+                      .map(sh => miniCard(sh.id, sh.name, filteredSellers.filter(s => s.showroomId === sh.id), () => drillInto("showrooms", sh.id, sh.name)));
+                  }
+                  if (selectedAreas.size > 0) {
+                    return SUPERVISORS.filter(sup => filteredSellers.some(s => s.supervisorId === sup.id))
+                      .map(sup => miniCard(sup.id, sup.name, filteredSellers.filter(s => s.supervisorId === sup.id), () => drillInto("supervisors", sup.id, sup.name)));
+                  }
+                  if (selectedRegions.size > 0) {
+                    return AREAS.filter(a => filteredSellers.some(s => s.areaId === a.id))
+                      .map(a => miniCard(a.id, a.name, filteredSellers.filter(s => s.areaId === a.id), () => drillInto("areas", a.id, a.name)));
+                  }
+                  // Default: all regions (shouldn't reach here in non-default, but as fallback)
+                  return REGIONS.filter(r => filteredSellers.some(s => s.regionId === r.id))
+                    .map(r => miniCard(r.id, r.name, filteredSellers.filter(s => s.regionId === r.id), () => drillInto("regions", r.id, r.name)));
+                })();
+
+                return (
+                  <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-100 dark:border-neutral-700 shadow-sm p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-bold text-neutral-800 dark:text-neutral-200">{cardTitle}</h3>
+                      <span className="text-[12px] text-neutral-400 font-medium">انقر للتفصيل</span>
+                    </div>
+                    <div className="space-y-2">{cardContent}</div>
+                  </div>
+                );
+              })()}
             </motion.div>
           )}
 
