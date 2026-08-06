@@ -586,7 +586,7 @@ function RichTextEditor({
           event.preventDefault();
           document.execCommand("insertText", false, event.clipboardData.getData("text/plain"));
         }}
-        className={cn("task-rich-text", className)}
+        className={cn("task-rich-text h-[90px]", className)}
       />
       {!hasRichTextContent(value) && (
         <span className={cn("pointer-events-none absolute inset-x-0 top-0 px-3 py-2 text-sm text-neutral-400 dark:text-[#8696a0]", placeholderClassName)}>
