@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, Fragment } from "react";
-import { Plus, Search, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, MoreHorizontal, List, LayoutGrid, Calendar as CalendarIcon, ArrowUpDown, Megaphone, Flag, UserCircle, Paperclip, Bell, Calendar, Users, Building2, FolderOpen, Inbox, Clock, Check, CheckSquare, Send, Star, Play, FilePlus, Pencil, Trash2, Printer, FileDown, ExternalLink, Video, Layers, Smile, Mic, Camera, Image as ImageIcon, FileText, CheckCheck, Square, AtSign, MessageSquare, Bold, Italic, Underline, Strikethrough, Code2, AlignRight, AlignCenter, AlignLeft, Link2, ListChecks, Highlighter, Repeat } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, MoreHorizontal, List, LayoutGrid, Calendar as CalendarIcon, ArrowUpDown, Megaphone, Flag, UserCircle, Paperclip, Bell, Calendar, Users, Building2, FolderOpen, Inbox, Clock, Check, CheckSquare, Send, Star, Play, FilePlus, Pencil, Trash2, Printer, FileDown, ExternalLink, Video, Layers, Smile, Mic, Camera, Image as ImageIcon, FileText, CheckCheck, Square, AtSign, MessageSquare, Bold, Italic, Underline, Strikethrough, Code2, AlignRight, AlignCenter, AlignLeft, Link2, ListChecks, Highlighter, Repeat, HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../lib/utils";
 import { useAI } from "./ai/AIContext";
@@ -36,6 +36,7 @@ export interface Task {
   supervisor?: string;
   progressMode?: "individual" | "collective";
   memberProgress?: Record<string, number>;
+  memberRoles?: Record<string, string>;
   taskSource?: string;
   createdAt?: string;
   startDate?: string;
@@ -919,17 +920,28 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
   });
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
+  const [formReadOnly, setFormReadOnly] = useState(false);
   const [form, setForm] = useState<Partial<Task>>({ status: "todo", progress: 0 });
   const [activeTab, setActiveTab] = useState<"tasks" | "campaigns" | "teams">("tasks");
   const [detailMobileTab, setDetailMobileTab] = useState<"details" | "activity">("details");
   const [detailDropdown, setDetailDropdown] = useState<"status" | "assignee" | "priority" | "dueDate" | "source" | "project" | "tags" | null>(null);
   const [formDropdown, setFormDropdown] = useState<"status" | "assignee" | "supervisor" | "dueDate" | "priority" | "tags" | "source" | "project" | "recurrence" | null>(null);
+  const [formDropdownPos, setFormDropdownPos] = useState<{ top: number; right: number; width: number } | null>(null);
+  const openFormDropdown = (name: typeof formDropdown, e?: React.MouseEvent) => {
+    if (formDropdown === name) { setFormDropdown(null); setFormDropdownPos(null); return; }
+    if (e) {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      setFormDropdownPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right, width: rect.width });
+    }
+    setFormDropdown(name);
+  };
   const formDropdownRefs = useRef<HTMLDivElement[]>([]);
   const setFormDropdownRef = (el: HTMLDivElement | null) => {
     if (el && !formDropdownRefs.current.includes(el)) formDropdownRefs.current.push(el);
     if (!el) formDropdownRefs.current = formDropdownRefs.current.filter(e => e.isConnected);
   };
   const [assignStep, setAssignStep] = useState<"mode" | "list" | "members">("mode");
+  const [assignTab, setAssignTab] = useState<"me" | "employees" | "team" | "department" | "committee">("me");
   const assignDropdownRef = useRef<HTMLDivElement>(null);
   const [supervisorSearch, setSupervisorSearch] = useState("");
   const supervisorDropdownRef = useRef<HTMLDivElement>(null);
@@ -992,6 +1004,8 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
   const [formAttachmentsCollapsed, setFormAttachmentsCollapsed] = useState(true);
   const [formSubtasksCollapsed, setFormSubtasksCollapsed] = useState(true);
   const [formExtraDetailsCollapsed, setFormExtraDetailsCollapsed] = useState(true);
+  const [progressModeHelp, setProgressModeHelp] = useState<"individual" | "collective" | null>(null);
+  const [showRoleDetail, setShowRoleDetail] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(new Set());
   const [tableDensity, setTableDensity] = useState<"simple" | "full">("full");
@@ -1111,11 +1125,11 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
       } else if (supervisorDropdownRef.current && supervisorDropdownRef.current.contains(e.target as Node)) {
         // keep supervisor dropdown open
       } else {
-        if (formDropdownRefs.current.length > 0 && !formDropdownRefs.current.some(ref => ref.contains(e.target as Node))) setFormDropdown(null);
+        if (formDropdownRefs.current.length > 0 && !formDropdownRefs.current.some(ref => ref.contains(e.target as Node))) { setFormDropdown(null); setFormDropdownPos(null); }
         setAssignStep("mode");
       }
     };
-    const onScroll = () => setTableDropdown(null);
+    const onScroll = () => { setTableDropdown(null); if (formDropdown) { setFormDropdown(null); setFormDropdownPos(null); } };
     document.addEventListener("mousedown", handler);
     window.addEventListener("scroll", onScroll, true);
     return () => { document.removeEventListener("mousedown", handler); window.removeEventListener("scroll", onScroll, true); };
@@ -1203,6 +1217,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
       createdAt: today,
     };
     setEditing(null);
+    setFormReadOnly(false);
     editingOriginalRef.current = null;
     setForm(initialForm);
     formInitialSnapshotRef.current = taskDraftSnapshot(initialForm, true);
@@ -1213,6 +1228,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
   const openEdit = (task: Task) => {
     const initialForm = { ...task };
     setEditing(task);
+    setFormReadOnly(true);
     editingOriginalRef.current = { ...task };
     setForm(initialForm);
     formInitialSnapshotRef.current = taskDraftSnapshot(initialForm);
@@ -1233,6 +1249,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
       setTasks(allTasks => allTasks.map(task => task.id === editing.id ? { ...original, comments: task.comments || [] } : task));
     }
     setModalOpen(false);
+    setFormReadOnly(false);
     setFormMobileTab("details");
     setFormComment("");
     setFormErrors({});
@@ -1244,6 +1261,9 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
     setFormPanelCollapsed(false);
     setTextFormatSelection(null);
     setFormDropdown(null);
+    setFormDropdownPos(null);
+    setProgressModeHelp(null);
+    setShowRoleDetail(false);
     editingOriginalRef.current = null;
   };
   const openDetail = (t: Task) => {
@@ -2723,7 +2743,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     value={assignSearch}
                                     onChange={(e) => setAssignSearch(e.target.value)}
                                     placeholder="بحث..."
-                                    className="w-full bg-gray-50 dark:bg-neutral-900 border-none rounded-lg py-1.5 ps-3 pe-8 text-xs focus:ring-1 focus:ring-teal-500 outline-none"
+                                    className="w-full bg-gray-50 dark:bg-neutral-900 border-none rounded-lg py-1.5 ps-8 pe-3 text-xs focus:ring-1 focus:ring-teal-500 outline-none"
                                   />
                                 </div>
                               </div>
@@ -3444,13 +3464,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
               <div className="flex items-center justify-between px-3 sm:px-5 py-3 border-b border-neutral-100 dark:border-neutral-800 bg-[#FAFCFF] dark:bg-neutral-900 shrink-0">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <span className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5 shrink-0">
-                    <span className="px-2 py-0.5 rounded-md border border-neutral-200 dark:border-neutral-700 text-[11px] font-medium bg-white dark:bg-neutral-800">{editing ? "تعديل المهمة" : "مهمة جديدة"}</span>
+                    <span className="px-2 py-0.5 rounded-md border border-neutral-200 dark:border-neutral-700 text-[11px] font-medium bg-white dark:bg-neutral-800">{editing ? (formReadOnly ? "عرض المهمة" : "تعديل المهمة") : "مهمة جديدة"}</span>
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className={cn("hidden sm:flex items-center gap-1 text-xs", formIsDirty ? "text-amber-600" : "text-neutral-400")}>
-                    <span className={cn("w-1.5 h-1.5 rounded-full", formIsDirty ? "bg-amber-500" : "bg-teal-500")} />
-                    {formIsDirty ? "تغييرات غير محفوظة" : editing ? "لا توجد تغييرات" : "مسودة جديدة"}
+                  <span className={cn("hidden sm:flex items-center gap-1 text-xs", formIsDirty && !formReadOnly ? "text-amber-600" : "text-neutral-400")}>
+                    <span className={cn("w-1.5 h-1.5 rounded-full", formIsDirty && !formReadOnly ? "bg-amber-500" : "bg-teal-500")} />
+                    {formReadOnly ? "وضع العرض" : formIsDirty ? "تغييرات غير محفوظة" : editing ? "لا توجد تغييرات" : "مسودة جديدة"}
                   </span>
                   <button onClick={() => closeForm()} className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-neutral-400 hover:text-red-500 transition-colors" aria-label="إغلاق">
                     <X className="w-4 h-4" />
@@ -3466,11 +3486,11 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
               {/* Body - task details on the right / activity on the left */}
               <div className="relative flex-1 overflow-hidden flex flex-col sm:flex-row">
-                {/* Mobile dropdown backdrop */}
+                {/* Dropdown backdrop */}
                 {formDropdown && (
                   <div
-                    className="sm:hidden fixed inset-0 z-[75] bg-black/30 backdrop-blur-[1px]"
-                    onClick={() => setFormDropdown(null)}
+                    className="fixed inset-0 z-[75] max-sm:bg-black/40 max-sm:backdrop-blur-[1px]"
+                    onClick={() => { setFormDropdown(null); setFormDropdownPos(null); }}
                   />
                 )}
                 <button
@@ -3488,10 +3508,182 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                 {/* Main content - right 45% */}
                 <div className={cn(
                   "min-w-0 flex-1 sm:flex-none bg-[#F9FBFF] dark:bg-neutral-900 transition-[width] duration-300",
-                  formDropdown ? "overflow-visible max-sm:overflow-y-auto" : "overflow-y-auto",
+                  "overflow-y-auto",
                   formMobileTab === "activity" ? "hidden sm:block" : "",
                   formPanelCollapsed ? "sm:!hidden" : "sm:w-[45%]"
                 )}>
+                  {formReadOnly ? (
+                    /* ======== READ-ONLY VIEW MODE ======== */
+                    <div className="p-3 sm:p-5 space-y-4 sm:space-y-5" dir="rtl">
+                      {/* Title */}
+                      <div>
+                        <h2 className="text-lg font-bold text-neutral-900 dark:text-white leading-snug">{form.title || "بدون عنوان"}</h2>
+                      </div>
+
+                      {/* Status + Priority + Progress */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold", STATUS_CONFIG[form.status || "todo"].badgeBg, STATUS_CONFIG[form.status || "todo"].badgeText)}>
+                          <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[form.status || "todo"].headerDot)} />
+                          {STATUS_CONFIG[form.status || "todo"].label}
+                        </span>
+                        <span className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold", PRIORITY_CONFIG[form.priority || "medium"].bg, PRIORITY_CONFIG[form.priority || "medium"].text)}>
+                          {PRIORITY_CONFIG[form.priority || "medium"].label}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-300">
+                          {form.progress ?? 0}%
+                        </span>
+                        {form.progressMode === "collective" && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-400">إنجاز جماعي</span>
+                        )}
+                      </div>
+
+                      {/* Progress bar */}
+                      <div className="w-full bg-neutral-100 dark:bg-neutral-700 rounded-full h-2 overflow-hidden">
+                        <div className="h-full rounded-full bg-teal-500 transition-all" style={{ width: `${form.progress ?? 0}%` }} />
+                      </div>
+
+                      {/* Description */}
+                      {form.description && (
+                        <div className="rounded-xl border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-4">
+                          <h3 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 mb-2">الوصف</h3>
+                          <div className="text-sm leading-7 text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: form.description }} />
+                        </div>
+                      )}
+
+                      {/* Team Members with Progress */}
+                      {form.assignMembers && form.assignMembers.length > 0 && (() => {
+                        const members = form.assignMembers || [];
+                        const sup = form.supervisor && !members.includes(form.supervisor) ? [form.supervisor] : [];
+                        const allMembers = [...members, ...sup];
+                        const isCollective = form.progressMode === "collective";
+                        return (
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500">فريق العمل</h3>
+                            <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold", isCollective ? "bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-400" : "bg-sky-50 text-sky-600 dark:bg-sky-900/20 dark:text-sky-400")}>
+                              {isCollective ? "تنفيذ جماعي" : "تنفيذ فردي"}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {allMembers.map(m => {
+                              const mp = (form.memberProgress || {})[m] ?? 0;
+                              const isAssignee = members.includes(m);
+                              const isSupervisor = form.supervisor === m;
+                              return (
+                                <div key={m} className="min-w-0 rounded-xl border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-2.5">
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    <img src={avatarUrl(m)} alt={m} className="h-8 w-8 shrink-0 rounded-full object-cover ring-2 ring-white dark:ring-neutral-700" />
+                                    <div className="min-w-0 flex-1">
+                                      <span className="block truncate text-sm font-semibold text-neutral-800 dark:text-neutral-100">{m}</span>
+                                      <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                                        {isAssignee && <span className="inline-block rounded-full bg-indigo-100 px-1.5 py-0.5 text-[9px] font-bold text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">معني</span>}
+                                        {isSupervisor && <span className="inline-block rounded-full bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">مشرف</span>}
+                                      </div>
+                                    </div>
+                                    <span className="shrink-0 rounded-md bg-teal-50 px-2 py-0.5 text-[10px] font-bold tabular-nums text-teal-600 dark:bg-teal-900/20 dark:text-teal-400">{mp}%</span>
+                                  </div>
+                                  {(form.memberRoles || {})[m] && (
+                                    <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400 leading-5">{(form.memberRoles || {})[m]}</p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        );
+                      })()}
+
+                      {/* Info Grid */}
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Due Date */}
+                        {form.dueDate && (
+                          <div className="rounded-xl border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-3">
+                            <p className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 mb-1">تاريخ الاستحقاق</p>
+                            <p className="text-sm font-bold text-neutral-800 dark:text-neutral-100">{form.dueDate}</p>
+                          </div>
+                        )}
+                        {/* Project */}
+                        {form.projectName && (
+                          <div className="rounded-xl border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-3">
+                            <p className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 mb-1">المشروع</p>
+                            <p className="text-sm font-bold text-neutral-800 dark:text-neutral-100">{form.projectName}</p>
+                          </div>
+                        )}
+                        {/* Source */}
+                        {form.taskSource && (
+                          <div className="rounded-xl border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-3">
+                            <p className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 mb-1">المصدر</p>
+                            <p className="text-sm font-bold text-neutral-800 dark:text-neutral-100">{form.taskSource}</p>
+                          </div>
+                        )}
+                        {/* Recurrence */}
+                        {form.recurrence && form.recurrence.frequency !== "none" && (
+                          <div className="rounded-xl border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-3">
+                            <p className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 mb-1">التكرار</p>
+                            <p className="text-sm font-bold text-neutral-800 dark:text-neutral-100">{RECURRENCE_LABELS[form.recurrence.frequency]}</p>
+                          </div>
+                        )}
+                        {/* Created */}
+                        {form.createdAt && (
+                          <div className="rounded-xl border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-3">
+                            <p className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 mb-1">تاريخ الإنشاء</p>
+                            <p className="text-sm font-bold text-neutral-800 dark:text-neutral-100">{form.createdAt}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Tags */}
+                      {form.tags && form.tags.length > 0 && (
+                        <div>
+                          <h3 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 mb-2">الوسوم</h3>
+                          <div className="flex flex-wrap gap-1.5">
+                            {form.tags.map(tag => {
+                              const tc = getTagColor(tag, form.tagColors);
+                              return (
+                                <span key={tag} className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium", tc.light)}>
+                                  <span className={cn("w-1.5 h-1.5 rounded-full", tc.dot)} />
+                                  {tag}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Subtasks */}
+                      {(form.subtasks || []).length > 0 && (
+                        <div>
+                          <h3 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 mb-2">المهام الفرعية ({(form.subtasks || []).length})</h3>
+                          <div className="space-y-1.5">
+                            {(form.subtasks || []).map(st => (
+                              <div key={st.id} className="flex items-center gap-2.5 rounded-lg border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2">
+                                <span className={cn("w-2 h-2 rounded-full shrink-0", STATUS_CONFIG[st.status || "todo"].headerDot)} />
+                                <span className={cn("flex-1 text-sm", st.status === "completed" ? "line-through text-neutral-400" : "text-neutral-700 dark:text-neutral-200")}>{st.title}</span>
+                                <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium", STATUS_CONFIG[st.status || "todo"].badgeBg, STATUS_CONFIG[st.status || "todo"].badgeText)}>{STATUS_CONFIG[st.status || "todo"].label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Attachments */}
+                      {editing && editing.attachments && editing.attachments.length > 0 && (
+                        <div>
+                          <h3 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 mb-2">المرفقات ({editing.attachments.length})</h3>
+                          <div className="space-y-1.5">
+                            {editing.attachments.map((att: any, i: number) => (
+                              <div key={att.id || i} className="flex items-center gap-2.5 rounded-lg border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2">
+                                <FileText className="w-4 h-4 text-neutral-400 shrink-0" />
+                                <span className="flex-1 text-sm text-neutral-700 dark:text-neutral-200 truncate">{att.name}</span>
+                                <span className="text-[10px] text-neutral-400">{att.size}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                  /* ======== EDIT MODE ======== */
                   <div className="p-3 sm:p-5 space-y-4 sm:space-y-5" dir="rtl">
                     {/* Title */}
                     <div>
@@ -3534,14 +3726,14 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   {/* Status Pill */}
                   {editing && (
                   <div className="relative overflow-visible">
-                    <button onClick={() => setFormDropdown(d => d === "status" ? null : "status")} className={cn("flex h-9 w-full items-center justify-between gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "status" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                    <button onClick={(e) => openFormDropdown("status", e)} className={cn("flex h-9 w-full items-center justify-between gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "status" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <span className={cn("w-2 h-2 rounded-full shrink-0", STATUS_CONFIG[form.status || "todo"].headerDot)} />
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الحالة:</span>
                       <span className="truncate max-w-[120px] text-neutral-700 dark:text-neutral-200">{STATUS_CONFIG[form.status || "todo"].label}</span>
                       <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "status" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "status" && (
-                      <div className="absolute right-0 top-full mt-1 z-[60] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
+                      <div className="fixed z-[80] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-h-[50vh] overflow-y-auto shadow-2xl max-sm:!left-2 max-sm:!right-2 max-sm:!bottom-2 max-sm:!top-auto max-sm:!w-auto max-sm:rounded-t-2xl max-sm:max-h-[60vh]" style={{ top: formDropdownPos?.top, right: formDropdownPos?.right, width: formDropdownPos?.width }}>
                         <p className="text-xs font-semibold text-neutral-400 px-3 py-1.5">الحالة</p>
                         {(["todo","in-progress","in-review","completed","overdue"] as TaskStatus[]).map(s => (
                           <button key={s} onClick={() => { setForm(f => ({ ...f, status: s })); setFormTouched(t => new Set([...t, "status"])); setFormDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center gap-2 rounded-lg transition-colors", (form.status || "todo") === s ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
@@ -3557,7 +3749,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                   {/* Assignee Pill */}
                   <div className="relative min-w-0 overflow-visible" ref={assignDropdownRef}>
                     <div className="flex h-9 w-full items-center justify-between gap-2 px-3 rounded-lg border text-sm font-medium transition-colors bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60">
-                      <button onClick={() => { setFormDropdown(d => d === "assignee" ? null : "assignee"); setAssignStep("mode"); setAssignSearch(""); }} className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                      <button onClick={(e) => { openFormDropdown("assignee", e); setAssignTab(form.assignMode === "team" ? "team" : form.assignMode === "department" ? "department" : form.assignMode === "committee" ? "committee" : "employees"); setAssignStep("list"); setAssignSearch(""); }} className="flex min-w-0 flex-1 items-center justify-between gap-2">
                         <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الإسناد:</span>
                         <span className="min-w-0 flex-1 truncate text-neutral-700 dark:text-neutral-200">
                           {form.assignMode === "team" ? (form.assignTarget || "فريق غير محدد") :
@@ -3588,10 +3780,46 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       )}
                     </div>
                     {formDropdown === "assignee" && (
-                      <div className="absolute right-0 top-full mt-2 z-[60] flex min-w-[300px] max-h-[420px] flex-col overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.14)] dark:border-neutral-600 dark:bg-neutral-800 max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
-                        {/* Search header for lists */}
-                        {(assignStep === "list" || assignStep === "members") && (
-                          <div className="p-2.5 border-b border-gray-100 dark:border-neutral-700">
+                      <div className="fixed z-[80] flex min-w-[340px] max-h-[50vh] flex-col overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.14)] dark:border-neutral-600 dark:bg-neutral-800 shadow-2xl max-sm:!left-2 max-sm:!right-2 max-sm:!bottom-2 max-sm:!top-auto max-sm:!w-auto max-sm:rounded-t-2xl max-sm:max-h-[60vh]" style={{ top: formDropdownPos?.top, right: formDropdownPos?.right, width: formDropdownPos?.width }}>
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100 dark:border-neutral-700 shrink-0">
+                          <p className="text-xs font-bold text-neutral-800 dark:text-neutral-100">اختيار المعنيين</p>
+                          <span className="text-[10px] text-neutral-400">
+                            {(form.assignMembers || []).length > 0 ? `${(form.assignMembers || []).length} من المعنيين` : "لم يتم الاختيار"}
+                          </span>
+                        </div>
+                        {/* Tabs */}
+                        <div className="grid grid-cols-5 gap-0.5 px-1.5 py-1.5 border-b border-gray-100 dark:border-neutral-700 shrink-0">
+                          {([
+                            { id: "me", label: "أنا", icon: UserCircle },
+                            { id: "employees", label: "موظفون", icon: ListChecks },
+                            { id: "team", label: "فريق", icon: Users },
+                            { id: "committee", label: "لجان", icon: LayoutGrid },
+                            { id: "department", label: "أقسام", icon: Building2 },
+                          ] as const).map(tab => (
+                            <button
+                              key={tab.id}
+                              onClick={() => {
+                                setAssignTab(tab.id);
+                                setAssignSearch("");
+                                setAssignStep("list");
+                                setForm(f => ({
+                                  ...f,
+                                  assignMode: tab.id === "employees" ? "me" : tab.id,
+                                  ...(tab.id === "team" || tab.id === "department" || tab.id === "committee" ? { assignTarget: undefined, assignee: tab.id === "team" ? "فريق" : tab.id === "department" ? "قسم" : "لجنة" } : {}),
+                                }));
+                                setFormTouched(t => new Set([...t, "assignee"]));
+                              }}
+                              className={cn("flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg text-xs font-semibold transition-colors min-w-0", assignTab === tab.id ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-700")}
+                            >
+                              <tab.icon className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate w-full text-center">{tab.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                        {/* Search */}
+                        {assignTab !== "me" && (
+                          <div className="p-2.5 border-b border-gray-100 dark:border-neutral-700 shrink-0">
                             <div className="relative">
                               <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                               <input
@@ -3599,70 +3827,62 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                 value={assignSearch}
                                 onChange={(e) => setAssignSearch(e.target.value)}
                                 onKeyDown={(e) => {
-                                  if (e.key === "Enter" && assignStep === "members" && form.assignMode === "me" && assignSearch.trim() && !assigneesList.some(a => a.toLowerCase() === assignSearch.trim().toLowerCase())) {
+                                  if (e.key === "Enter" && assignTab === "employees" && assignSearch.trim() && !assigneesList.some(a => a.toLowerCase() === assignSearch.trim().toLowerCase())) {
                                     const name = assignSearch.trim();
                                     setAssigneesList(p => [...p, name]);
                                     setForm(f => { const next = [...(f.assignMembers || []), name]; return { ...f, assignMembers: next, assignee: next[0] }; });
                                     setAssignSearch("");
                                   }
                                 }}
-                                placeholder={assignStep === "members" && form.assignMode === "me" ? "ابحث أو اكتب اسم موظف جديد..." : "بحث..."}
-                                className="h-9 w-full rounded-lg border border-neutral-200 bg-white py-1.5 ps-3 pe-8 text-xs outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-neutral-600 dark:bg-neutral-900 dark:focus:ring-indigo-900/30"
+                                placeholder={assignTab === "employees" ? "ابحث أو اكتب اسم موظف جديد..." : "بحث..."}
+                                className="h-9 w-full rounded-lg border border-neutral-200 bg-white py-1.5 ps-8 pe-3 text-xs outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-neutral-600 dark:bg-neutral-900 dark:focus:ring-indigo-900/30"
                               />
                             </div>
                           </div>
                         )}
-                        <div className="flex-1 overflow-y-auto">
-                        {/* Step 1: Choose mode */}
-                        {assignStep === "mode" && (
-                          <div className="p-2">
-                            <div className="flex items-center justify-between px-3 py-2">
-                              <p className="text-xs font-semibold text-neutral-400">الاسناد إلى</p>
-                              {((form.assignMembers && form.assignMembers.length > 0) || form.assignee || form.assignTarget) && (
+                        {/* Selected members chips */}
+                        {(form.assignMembers || []).length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 border-b border-gray-100 dark:border-neutral-700 shrink-0">
+                            {(form.assignMembers || []).map(m => (
+                              <span key={m} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 text-[10px] font-medium text-indigo-700 dark:text-indigo-300">
+                                <img src={avatarUrl(m)} alt={m} className="h-3.5 w-3.5 rounded-full object-cover" />
+                                {m}
                                 <button
-                                  onClick={() => { setForm(f => ({ ...f, assignMode: undefined, assignee: "", assignTarget: undefined, assignMembers: [] })); setFormTouched(t => new Set([...t, "assignee"])); setFormDropdown(null); }}
-                                  className="text-xs text-red-500 hover:text-red-600 dark:text-red-400 font-medium transition-colors flex items-center gap-1"
+                                  onClick={() => {
+                                    setForm(f => {
+                                      const current = f.assignMembers || [];
+                                      const next = current.filter(x => x !== m);
+                                      return { ...f, assignMembers: next, assignee: next.length > 0 ? next[0] : undefined };
+                                    });
+                                  }}
+                                  className="shrink-0 rounded-full p-0.5 text-indigo-400 hover:bg-indigo-200 hover:text-indigo-700 dark:hover:bg-indigo-800/40 dark:hover:text-indigo-200 transition-colors"
+                                  title="إزالة"
                                 >
                                   <X className="w-3 h-3" />
-                                  إزالة الإسناد
                                 </button>
-                              )}
-                            </div>
-                            {((form.assignMembers && form.assignMembers.length > 0) || form.assignee) && (
-                              <div className="flex flex-wrap items-center gap-1.5 px-3 pb-2">
-                                <span className="text-[10px] font-semibold text-neutral-400 shrink-0">المسند لهم:</span>
-                                {(form.assignMembers && form.assignMembers.length > 0 ? form.assignMembers : form.assignee ? [form.assignee] : []).map(m => (
-                                  <span key={m} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 text-[10px] font-medium text-indigo-700 dark:text-indigo-300">
-                                    <img src={avatarUrl(m)} alt={m} className="h-3.5 w-3.5 rounded-full object-cover" />
-                                    {m}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "me", assignee: CURRENT_USER_NAME, assignTarget: undefined, assignMembers: [CURRENT_USER_NAME] })); setFormTouched(t => new Set([...t, "assignee"])); setFormDropdown(null); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors flex items-center gap-2", form.assignMode === "me" && form.assignMembers?.includes(CURRENT_USER_NAME) ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex-1 overflow-y-auto">
+                        {/* Tab: me */}
+                        {assignTab === "me" && (
+                          <div className="p-2">
+                            <p className="text-[10px] font-semibold text-neutral-400 px-3 py-1.5">إسناد المهمة لي</p>
+                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "me", assignee: CURRENT_USER_NAME, assignTarget: undefined, assignMembers: [CURRENT_USER_NAME] })); setFormTouched(t => new Set([...t, "assignee"])); }} className={cn("group flex min-h-9 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-right transition-colors", (form.assignMembers || []).includes(CURRENT_USER_NAME) ? "bg-indigo-50 text-neutral-800 font-medium dark:bg-indigo-900/20 dark:text-neutral-100" : "text-neutral-700 hover:bg-indigo-50/70 dark:text-neutral-200 dark:hover:bg-neutral-700")}>
                               <img src={avatarUrl(CURRENT_USER_NAME)} alt={CURRENT_USER_NAME} className="h-6 w-6 rounded-full object-cover" />
-                              إسناد المهمة لي
-                            </button>
-                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "me", assignee: undefined, assignTarget: undefined })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("members"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "me" && !form.assignMembers?.includes(CURRENT_USER_NAME) ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
-                              إسناد المهمة لموظف
-                            </button>
-                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "team", assignee: "فريق", assignTarget: undefined })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "team" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
-                              إسناد المهمة لفريق
-                            </button>
-                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "department", assignee: "قسم", assignTarget: undefined })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "department" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
-                              إسناد المهمة لقسم
-                            </button>
-                            <button onClick={() => { setForm(f => ({ ...f, assignMode: "committee", assignee: "لجنة", assignTarget: undefined })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("list"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignMode === "committee" ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
-                              إسناد المهمة للجنة
+                              <span className="min-w-0 flex-1 truncate">{CURRENT_USER_NAME}</span>
+                              <span className={cn("relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors", (form.assignMembers || []).includes(CURRENT_USER_NAME) ? "border-indigo-500 bg-indigo-500" : "border-indigo-400 bg-white dark:bg-neutral-800")}>
+                                {(form.assignMembers || []).includes(CURRENT_USER_NAME) && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+                              </span>
                             </button>
                           </div>
                         )}
-                        {/* Step 2: Choose list item (team/dept/committee) */}
-                        {assignStep === "list" && form.assignMode && form.assignMode !== "me" && (
+                        {/* Tabs: entity list (team/dept/committee) */}
+                        {(assignTab === "team" || assignTab === "department" || assignTab === "committee") && assignStep !== "members" && (
                           <div className="p-2">
-                            <button onClick={() => setAssignStep("mode")} className="text-xs text-gray-500 dark:text-neutral-400 hover:text-gray-600 px-3 py-1 mb-1 flex items-center gap-1">← رجوع</button>
-                            <p className="text-xs font-semibold text-gray-400 px-3 py-2">{form.assignMode === "team" ? "اختر الفريق" : form.assignMode === "department" ? "اختر القسم" : "اختر اللجنة"}</p>
-                            {(form.assignMode === "team" ? TEAMS : form.assignMode === "department" ? DEPARTMENTS : COMMITTEES)
+                            <p className="text-xs font-semibold text-gray-400 px-3 py-2">{assignTab === "team" ? "اختر الفريق" : assignTab === "department" ? "اختر القسم" : "اختر اللجنة"}</p>
+                            {(assignTab === "team" ? TEAMS : assignTab === "department" ? DEPARTMENTS : COMMITTEES)
                               .filter(item => item.name.toLowerCase().includes(assignSearch.toLowerCase()))
                               .map(item => (
                               <button key={item.name} onClick={() => { setForm(f => ({ ...f, assignTarget: item.name })); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("members"); setAssignSearch(""); }} className={cn("w-full px-3 py-2.5 text-sm text-right hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors", form.assignTarget === item.name ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-gray-700 dark:text-gray-200")}>
@@ -3671,11 +3891,11 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                             ))}
                           </div>
                         )}
-                        {/* Step 3: Choose members */}
-                        {assignStep === "members" && (
+                        {/* Entity members (team/dept/committee drill-down) */}
+                        {(assignTab === "team" || assignTab === "department" || assignTab === "committee") && assignStep === "members" && (
                           <div className="p-2">
-                            <button onClick={() => { if (form.assignMode === "me") setAssignStep("mode"); else setAssignStep("list"); setAssignSearch(""); }} className="text-xs text-gray-500 dark:text-neutral-400 hover:text-gray-600 px-3 py-1 mb-1 flex items-center gap-1">← رجوع</button>
-                            {form.assignMode !== "me" && form.assignTarget && (
+                            <button onClick={() => { setAssignStep("list"); setAssignSearch(""); }} className="text-xs text-gray-500 dark:text-neutral-400 hover:text-gray-600 px-3 py-1 mb-1 flex items-center gap-1">→ رجوع</button>
+                            {form.assignTarget && (
                               <>
                                 <div className="flex items-center justify-between px-3 py-2">
                                   <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">{form.assignTarget}</p>
@@ -3735,59 +3955,60 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                     </button>
                                   ));
                                 })()}
-                                <div className="px-2 pt-2 pb-1 sticky bottom-0 bg-white dark:bg-neutral-800 border-t border-gray-100 dark:border-neutral-700 mt-2">
-                                  <button onClick={() => { setFormDropdown(null); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("mode"); }} className="w-full rounded-lg bg-black py-2 text-xs font-semibold text-white transition-colors hover:bg-neutral-800">تم</button>
-                                </div>
-                              </>
-                            )}
-                            {form.assignMode === "me" && (
-                              <>
-                                <div className="flex items-center justify-between px-3 py-2">
-                                  <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">اختر الموظفين</p>
-                                  <span className="text-[10px] text-neutral-400">{(form.assignMembers || []).length} محدد</span>
-                                </div>
-                                <p className="text-[10px] font-semibold text-neutral-400 px-3 py-1">الأعضاء</p>
-                                {assigneesList
-                                  .filter(a => a.toLowerCase().includes(assignSearch.toLowerCase()))
-                                  .map(a => (
-                                  <button 
-                                    key={a} 
-                                    onClick={() => { 
-                                      setForm(f => {
-                                        const current = f.assignMembers || [];
-                                        const next = current.includes(a) ? current.filter(x => x !== a) : [...current, a];
-                                        return { ...f, assignMembers: next, assignee: next.length > 0 ? next[0] : undefined };
-                                      }); 
-                                    }} 
-                                    className={cn("group flex min-h-9 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-right transition-colors", (form.assignMembers || []).includes(a) ? "bg-indigo-50 text-neutral-800 font-medium dark:bg-indigo-900/20 dark:text-neutral-100" : "text-neutral-700 hover:bg-indigo-50/70 dark:text-neutral-200 dark:hover:bg-neutral-700")}
-                                  >
-                                    <span className="min-w-0 flex-1 truncate">{a}</span>
-                                    <span className={cn("relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors", (form.assignMembers || []).includes(a) ? "border-indigo-500 bg-indigo-500" : "border-indigo-400 bg-white dark:bg-neutral-800")}>
-                                      {(form.assignMembers || []).includes(a) && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
-                                    </span>
-                                  </button>
-                                ))}
-                                {assignSearch.trim() && !assigneesList.some(a => a.toLowerCase() === assignSearch.trim().toLowerCase()) && (
-                                  <button
-                                    onClick={() => {
-                                      const name = assignSearch.trim();
-                                      setAssigneesList(p => [...p, name]);
-                                      setForm(f => { const next = [...(f.assignMembers || []), name]; return { ...f, assignMembers: next, assignee: next[0] }; });
-                                      setAssignSearch("");
-                                    }}
-                                    className="w-full px-3 py-2 text-sm text-right rounded-lg transition-colors flex items-center gap-2 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 font-medium"
-                                  >
-                                    <Plus className="w-3.5 h-3.5 shrink-0" />
-                                    <span className="truncate">إضافة الموظف "{assignSearch.trim()}"</span>
-                                  </button>
-                                )}
-                                <div className="px-2 pt-2 pb-1 sticky bottom-0 bg-white dark:bg-neutral-800 border-t border-gray-100 dark:border-neutral-700 mt-2">
-                                  <button onClick={() => { setFormDropdown(null); setFormTouched(t => new Set([...t, "assignee"])); setAssignStep("mode"); }} className="w-full rounded-lg bg-black py-2 text-xs font-semibold text-white transition-colors hover:bg-neutral-800">تم</button>
-                                </div>
                               </>
                             )}
                           </div>
                         )}
+                        {/* Tab: employees */}
+                        {assignTab === "employees" && (
+                          <div className="p-2">
+                            <div className="flex items-center justify-between px-3 py-2">
+                              <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">اختر الموظفين</p>
+                              <span className="text-[10px] text-neutral-400">{(form.assignMembers || []).length} محدد</span>
+                            </div>
+                            <p className="text-[10px] font-semibold text-neutral-400 px-3 py-1">الأعضاء</p>
+                            {assigneesList
+                              .filter(a => a.toLowerCase().includes(assignSearch.toLowerCase()))
+                              .map(a => (
+                              <button
+                                key={a}
+                                onClick={() => {
+                                  setForm(f => {
+                                    const current = f.assignMembers || [];
+                                    const next = current.includes(a) ? current.filter(x => x !== a) : [...current, a];
+                                    return { ...f, assignMembers: next, assignee: next.length > 0 ? next[0] : undefined };
+                                  });
+                                }}
+                                className={cn("group flex min-h-9 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-right transition-colors", (form.assignMembers || []).includes(a) ? "bg-indigo-50 text-neutral-800 font-medium dark:bg-indigo-900/20 dark:text-neutral-100" : "text-neutral-700 hover:bg-indigo-50/70 dark:text-neutral-200 dark:hover:bg-neutral-700")}
+                              >
+                                <img src={avatarUrl(a)} alt={a} className="h-6 w-6 rounded-full object-cover" />
+                                <span className="min-w-0 flex-1 truncate">{a}</span>
+                                <span className={cn("relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors", (form.assignMembers || []).includes(a) ? "border-indigo-500 bg-indigo-500" : "border-indigo-400 bg-white dark:bg-neutral-800")}>
+                                  {(form.assignMembers || []).includes(a) && <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />}
+                                </span>
+                              </button>
+                            ))}
+                            {assignSearch.trim() && !assigneesList.some(a => a.toLowerCase() === assignSearch.trim().toLowerCase()) && (
+                              <button
+                                onClick={() => {
+                                  const name = assignSearch.trim();
+                                  setAssigneesList(p => [...p, name]);
+                                  setForm(f => { const next = [...(f.assignMembers || []), name]; return { ...f, assignMembers: next, assignee: next[0] }; });
+                                  setAssignSearch("");
+                                }}
+                                className="w-full px-3 py-2 text-sm text-right rounded-lg transition-colors flex items-center gap-2 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 font-medium"
+                              >
+                                <Plus className="w-3.5 h-3.5 shrink-0" />
+                                <span className="truncate">إضافة الموظف "{assignSearch.trim()}"</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                        </div>
+                        {/* Footer */}
+                        <div className="flex items-center gap-2 p-2.5 border-t border-gray-100 dark:border-neutral-700 shrink-0">
+                          <button onClick={() => { setFormDropdown(null); setFormDropdownPos(null); setFormTouched(t => new Set([...t, "assignee"])); }} className="flex-1 rounded-lg bg-teal-600 py-2 text-xs font-semibold text-white transition-colors hover:bg-teal-700">اعتماد ({(form.assignMembers || []).length})</button>
+                          <button onClick={() => { setFormDropdown(null); setFormDropdownPos(null); }} className="px-4 rounded-lg border border-neutral-200 dark:border-neutral-600 py-2 text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">إلغاء</button>
                         </div>
                       </div>
                     )}
@@ -3795,7 +4016,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
                   {/* Supervisor Pill */}
                   <div className="relative min-w-0 overflow-visible" ref={supervisorDropdownRef}>
-                    <button onClick={() => { setFormDropdown(d => d === "supervisor" ? null : "supervisor"); setSupervisorSearch(""); }} className={cn("flex h-9 w-full items-center justify-between gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "supervisor" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                    <button onClick={(e) => { openFormDropdown("supervisor", e); setSupervisorSearch(""); }} className={cn("flex h-9 w-full items-center justify-between gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "supervisor" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الإشراف:</span>
                       <span className="min-w-0 flex-1 truncate text-neutral-700 dark:text-neutral-200">
                         {form.supervisor || "اختر مشرفًا"}
@@ -3803,7 +4024,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       <ChevronDown className={cn("w-3 h-3 transition-transform shrink-0 text-neutral-400", formDropdown === "supervisor" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "supervisor" && (
-                      <div className="absolute right-0 top-full mt-2 z-[60] flex min-w-[260px] max-h-[360px] flex-col overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.14)] dark:border-neutral-600 dark:bg-neutral-800 max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
+                      <div className="fixed z-[80] flex min-w-[260px] max-h-[50vh] flex-col overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.14)] dark:border-neutral-600 dark:bg-neutral-800 shadow-2xl max-sm:!left-2 max-sm:!right-2 max-sm:!bottom-2 max-sm:!top-auto max-sm:!w-auto max-sm:rounded-t-2xl max-sm:max-h-[60vh]" style={{ top: formDropdownPos?.top, right: formDropdownPos?.right, width: formDropdownPos?.width }}>
                         <div className="p-2.5 border-b border-gray-100 dark:border-neutral-700">
                           <div className="relative">
                             <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
@@ -3812,7 +4033,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                               value={supervisorSearch}
                               onChange={(e) => setSupervisorSearch(e.target.value)}
                               placeholder="ابحث عن موظف..."
-                              className="h-9 w-full rounded-lg border border-neutral-200 bg-white py-1.5 ps-3 pe-8 text-xs outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-neutral-600 dark:bg-neutral-900 dark:focus:ring-indigo-900/30"
+                              className="h-9 w-full rounded-lg border border-neutral-200 bg-white py-1.5 ps-8 pe-3 text-xs outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-neutral-600 dark:bg-neutral-900 dark:focus:ring-indigo-900/30"
                             />
                           </div>
                         </div>
@@ -3855,7 +4076,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
                   {/* Delivery date */}
                   <div className="relative min-w-0 overflow-visible">
-                    <button onClick={() => setFormDropdown(d => d === "dueDate" ? null : "dueDate")} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "dueDate" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                    <button onClick={(e) => openFormDropdown("dueDate", e)} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "dueDate" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <CalendarIcon className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الموعد:</span>
                       <span className="truncate max-w-[120px] text-neutral-700 dark:text-neutral-200">
@@ -3864,7 +4085,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       <ChevronDown className={cn("w-3 h-3 ms-auto transition-transform shrink-0 text-neutral-400", formDropdown === "dueDate" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "dueDate" && (
-                      <div className="absolute right-0 top-full mt-1.5 z-[60] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-3 min-w-[300px] max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
+                      <div className="fixed z-[80] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-3 min-w-[300px] max-h-[50vh] overflow-y-auto shadow-2xl max-sm:!left-2 max-sm:!right-2 max-sm:!bottom-2 max-sm:!top-auto max-sm:!w-auto max-sm:rounded-t-2xl max-sm:max-h-[60vh]" style={{ top: formDropdownPos?.top, right: formDropdownPos?.right, width: formDropdownPos?.width }}>
                         <p className="text-xs font-semibold text-neutral-400 px-1 pb-2">تحديد موعد التسليم</p>
 
                         <div className="space-y-3">
@@ -3918,14 +4139,14 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
                   {/* Priority Pill */}
                   <div className="relative overflow-visible">
-                    <button onClick={() => setFormDropdown(d => d === "priority" ? null : "priority")} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "priority" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                    <button onClick={(e) => openFormDropdown("priority", e)} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "priority" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <Flag className={cn("w-4 h-4", form.priority ? PRIORITY_CONFIG[form.priority].flag : "text-neutral-400")} />
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الأولوية:</span>
                       <span className="truncate max-w-[120px] text-neutral-700 dark:text-neutral-200">{form.priority ? PRIORITY_CONFIG[form.priority].label : "اختر"}</span>
                       <ChevronDown className={cn("w-3 h-3 ms-auto transition-transform shrink-0 text-neutral-400", formDropdown === "priority" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "priority" && (
-                      <div className="absolute right-0 top-full mt-1 z-[60] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
+                      <div className="fixed z-[80] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-h-[50vh] overflow-y-auto shadow-2xl max-sm:!left-2 max-sm:!right-2 max-sm:!bottom-2 max-sm:!top-auto max-sm:!w-auto max-sm:rounded-t-2xl max-sm:max-h-[60vh]" style={{ top: formDropdownPos?.top, right: formDropdownPos?.right, width: formDropdownPos?.width }}>
                         <p className="text-xs font-semibold text-neutral-400 px-3 py-1.5">الأولوية</p>
                         {(["emergency","urgent","high","medium","low"] as TaskPriority[]).map(p => (
                           <button key={p} onClick={() => { setForm(f => ({ ...f, priority: p })); setFormTouched(t => new Set([...t, "priority"])); setFormDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right flex items-center justify-between rounded-lg transition-colors", form.priority === p ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
@@ -3942,7 +4163,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                 {/* Progress Pill */}
                 {((form.assignMembers && form.assignMembers.length > 1) || (form.supervisor && !(form.assignMembers || []).includes(form.supervisor))) ? (
                   <div className="space-y-3 rounded-xl border border-neutral-200 bg-white p-3.5 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200">
@@ -3959,15 +4180,44 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                           </div>
                         </div>
                       </div>
+                      <div className="flex items-center gap-1">
+                        <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200">
+                          <input
+                            type="radio"
+                            name="task-progress-mode"
+                            value="individual"
+                            checked={(form.progressMode || "individual") === "individual"}
+                            onChange={() => {
+                              setForm(f => ({ ...f, progressMode: "individual" }));
+                              setFormTouched(t => new Set([...t, "progress"]));
+                            }}
+                            className="h-4 w-4 cursor-pointer accent-black"
+                          />
+                          <span>فردي</span>
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200">
+                          <input
+                            type="radio"
+                            name="task-progress-mode"
+                            value="collective"
+                            checked={form.progressMode === "collective"}
+                            onChange={() => {
+                              setForm(f => ({ ...f, progressMode: "collective" }));
+                              setFormTouched(t => new Set([...t, "progress"]));
+                            }}
+                            className="h-4 w-4 cursor-pointer accent-black"
+                          />
+                          <span>جماعي</span>
+                        </label>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 border-t border-neutral-100 pt-3 sm:grid-cols-2 md:grid-cols-3 dark:border-neutral-700">
+                    <div className={cn("grid gap-2 border-t border-neutral-100 pt-3 dark:border-neutral-700", showRoleDetail && !formReadOnly && (form.progressMode || "individual") === "individual" && (form.assignMembers || []).length > 1 ? "grid-cols-1" : "grid-cols-2 sm:grid-cols-2 md:grid-cols-3")}>
                       {(() => {
                         const members = form.assignMembers || [];
                         const sup = form.supervisor && !members.includes(form.supervisor) ? [form.supervisor] : [];
                         const allMembers = [...members, ...sup];
                         return allMembers.map(m => {
-                        const mp = (form.memberProgress || {})[m] ?? 0;
                         const isAssignee = members.includes(m);
                         const isSupervisor = form.supervisor === m;
                         return (
@@ -4011,28 +4261,56 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                 <X className="w-3.5 h-3.5" />
                               </button>
                             </div>
-                            {editing && (form.progressMode || "individual") === "individual" && <div className="flex min-w-0 items-center gap-2">
-                              <input
-                                type="range" min={0} max={100} value={mp}
+                            {showRoleDetail && !formReadOnly && (form.progressMode || "individual") === "individual" && (form.assignMembers || []).length > 1 && isAssignee && (
+                              <textarea
+                                value={(form.memberRoles || {})[m] || ""}
                                 onChange={e => {
-                                  const val = parseInt(e.target.value);
-                                  setForm(f => {
-                                    const nextMp = { ...(f.memberProgress || {}), [m]: val };
-                                    const members = f.assignMembers || [];
-                                    const avg = members.length > 0 ? Math.round(members.reduce((s, x) => s + (nextMp[x] ?? 0), 0) / members.length) : val;
-                                    return { ...f, memberProgress: nextMp, progress: avg };
-                                  });
+                                  const val = e.target.value;
+                                  setForm(f => ({ ...f, memberRoles: { ...(f.memberRoles || {}), [m]: val } }));
                                 }}
-                                className="progress-slider flex-1 min-w-0 cursor-pointer"
+                                placeholder="دور الموظف في المهمة..."
+                                rows={2}
+                                className="w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-2 text-sm outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-neutral-600 dark:bg-neutral-900 dark:focus:ring-indigo-900/30"
                               />
-                              <span className="shrink-0 rounded-md bg-teal-50 px-2 py-0.5 text-[10px] font-bold tabular-nums text-teal-600 dark:bg-teal-900/20 dark:text-teal-400">{mp}%</span>
-                            </div>}
+                            )}
                           </div>
                         );
                       });
                       })()
                     }
                     </div>
+
+                    {!formReadOnly && (form.progressMode || "individual") === "individual" && (form.assignMembers || []).length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowRoleDetail(v => !v)}
+                        className={cn("flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors", showRoleDetail ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900" : "text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-700")}
+                      >
+                        <ListChecks className="w-3.5 h-3.5" />
+                        تفصيل الأدوار
+                      </button>
+                    )}
+
+                    {editing && form.progressMode === "collective" && (
+                      <div className="rounded-xl border border-neutral-100 bg-neutral-50/70 p-3 dark:border-neutral-700 dark:bg-neutral-900/40">
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                            <SlidersHorizontal className="h-3.5 w-3.5" />
+                            الإنجاز الجماعي
+                          </span>
+                          <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs font-bold tabular-nums text-teal-700 dark:bg-teal-900/20 dark:text-teal-300">{form.progress ?? 0}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={form.progress || 0}
+                          onChange={e => setForm(f => ({ ...f, progress: parseInt(e.target.value) }))}
+                          className="h-2 w-full cursor-pointer accent-teal-500"
+                          aria-label="نسبة الإنجاز الجماعي"
+                        />
+                      </div>
+                    )}
                   </div>
                 ) : editing ? (
                   <div className="rounded-xl border border-neutral-200 bg-white px-3 py-2.5 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
@@ -4091,7 +4369,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
                   {/* Tags Pill */}
                   <div className="relative overflow-visible">
-                    <button onClick={() => { setFormDropdown(d => d === "tags" ? null : "tags"); setTagSearch(""); setNewTag(""); setShowAddTag(false); }} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "tags" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                    <button onClick={(e) => { openFormDropdown("tags", e); setTagSearch(""); setNewTag(""); setShowAddTag(false); }} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "tags" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">الوسم:</span>
                       {(form.tags && form.tags.length > 0) ? (
                         <div className="flex items-center gap-1 min-w-0">
@@ -4105,7 +4383,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                       <ChevronDown className={cn("w-3 h-3 ms-auto transition-transform shrink-0 text-neutral-400", formDropdown === "tags" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "tags" && (
-                      <div className="absolute right-0 top-full mt-1 z-[60] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-3 min-w-[280px] max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
+                      <div className="fixed z-[80] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-3 min-w-[280px] max-h-[50vh] overflow-y-auto shadow-2xl max-sm:!left-2 max-sm:!right-2 max-sm:!bottom-2 max-sm:!top-auto max-sm:!w-auto max-sm:rounded-t-2xl max-sm:max-h-[60vh]" style={{ top: formDropdownPos?.top, right: formDropdownPos?.right, width: formDropdownPos?.width }}>
                         <p className="text-xs font-semibold text-neutral-400 mb-2">الوسوم</p>
                         {/* Search */}
                         <div className="relative mb-2.5">
@@ -4115,7 +4393,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                             value={tagSearch}
                             onChange={(e) => setTagSearch(e.target.value)}
                             placeholder="ابحث عن وسم..."
-                            className="h-8 w-full rounded-lg border border-neutral-200 bg-white py-1.5 ps-3 pe-8 text-xs outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-neutral-600 dark:bg-neutral-900 dark:focus:ring-indigo-900/30"
+                            className="h-8 w-full rounded-lg border border-neutral-200 bg-white py-1.5 ps-8 pe-3 text-xs outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-neutral-600 dark:bg-neutral-900 dark:focus:ring-indigo-900/30"
                           />
                         </div>
                         {/* Tags list */}
@@ -4217,13 +4495,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
                   {/* Source Pill */}
                   <div className="relative overflow-visible">
-                    <button onClick={() => setFormDropdown(d => d === "source" ? null : "source")} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "source" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                    <button onClick={(e) => openFormDropdown("source", e)} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "source" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">المصدر:</span>
                       <span className="truncate max-w-[120px] text-neutral-700 dark:text-neutral-200">{form.taskSource || "اختر المصدر"}</span>
                       <ChevronDown className={cn("w-3 h-3 ms-auto transition-transform shrink-0 text-neutral-400", formDropdown === "source" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "source" && (
-                      <div className="absolute right-0 top-full mt-1 z-[60] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
+                      <div className="fixed z-[80] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-1.5 min-w-[160px] max-h-[50vh] overflow-y-auto shadow-2xl max-sm:!left-2 max-sm:!right-2 max-sm:!bottom-2 max-sm:!top-auto max-sm:!w-auto max-sm:rounded-t-2xl max-sm:max-h-[60vh]" style={{ top: formDropdownPos?.top, right: formDropdownPos?.right, width: formDropdownPos?.width }}>
                         <p className="text-xs font-semibold text-neutral-400 px-3 py-1.5">المصدر</p>
                         {SOURCES.map(s => (
                           <button key={s} onClick={() => { setForm(f => ({ ...f, taskSource: s })); setFormTouched(t => new Set([...t, "source"])); setFormDropdown(null); }} className={cn("w-full px-4 py-2 text-sm text-right rounded-lg transition-colors", form.taskSource === s ? "bg-indigo-50 text-indigo-700 font-medium dark:bg-indigo-900/20 dark:text-indigo-300" : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700/50")}>
@@ -4236,13 +4514,13 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
                   {/* Project Pill */}
                   <div className="relative overflow-visible">
-                    <button onClick={() => { setFormDropdown(d => d === "project" ? null : "project"); setProjectSearch(""); }} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "project" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                    <button onClick={(e) => { openFormDropdown("project", e); setProjectSearch(""); }} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "project" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">المشروع:</span>
                       <span className="truncate max-w-[150px] text-neutral-700 dark:text-neutral-200">{form.projectName || "حدد المشروع"}</span>
                       <ChevronDown className={cn("w-3 h-3 ms-auto transition-transform shrink-0 text-neutral-400", formDropdown === "project" ? "rotate-180" : "")} />
                     </button>
                     {formDropdown === "project" && (
-                      <div className="absolute right-0 top-full mt-2 z-[60] flex min-w-[300px] max-h-[420px] flex-col overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.14)] dark:border-neutral-600 dark:bg-neutral-800 max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
+                      <div className="fixed z-[80] flex min-w-[300px] max-h-[50vh] flex-col overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.14)] dark:border-neutral-600 dark:bg-neutral-800 shadow-2xl max-sm:!left-2 max-sm:!right-2 max-sm:!bottom-2 max-sm:!top-auto max-sm:!w-auto max-sm:rounded-t-2xl max-sm:max-h-[60vh]" style={{ top: formDropdownPos?.top, right: formDropdownPos?.right, width: formDropdownPos?.width }}>
                         <div className="p-2.5 border-b border-gray-100 dark:border-neutral-700">
                           <div className="relative">
                             <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
@@ -4261,7 +4539,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                                 }
                               }}
                               placeholder="ابحث أو اكتب اسم مشروع جديد..."
-                              className="h-9 w-full rounded-lg border border-neutral-200 bg-white py-1.5 ps-3 pe-8 text-xs outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-neutral-600 dark:bg-neutral-900 dark:focus:ring-indigo-900/30"
+                              className="h-9 w-full rounded-lg border border-neutral-200 bg-white py-1.5 ps-8 pe-3 text-xs outline-none transition-shadow focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:border-neutral-600 dark:bg-neutral-900 dark:focus:ring-indigo-900/30"
                             />
                           </div>
                         </div>
@@ -4303,7 +4581,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
 
                   {/* Recurrence Pill */}
                   <div className="relative overflow-visible">
-                    <button onClick={() => setFormDropdown(d => d === "recurrence" ? null : "recurrence")} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "recurrence" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
+                    <button onClick={(e) => openFormDropdown("recurrence", e)} className={cn("flex h-9 w-full items-center gap-2 px-3 rounded-lg border text-sm font-medium transition-colors", formDropdown === "recurrence" ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-700 dark:border-neutral-600" : "bg-white border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/60")}>
                       <Repeat className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                       <span className="text-neutral-400 dark:text-neutral-500 font-normal shrink-0">التكرار:</span>
                       <span className="truncate max-w-[150px] text-neutral-700 dark:text-neutral-200">
@@ -4346,7 +4624,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         });
                       };
                       return (
-                      <div className="absolute right-0 top-full mt-1 z-[60] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-2.5 min-w-[240px] max-sm:fixed max-sm:left-2 max-sm:right-2 max-sm:top-auto max-sm:bottom-2 max-sm:z-[80] max-sm:min-w-0 max-sm:max-h-[50vh] max-sm:overflow-y-auto max-sm:shadow-2xl">
+                      <div className="fixed z-[80] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-xl shadow-lg p-2.5 min-w-[240px] max-h-[50vh] overflow-y-auto shadow-2xl max-sm:!left-2 max-sm:!right-2 max-sm:!bottom-2 max-sm:!top-auto max-sm:!w-auto max-sm:rounded-t-2xl max-sm:max-h-[60vh]" style={{ top: formDropdownPos?.top, right: formDropdownPos?.right, width: formDropdownPos?.width }}>
                         <p className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 text-center mb-1.5">{RECURRENCE_MONTHS_AR[rMonth]} {rYear}</p>
                         {/* Day names */}
                         <div className="grid grid-cols-7 gap-0.5 mb-1">
@@ -4777,6 +5055,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                 </section>
 
                 </div>
+                  )}
               </div>
 
                 {/* Activity sidebar - left 55% */}
@@ -4987,17 +5266,9 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                               <span className="w-9 h-9 rounded-full bg-[#7f66ff] flex items-center justify-center"><FileText className="w-4 h-4 text-white" /></span>
                               مستند
                             </button>
-                            <button onClick={() => { setFormAttachmentMenuOpen(false); formMediaInputRef.current?.click(); }} className="w-full px-3 py-2.5 flex items-center gap-3 text-xs text-[#111b21] dark:text-[#e9edef] hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                              <span className="w-9 h-9 rounded-full bg-[#007bfc] flex items-center justify-center"><ImageIcon className="w-4 h-4 text-white" /></span>
-                              الصور والفيديو
-                            </button>
                             <button onClick={() => { setFormAttachmentMenuOpen(false); formCameraInputRef.current?.click(); }} className="w-full px-3 py-2.5 flex items-center gap-3 text-xs text-[#111b21] dark:text-[#e9edef] hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                               <span className="w-9 h-9 rounded-full bg-[#ff2e74] flex items-center justify-center"><Camera className="w-4 h-4 text-white" /></span>
                               الكاميرا
-                            </button>
-                            <button onClick={() => { setFormAttachmentMenuOpen(false); setVideoRecorderTarget("form"); }} className="w-full px-3 py-2.5 flex items-center gap-3 text-xs text-[#111b21] dark:text-[#e9edef] hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                              <span className="w-9 h-9 rounded-full bg-[#00a884] flex items-center justify-center"><Video className="w-4 h-4 text-white" /></span>
-                              تسجيل فيديو
                             </button>
                             <button onClick={() => { const start = formComment.length; setFormComment(value => `${value}${value && !value.endsWith(" ") ? " " : ""}@`); setFormMention({ query: "", startIndex: start + (formComment && !formComment.endsWith(" ") ? 1 : 0) }); setFormAttachmentMenuOpen(false); }} className="w-full px-3 py-2.5 flex items-center gap-3 text-xs text-[#111b21] dark:text-[#e9edef] hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                               <span className="w-9 h-9 rounded-full bg-[#009de2] flex items-center justify-center"><AtSign className="w-4 h-4 text-white" /></span>
@@ -5034,14 +5305,18 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                 <div className="flex items-center gap-2 min-w-0">
                   <span className={cn("hidden sm:flex items-center gap-1.5 text-xs truncate", formIsDirty ? "text-amber-600" : "text-neutral-400")}>
                     <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", formIsDirty ? "bg-amber-500" : "bg-teal-500")} />
-                    {formIsDirty ? "تغييرات غير محفوظة" : editing ? "لا توجد تغييرات" : "المهمة جاهزة للإنشاء"}
+                    {formReadOnly ? "وضع العرض — اضغط تعديل المهمة للتعديل" : formIsDirty ? "تغييرات غير محفوظة" : editing ? "لا توجد تغييرات" : "المهمة جاهزة للإنشاء"}
                   </span>
                   <span className="hidden lg:inline text-[10px] text-neutral-400 border border-neutral-200 dark:border-neutral-700 rounded px-1.5 py-0.5">Ctrl + S</span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <input ref={taskFileInputRef} type="file" multiple className="hidden" onChange={async event => { await addTaskFiles(event.target.files); event.target.value = ""; }} />
                   <button onClick={() => closeForm()} className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">إلغاء</button>
-                  <button onClick={save} className="px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-white bg-black hover:bg-neutral-800 shadow-sm transition-colors">{editing ? "حفظ التعديلات" : "إنشاء المهمة"}</button>
+                  {formReadOnly ? (
+                    <button onClick={() => setFormReadOnly(false)} className="px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition-colors">تعديل المهمة</button>
+                  ) : (
+                    <button onClick={save} className="px-4 sm:px-5 py-2 rounded-lg text-xs sm:text-sm font-semibold text-white bg-black hover:bg-neutral-800 shadow-sm transition-colors">{editing ? "حفظ التعديلات" : "إنشاء المهمة"}</button>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -5104,7 +5379,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         }
                       }}
                       placeholder="ابحث أو اكتب اسم موظف جديد..."
-                      className="w-full bg-gray-50 dark:bg-neutral-900 border-none rounded-lg py-1.5 ps-3 pe-8 text-xs focus:ring-1 focus:ring-teal-500 outline-none"
+                      className="w-full bg-gray-50 dark:bg-neutral-900 border-none rounded-lg py-1.5 ps-8 pe-3 text-xs focus:ring-1 focus:ring-teal-500 outline-none"
                     />
                   </div>
                 </div>
@@ -5164,7 +5439,7 @@ export default function TasksPage({ onBack: _onBack, onNewCampaign }: TasksPageP
                         }
                       }}
                       placeholder="ابحث أو اكتب اسم مشروع جديد..."
-                      className="w-full bg-gray-50 dark:bg-neutral-900 border-none rounded-lg py-1.5 ps-3 pe-8 text-xs focus:ring-1 focus:ring-teal-500 outline-none"
+                      className="w-full bg-gray-50 dark:bg-neutral-900 border-none rounded-lg py-1.5 ps-8 pe-3 text-xs focus:ring-1 focus:ring-teal-500 outline-none"
                     />
                   </div>
                 </div>
